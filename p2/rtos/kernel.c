@@ -1,30 +1,26 @@
 #include "kernel.h"
-#include "hardware/hw.h"
 
 #include <stdio.h>
 #include <string.h>
 
 #define LED_PIN_MASK 0x80			//Pin 13 = PB7
 
-/*System variables used by the kernel only*/
+/*Variables shared within the kernel only*/
 volatile static PD Process[MAXTHREAD];			//Contains the process descriptor for all tasks, regardless of their current state.
-volatile static EVENT_TYPE Event[MAXEVENT];		//Contains all the event objects 
-volatile static MUTEX_TYPE Mutex[MAXMUTEX];		//Contains all the mutex objects
 
+/*System variables used by the kernel only*/
 volatile static unsigned int Last_Dispatched;	//Which task in the process queue was last dispatched.
-volatile static unsigned int Task_Count;		//Number of tasks created so far.
-volatile static unsigned int Event_Count;		//Number of events created so far.
-volatile static unsigned int Mutex_Count;		//Number of Mutexes created so far.
 volatile static unsigned int Tick_Count;		//Number of timer ticks missed
 
+volatile unsigned int Task_Count;				//Number of tasks created so far.
+
+
 /*Variables accessible by OS*/
-volatile PD* Cp;		
+volatile PD* Current_Process;					//Process descriptor for the last running process before entering the kernel
 volatile unsigned char *KernelSp;				//Pointer to the Kernel's own stack location.
 volatile unsigned char *CurrentSp;				//Pointer to the stack location of the current running task. Used for saving into PD during ctxswitch.						//The process descriptor of the currently RUNNING task. CP is used to pass information from OS calls to the kernel telling it what to do.
 volatile unsigned int KernelActive;				//Indicates if kernel has been initialzied by OS_Start().
 volatile unsigned int Last_PID;					//Last (also highest) PID value created so far.
-volatile unsigned int Last_EventID;				//Last (also highest) EVENT value created so far.
-volatile unsigned int Last_MutexID;				//Last (also highest) MUTEX value created so far.
 volatile ERROR_TYPE err;						//Error code for the previous kernel operation (if any)
 
 
@@ -51,63 +47,7 @@ PD* findProcessByPID(int pid)
 	return NULL;
 }
 
-EVENT_TYPE* findEventByEventID(EVENT e)
-{
-	int i;
-	
-	//Ensure the request event ID is > 0
-	if(e <= 0)
-	{
-		#ifdef DEBUG
-		printf("findEventByID: The specified event ID is invalid!\n");
-		#endif
-		err = INVALID_ARG_ERR;
-		return NULL;
-	}
-	
-	//Find the requested Event and return its pointer if found
-	for(i=0; i<MAXEVENT; i++)
-	{
-		if(Event[i].id == e) 
-			return &Event[i];
-	}
-	
-	//Event wasn't found
-	//#ifdef DEBUG
-	//printf("findEventByEventID: The requested event %d was not found!\n", e);
-	//#endif
-	err = EVENT_NOT_FOUND_ERR;
-	return NULL;
-}
 
-MUTEX_TYPE* findMutexByMutexID(MUTEX m)
-{
-	int i;
-	
-	//Ensure the request mutex ID is > 0
-	if(m <= 0)
-	{
-		#ifdef DEBUG
-		printf("findMutexByID: The specified mutex ID is invalid!\n");
-		#endif
-		err = INVALID_ARG_ERR;
-		return NULL;
-	}
-	
-	//Find the requested Mutex and return its pointer if found
-	for(i=0; i<MAXMUTEX; i++)
-	{
-		if(Mutex[i].id == m)
-		return &Mutex[i];
-	}
-	
-	//mutex wasn't found
-	//#ifdef DEBUG
-	//printf("findMutexByEventID: The requested mutex %d was not found!\n", m);
-	//#endif
-	err = MUTEX_NOT_FOUND_ERR;
-	return NULL;
-}
 
 /************************************************************************/
 /*				   		       OS HELPERS                               */
@@ -126,28 +66,6 @@ int findPIDByFuncPtr(voidfuncptr f)
 	
 	//No process with such PID
 	return -1;
-}
-
-/*Only useful if our RTOS allows more than one missed event signals to be recorded*/
-int getEventCount(EVENT e)
-{
-	EVENT_TYPE* e1 = findEventByEventID(e);
-	
-	if(e1 == NULL) 
-		return 0;
-		
-	return e1->count;	
-}
-
-void debug_print_task_states()
-{
-	int i = 0;
-	
-	for(i=0; i<MAXTHREAD; i++)
-	{
-		if(Process[i].state != DEAD)
-			printf("\t Task: %d \t State: %d\n", i, Process[i].state);
-	}
 }
 
 /*
@@ -291,7 +209,7 @@ void Kernel_Create_Task(voidfuncptr f, PRIORITY py, int arg)
 static void Kernel_Suspend_Task() 
 {
 	//Finds the process descriptor for the specified PID
-	PD* p = findProcessByPID(Cp->request_arg);
+	PD* p = findProcessByPID(Current_Process->request_arg);
 	
 	//Ensure the PID specified in the PD currently exists in the global process list
 	if(p == NULL)
@@ -337,7 +255,7 @@ static void Kernel_Suspend_Task()
 static void Kernel_Resume_Task()
 {
 	//Finds the process descriptor for the specified PID
-	PD* p = findProcessByPID(Cp->request_arg);
+	PD* p = findProcessByPID(Current_Process->request_arg);
 	
 	//Ensure the PID specified in the PD currently exists in the global process list
 	if(p == NULL)
@@ -371,294 +289,7 @@ static void Kernel_Resume_Task()
 	
 }
 
-/************************************************************************/
-/*                  EVENT RELATED KERNEL FUNCTIONS                      */
-/************************************************************************/
 
-void Kernel_Create_Event(void)
-{
-	int i;
-	
-	//Make sure the system's events are not at max
-	if(Event_Count >= MAXEVENT)
-	{
-		#ifdef DEBUG
-		printf("Event_Init: Failed to create Event. The system is at its max event threshold.\n");
-		#endif
-		err = MAX_EVENT_ERR;
-		return;
-	}
-	
-	//Find an uninitialized Event slot
-	for(i=0; i<MAXEVENT; i++)
-		if(Event[i].id == 0) break;
-	
-	//Assign a new unique ID to the event. Note that the smallest valid Event ID is 1.
-	Event[i].id = ++Last_EventID;
-	Event[i].owner = 0;
-	++Event_Count;
-	err = NO_ERR;
-	
-	#ifdef DEBUG
-	printf("Event_Init: Created Event %d!\n", Last_EventID);
-	#endif
-	
-}
-
-static void Kernel_Wait_Event(void)
-{
-	EVENT_TYPE* e = findEventByEventID(Cp->request_arg);
-	
-	if(e == NULL)
-	{
-		#ifdef DEBUG
-		printf("Kernel_Wait_Event: Error finding requested event!\n");
-		#endif
-		return;
-	}
-	
-	//Ensure no one else is waiting for this same event
-	if(e->owner > 0 && e->owner != Cp->pid)
-	{
-		#ifdef DEBUG
-			printf("Kernel_Wait_Event: The requested event is already being waited by PID %d\n", e->owner);
-		#endif
-		err = EVENT_NOT_FOUND_ERR;
-		return;
-	}
-	
-	//Has this event been signaled already? If yes, "consume" event and keep executing the same task
-	if(e->count > 0)
-	{
-		e->owner = 0;
-		e->count = 0;
-		e->id = 0;
-		--Event_Count;	
-		return;
-	}
-	
-	//Set the owner of the requested event to the current task and put it into the WAIT EVENT state
-	e->owner = Cp->pid;
-	Cp->state = WAIT_EVENT;
-	err = NO_ERR;
-	
-	
-}
-
-static void Kernel_Signal_Event(void)
-{
-	EVENT_TYPE* e = findEventByEventID(Cp->request_arg);
-	PD *e_owner;
-	
-	if(e == NULL)
-	{
-		#ifdef DEBUG
-		printf("Kernel_Signal_Event: Error finding requested event!\n");
-		#endif
-		return;
-	}
-	
-	//Increment the event counter if needed 
-	if(MAX_EVENT_SIG_MISS == 0 || e->count < MAX_EVENT_SIG_MISS)
-		e->count++;
-	
-	//If the event is unowned, return
-	if(e->owner == 0)
-	{
-		#ifdef DEBUG
-		printf("Kernel_Signal_Event: *WARNING* The requested event is not being waited by anyone!\n");
-		#endif
-		err = SIGNAL_UNOWNED_EVENT_ERR;
-		return;
-	}
-	
-	//Fetch the owner's PD and ensure it's still valid
-	e_owner = findProcessByPID(e->owner);
-	if(e_owner == NULL)
-	{
-		#ifdef DEBUG
-		printf("Kernel_Signal_Event: Event owner's PID not found in global process list!\n");
-		#endif
-		err = PID_NOT_FOUND_ERR;
-		return;
-	}
-	
-	//Wake up the owner of the event by setting its state to READY if it's active. The event is "consumed"
-	if(e_owner->state == WAIT_EVENT)
-	{
-		e->owner = 0;
-		e->count = 0;
-		e->id = 0;
-		--Event_Count;
-		e_owner->state = READY;
-	}
-	
-	
-}
-
-/************************************************************************/
-/*                  MUTEX RELATED KERNEL FUNCTIONS                      */
-/************************************************************************/
-
-void Kernel_Create_Mutex(void)
-{
-	int i;
-	
-	//Make sure the system's mutexes are not at max
-	if(Mutex_Count >= MAXMUTEX)
-	{
-		#ifdef DEBUG
-		printf("Kernel_Create_Mutex: Failed to create Mutex. The system is at its max mutex threshold.\n");
-		#endif
-		err = MAX_MUTEX_ERR;
-		return;
-	}
-	
-	//Find an uninitialized Mutex slot
-	for(i=0; i<MAXMUTEX; i++)
-		if(Mutex[i].id == 0) break;
-	
-	//Assign a new unique ID to the mutex. Note that the smallest valid mutex ID is 1.
-	Mutex[i].id = ++Last_MutexID;
-	Mutex[i].owner = 0;		// note when mutex's owner is 0, it is free
-	// init priority stack
-	for (int j=0; j<MAXTHREAD; j++) {
-		Mutex[i].priority_stack[j] = LOWEST_PRIORITY+1;
-		Mutex[i].blocked_stack[j] = -1;
-		Mutex[i].order[j] = 0;
-	}
-	Mutex[i].num_of_process = 0;
-	Mutex[i].total_num = 0;
-	++Mutex_Count;
-	err = NO_ERR;
-	
-	#ifdef DEBUG
-	printf("Kernel_Create_Mutex: Created Mutex %d!\n", Last_MutexID);
-	#endif
-	
-	
-}
-
-static void Dispatch();
-
-static void Kernel_Lock_Mutex(void)
-{
-	MUTEX_TYPE* m = findMutexByMutexID(Cp->request_arg);
-	PD *m_owner = findProcessByPID(m->owner);
-	
-	if(m == NULL)
-	{
-		#ifdef DEBUG
-		printf("Kernel_Lock_Mutex: Error finding requested mutex!\n");
-		#endif
-		return;
-	}
-	
-	// if mutex is free
-	if(m->owner == 0)
-	{
-		m->owner = Cp->pid;
-		m->count = 1;
-		m->own_pri = Cp->pri;				// keep track of the original priority of the owner
-		
-		return;
-	} else if (m->owner == Cp->pid) {
-		// if it has locked by the current process
-		++(m->count);
-		return;
-	} else {
-		Cp->state = WAIT_MUTEX;								//put cp into state wait mutex
-		//enqueue cp to stack
-		++(m->num_of_process);
-		++(m->total_num);
-		for (int i=0; i<MAXTHREAD; i++) {
-			if (m->blocked_stack[i] == -1){
-				m->blocked_stack[i] = Cp->pid;
-				m->order[i] = m->total_num;
-				m->priority_stack[i] = Cp->pri;
-				break;	
-			}
-		}
-		// end of enqueue
-		
-		
-		
-		//if cp's priority is higher than the owner
-		if (Cp->pri < m_owner->pri) {
-			m_owner->pri = Cp->pri;				// the owner gets cp's priority
-		}
-		
-		
-		
-		Dispatch();
-	}
-	
-	
-	
-	
-}
-
-static void Kernel_Unlock_Mutex(void)
-{
-	MUTEX_TYPE* m = findMutexByMutexID(Cp->request_arg);
-	PD *m_owner = findProcessByPID(m->owner);
-	
-	if(m == NULL)
-	{
-		#ifdef DEBUG
-		printf("Kernel_Unlock_Mutex: Error finding requested mutex!\n");
-		#endif
-		return;
-	}
-	
-	if(m->owner != Cp->pid){
-		#ifdef DEBUG
-		printf("Kernel_Unlock_Mutex: The owner is not the current process\n");
-		#endif
-		
-		return;
-	} else if (m->count > 1) {
-		// M is locked more than once
-		--(m->count);
-	} else if (m->num_of_process > 0) {
-		// there are tasks waiting on the mutex
-		// deque the task with highest priority
-		PID p_dequeue = 0;
-		unsigned int temp_order = m->total_num + 1;
-		PRIORITY temp_pri = LOWEST_PRIORITY + 1;
-		int i;
-		for (i=0; i<MAXTHREAD; i++) {
-			if (m->priority_stack[i] < temp_pri) {
-				// found a task with higher priority
-				temp_pri = m->priority_stack[i];
-				temp_order = m->order[i];
-				p_dequeue = m->blocked_stack[i];
-			} else if (m->priority_stack[i] == temp_pri && temp_order < m->order[i]) {
-				// same priority and came into the queue earlier
-				temp_order = m->order[i];
-				p_dequeue = m->blocked_stack[i];
-			}
-		}
-		//dequeue index i
-		m->blocked_stack[i] = -1;
-		m->priority_stack[i] = LOWEST_PRIORITY+1;
-		m->order[i] = 0;
-		--(m->num_of_process);
-		PD* target_p = findProcessByPID(p_dequeue);
-		m_owner->pri = m->own_pri;		//reset owner's priority
-		m->owner = p_dequeue;
-		m->own_pri = temp_pri;			//keep track of new owner's priority;
-		target_p->state = READY;
-		Cp->state = READY;
-		Dispatch();
-		return;
-	} else {
-		m->owner = 0;
-		m->count = 0;
-		m_owner->pri = m->own_pri;		//reset owner's priority
-		return;
-	}
-}
 
 /************************************************************************/
 /*                     TASK TERMINATE FUNCTION                         */
@@ -668,9 +299,10 @@ static void Kernel_Terminate_Task(void)
 {
 	MUTEX_TYPE* m;
 	// go through all mutex check if it owns a mutex
-	int index;
-	for (index=0; index<MAXMUTEX; index++) {
-		if (Mutex[index].owner == Cp->pid) {
+	/*int index;
+	for (index=0; index<MAXMUTEX; index++) 
+	{
+		if (Mutex[index].owner == Current_Process->pid) {
 			// it owns a mutex unlock the mutex
 			if (Mutex[index].num_of_process > 0) {
 				// if there are other process waiting on the mutex
@@ -704,8 +336,9 @@ static void Kernel_Terminate_Task(void)
 				Mutex[index].count = 0;
 			}
 		}
-	}
-	Cp->state = DEAD;			//Mark the task as DEAD so its resources will be recycled later when new tasks are created
+	}*/
+	
+	Current_Process->state = DEAD;			//Mark the task as DEAD so its resources will be recycled later when new tasks are created
 	--Task_Count;
 	
 	PORTB &= ~(1<<PB2);
@@ -771,16 +404,16 @@ static void Dispatch()
 		next_dispatch = Kernel_Select_Next_Task();
 		
 		if(next_dispatch < 0)
-			printf("SOMETHING WENT WRONG WITH SCHEDULLER!\N");
+			printf("SOMETHING WENT WRONG WITH SCHEDULLER!\n");
 		
 	}
 	
 
 	//Load the next selected task's process descriptor into Cp
 	Last_Dispatched = next_dispatch;
-	Cp = &(Process[Last_Dispatched]);
-	CurrentSp = Cp->sp;
-	Cp->state = RUNNING;
+	Current_Process = &(Process[Last_Dispatched]);
+	CurrentSp = Current_Process->sp;
+	Current_Process->state = RUNNING;
 }
 
 /**
@@ -800,25 +433,25 @@ static void Next_Kernel_Request()
 	while(1) 
 	{
 		//Clears the process' request fields
-		Cp->request = NONE;
+		Current_Process->request = NONE;
 		//Cp->request_arg is not reset, because task_sleep uses it to keep track of remaining ticks
 
 		//Load the current task's stack pointer and switch to its context
-		CurrentSp = Cp->sp;
+		CurrentSp = Current_Process->sp;
 		Exit_Kernel();
 
 		/* if this task makes a system call, it will return to here! */
 
 		//Save the current task's stack pointer and proceed to handle its request
-		Cp->sp = CurrentSp;
+		Current_Process->sp = CurrentSp;
 		
 		//Check if any timer ticks came in
 		Kernel_Tick_Handler();
 
-		switch(Cp->request)
+		switch(Current_Process->request)
 		{
 			case CREATE_T:
-			Kernel_Create_Task(Cp->code, Cp->pri, Cp->arg);
+			Kernel_Create_Task(Current_Process->code, Current_Process->pri, Current_Process->arg);
 			break;
 			
 			case TERMINATE:
@@ -835,7 +468,7 @@ static void Next_Kernel_Request()
 			break;
 			
 			case SLEEP:
-			Cp->state = SLEEPING;
+			Current_Process->state = SLEEPING;
 			Dispatch();					
 			break;
 			
@@ -845,7 +478,7 @@ static void Next_Kernel_Request()
 			
 			case WAIT_E:
 			Kernel_Wait_Event();	
-			if(Cp->state != RUNNING) Dispatch();	//Don't dispatch to a different task if the event is already signaled
+			if(Current_Process->state != RUNNING) Dispatch();	//Don't dispatch to a different task if the event is already signaled
 			break;
 			
 			case SIGNAL_E:
@@ -869,7 +502,7 @@ static void Next_Kernel_Request()
 		   
 			case YIELD:
 			case NONE:					// NONE could be caused by a timer interrupt
-			Cp->state = READY;
+			Current_Process->state = READY;
 			Dispatch();
 			break;
        
@@ -914,13 +547,11 @@ void Kernel_Reset()
 	int x;
 	
 	Task_Count = 0;
-	Event_Count = 0;
 	KernelActive = 0;
 	Tick_Count = 0;
 	Last_Dispatched = 0;
 	Last_PID = 0;
-	Last_EventID = 0;
-	Last_MutexID = 0;
+	
 	err = NO_ERR;
 	
 	//Clear and initialize the memory used for tasks
@@ -929,17 +560,9 @@ void Kernel_Reset()
 		Process[x].state = DEAD;
 	}
 	
-	//Clear and initialize the memory used for Events
-	memset(Event, 0, MAXEVENT*sizeof(EVENT_TYPE));
-	for (x = 0; x < MAXEVENT; x++) {
-		Event[x].id = 0;
-	}
 	
-	//Clear and initialize the memory used for Mutex
-	memset(Mutex, 0, MAXMUTEX*sizeof(MUTEX_TYPE));
-	for (x = 0; x < MAXMUTEX; x++) {
-		Event[x].id = 0;
-	}
+	Event_Reset();
+	Mutex_Reset();
 	
 	#ifdef DEBUG
 	printf("OS initialized!\n");

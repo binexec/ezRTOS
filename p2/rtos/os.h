@@ -12,7 +12,7 @@
 #define MAXMUTEX      8 
 #define MAXEVENT      8      
 #define MSECPERTICK   10   // resolution of a system tick in milliseconds
-#define MINPRIORITY   10   // 0 is the highest priority, 10 the lowest
+#define LOWEST_PRIORITY   10   // 0 is the highest priority, 10 the lowest
 
 typedef void (*voidfuncptr) (void);      /* pointer to void f(void) */
 

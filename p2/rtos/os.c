@@ -1,5 +1,6 @@
 #include "os.h"
 #include "kernel.h"
+#include "hardware/uart/uart.h"
 
 #include <stdio.h>
 
@@ -24,10 +25,10 @@ PID Task_Create(voidfuncptr f, PRIORITY py, int arg)
      Enter_Critical_Section();
 	 
 	 //Fill in the parameters for the new task into CP
-	 Cp->pri = py;
-	 Cp->arg = arg;
-     Cp->request = CREATE_T;
-     Cp->code = f;
+	 Current_Process->pri = py;
+	 Current_Process->arg = arg;
+     Current_Process->request = CREATE_T;
+     Current_Process->code = f;
 
      Enter_Kernel();
    } 
@@ -57,7 +58,7 @@ void Task_Terminate()
 	PORTB |= (1<<PB2);
 
 	Enter_Critical_Section();
-	Cp -> request = TERMINATE;
+	Current_Process -> request = TERMINATE;
 	Enter_Kernel();			
 }
 
@@ -70,14 +71,14 @@ void Task_Yield()
 	}
 
     Enter_Critical_Section();
-    Cp ->request = YIELD;
+    Current_Process ->request = YIELD;
     Enter_Kernel();
 }
 
 int Task_GetArg()
 {
 	if (KernelActive) 
-		return Cp->arg;
+		return Current_Process->arg;
 	else
 		return -1;
 }
@@ -92,8 +93,8 @@ void Task_Suspend(PID p)
 	Enter_Critical_Section();
 	
 	//Sets up the kernel request fields in the PD for this task
-	Cp->request = SUSPEND;
-	Cp->request_arg = p;
+	Current_Process->request = SUSPEND;
+	Current_Process->request_arg = p;
 	//printf("SUSPENDING: %u\n", Cp->request_arg);
 	Enter_Kernel();
 }
@@ -107,8 +108,8 @@ void Task_Resume(PID p)
 	Enter_Critical_Section();
 	
 	//Sets up the kernel request fields in the PD for this task
-	Cp->request = RESUME;
-	Cp->request_arg = p;
+	Current_Process->request = RESUME;
+	Current_Process->request_arg = p;
 	//printf("RESUMING: %u\n", Cp->request_arg);
 	Enter_Kernel();
 }
@@ -123,8 +124,8 @@ void Task_Sleep(TICK t)
 	}
 	Enter_Critical_Section();
 	
-	Cp->request = SLEEP;
-	Cp->request_arg = t;
+	Current_Process->request = SLEEP;
+	Current_Process->request_arg = t;
 
 	Enter_Kernel();
 }
@@ -135,7 +136,7 @@ EVENT Event_Init(void)
 	if(KernelActive)
 	{
 		Enter_Critical_Section();
-		Cp->request = CREATE_E;
+		Current_Process->request = CREATE_E;
 		Enter_Kernel();
 	}
 	else
@@ -162,8 +163,8 @@ void Event_Wait(EVENT e)
 	
 	Enter_Critical_Section();
 	
-	Cp->request = WAIT_E;
-	Cp->request_arg = e;
+	Current_Process->request = WAIT_E;
+	Current_Process->request_arg = e;
 	Enter_Kernel();
 	
 }
@@ -176,8 +177,8 @@ void Event_Signal(EVENT e)
 	}
 	Enter_Critical_Section();
 	
-	Cp->request = SIGNAL_E;
-	Cp->request_arg = e;
+	Current_Process->request = SIGNAL_E;
+	Current_Process->request_arg = e;
 	Enter_Kernel();	
 }
 
@@ -188,7 +189,7 @@ MUTEX Mutex_Init(void)
 	if(KernelActive)
 	{
 		Enter_Critical_Section();
-		Cp->request = CREATE_M;
+		Current_Process->request = CREATE_M;
 		Enter_Kernel();
 	}
 	else
@@ -217,8 +218,8 @@ void Mutex_Lock(MUTEX m)
 	
 	Enter_Critical_Section();
 	
-	Cp->request = LOCK_M;
-	Cp->request_arg = m;
+	Current_Process->request = LOCK_M;
+	Current_Process->request_arg = m;
 	Enter_Kernel();
 }
 
@@ -230,13 +231,13 @@ void Mutex_Unlock(MUTEX m)
 	}
 	Enter_Critical_Section();
 	
-	Cp->request = UNLOCK_M;
-	Cp->request_arg = m;
+	Current_Process->request = UNLOCK_M;
+	Current_Process->request_arg = m;
 	Enter_Kernel();
 }
 
 /*Don't use main function for application code. Any mandatory kernel initialization should be done here*/
-void main() 
+int main() 
 {
    //Enable STDIN/OUT to UART redirection for debugging
    #ifdef DEBUG

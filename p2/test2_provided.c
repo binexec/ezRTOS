@@ -45,16 +45,6 @@ void Peng()
 	}
 }
 
-void dbg_task()
-{
-	for(;;)
-	{
-		debug_print_task_states();
-		Task_Sleep(1000);
-		Task_Yield();
-	}
-}
-
 void suspend_pong()
 {
 	for(;;)
@@ -62,13 +52,11 @@ void suspend_pong()
 		Task_Sleep(300);
 		printf("SUSPENDING PONG!\n");
 		Task_Suspend(findPIDByFuncPtr(Pong));
-		//debug_print_task_states();
 		Task_Yield();
 		
 		Task_Sleep(300);
 		printf("RESUMING PONG!\n");
 		Task_Resume(findPIDByFuncPtr(Pong));
-		//debug_print_task_states();
 		Task_Yield();
 	}
 	

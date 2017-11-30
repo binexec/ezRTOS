@@ -35,16 +35,20 @@ LINKER_SCRIPT_DEP:=
 SUBDIRS :=  \
 ../rtos \
 ../rtos/hardware \
-../uart
+../rtos/hardware/uart/ \
+../rtos/mutex \
+../rtos/event
 
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS +=  \
+../rtos/event/event.c \
 ../rtos/hardware/hw.c \
+../rtos/hardware/uart/uart.c \
 ../rtos/kernel.c \
+../rtos/mutex/mutex.c \
 ../rtos/os.c \
-../test2_provided.c \
-../uart/uart.c
+../test2_provided.c
 
 
 PREPROCESSING_SRCS +=  \
@@ -55,36 +59,44 @@ ASM_SRCS +=
 
 
 OBJS +=  \
+rtos/event/event.o \
 rtos/hardware/cswitch.o \
 rtos/hardware/hw.o \
+rtos/hardware/uart/uart.o \
 rtos/kernel.o \
+rtos/mutex/mutex.o \
 rtos/os.o \
-test2_provided.o \
-uart/uart.o
+test2_provided.o
 
 OBJS_AS_ARGS +=  \
+rtos/event/event.o \
 rtos/hardware/cswitch.o \
 rtos/hardware/hw.o \
+rtos/hardware/uart/uart.o \
 rtos/kernel.o \
+rtos/mutex/mutex.o \
 rtos/os.o \
-test2_provided.o \
-uart/uart.o
+test2_provided.o
 
 C_DEPS +=  \
+rtos/event/event.d \
 rtos/hardware/cswitch.d \
 rtos/hardware/hw.d \
+rtos/hardware/uart/uart.d \
 rtos/kernel.d \
+rtos/mutex/mutex.d \
 rtos/os.d \
-test2_provided.d \
-uart/uart.d
+test2_provided.d
 
 C_DEPS_AS_ARGS +=  \
+rtos/event/event.d \
 rtos/hardware/cswitch.d \
 rtos/hardware/hw.d \
+rtos/hardware/uart/uart.d \
 rtos/kernel.d \
+rtos/mutex/mutex.d \
 rtos/os.d \
-test2_provided.d \
-uart/uart.d
+test2_provided.d
 
 OUTPUT_FILE_PATH +=ezRTOS.elf
 
@@ -111,7 +123,25 @@ LINKER_SCRIPT_DEP+=
 
 
 
+
+
+
+
+rtos/event/%.o: ../rtos/event/%.c
+	@echo Building file: $<
+	@echo Invoking: AVR/GNU C Compiler : 5.4.0
+	$(QUOTE)C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr8\avr8-gnu-toolchain\bin\avr-gcc.exe$(QUOTE)  -x c -funsigned-char -funsigned-bitfields -DF_CPU=16000000 -DBAUD=9600  -I"C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.0.90\include"  -O1 -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -mrelax -g2 -Wall -mmcu=atmega2560 -B "C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.0.90\gcc\dev\atmega2560" -c -std=gnu99 -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 
+	@echo Finished building: $<
+	
+
 rtos/hardware/%.o: ../rtos/hardware/%.c
+	@echo Building file: $<
+	@echo Invoking: AVR/GNU C Compiler : 5.4.0
+	$(QUOTE)C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr8\avr8-gnu-toolchain\bin\avr-gcc.exe$(QUOTE)  -x c -funsigned-char -funsigned-bitfields -DF_CPU=16000000 -DBAUD=9600  -I"C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.0.90\include"  -O1 -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -mrelax -g2 -Wall -mmcu=atmega2560 -B "C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.0.90\gcc\dev\atmega2560" -c -std=gnu99 -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 
+	@echo Finished building: $<
+	
+
+rtos/hardware/uart/%.o: ../rtos/hardware/uart/%.c
 	@echo Building file: $<
 	@echo Invoking: AVR/GNU C Compiler : 5.4.0
 	$(QUOTE)C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr8\avr8-gnu-toolchain\bin\avr-gcc.exe$(QUOTE)  -x c -funsigned-char -funsigned-bitfields -DF_CPU=16000000 -DBAUD=9600  -I"C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.0.90\include"  -O1 -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -mrelax -g2 -Wall -mmcu=atmega2560 -B "C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.0.90\gcc\dev\atmega2560" -c -std=gnu99 -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 
@@ -125,14 +155,14 @@ rtos/%.o: ../rtos/%.c
 	@echo Finished building: $<
 	
 
-./%.o: .././%.c
+rtos/mutex/%.o: ../rtos/mutex/%.c
 	@echo Building file: $<
 	@echo Invoking: AVR/GNU C Compiler : 5.4.0
 	$(QUOTE)C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr8\avr8-gnu-toolchain\bin\avr-gcc.exe$(QUOTE)  -x c -funsigned-char -funsigned-bitfields -DF_CPU=16000000 -DBAUD=9600  -I"C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.0.90\include"  -O1 -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -mrelax -g2 -Wall -mmcu=atmega2560 -B "C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.0.90\gcc\dev\atmega2560" -c -std=gnu99 -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 
 	@echo Finished building: $<
 	
 
-uart/%.o: ../uart/%.c
+./%.o: .././%.c
 	@echo Building file: $<
 	@echo Invoking: AVR/GNU C Compiler : 5.4.0
 	$(QUOTE)C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr8\avr8-gnu-toolchain\bin\avr-gcc.exe$(QUOTE)  -x c -funsigned-char -funsigned-bitfields -DF_CPU=16000000 -DBAUD=9600  -I"C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.0.90\include"  -O1 -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -mrelax -g2 -Wall -mmcu=atmega2560 -B "C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.0.90\gcc\dev\atmega2560" -c -std=gnu99 -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 

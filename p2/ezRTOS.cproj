@@ -111,6 +111,12 @@
     </ToolchainSettings>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="rtos\event\event.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="rtos\event\event.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="rtos\hardware\cswitch.s">
       <SubType>compile</SubType>
     </Compile>
@@ -120,10 +126,25 @@
     <Compile Include="rtos\hardware\hw.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="rtos\hardware\uart\uart.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="rtos\hardware\uart\uart.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="rtos\kernel.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="rtos\kernel.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="rtos\kernel_internal.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="rtos\mutex\mutex.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="rtos\mutex\mutex.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="rtos\os.c">
@@ -135,17 +156,13 @@
     <Compile Include="test2_provided.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="uart\uart.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="uart\uart.h">
-      <SubType>compile</SubType>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="rtos" />
     <Folder Include="rtos\hardware" />
-    <Folder Include="uart" />
+    <Folder Include="rtos\hardware\uart\" />
+    <Folder Include="rtos\mutex" />
+    <Folder Include="rtos\event" />
   </ItemGroup>
   <Import Project="$(AVRSTUDIO_EXE_PATH)\\Vs\\Compiler.targets" />
 </Project>
