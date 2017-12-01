@@ -33,11 +33,13 @@ void OS_Abort(void);
 
 /*Task/Thread related functions*/
 PID  Task_Create(voidfuncptr f, PRIORITY py, int arg);
+//void Task_Suspend( PID p );
+//void Task_Resume( PID p );
+void Task_Suspend(voidfuncptr f);		//Suspend/Resume tasks by the function name instead
+void Task_Resume(voidfuncptr f);
 void Task_Terminate(void);
 void Task_Yield(void);
 int  Task_GetArg(void);
-void Task_Suspend( PID p );          
-void Task_Resume( PID p );
 void Task_Sleep(TICK t);		// sleep time is at least t*MSECPERTICK
 
 /*Mutex related functions*/

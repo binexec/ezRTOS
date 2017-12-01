@@ -1,6 +1,9 @@
 #include "rtos/os.h"
-#include "rtos/kernel.h"
+#include "rtos/kernel/kernel.h"
 #include <stdio.h>
+
+#include <avr/io.h>
+#include <avr/interrupt.h>
 
 #define LED_PIN_MASK 0x80			//Pin 13 = PB7
 EVENT e1;
@@ -51,12 +54,12 @@ void suspend_pong()
 	{
 		Task_Sleep(300);
 		printf("SUSPENDING PONG!\n");
-		Task_Suspend(findPIDByFuncPtr(Pong));
+		Task_Suspend(Pong);
 		Task_Yield();
 		
 		Task_Sleep(300);
 		printf("RESUMING PONG!\n");
-		Task_Resume(findPIDByFuncPtr(Pong));
+		Task_Resume(Pong);
 		Task_Yield();
 	}
 	

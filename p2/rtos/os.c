@@ -1,10 +1,10 @@
 #include "os.h"
-#include "kernel.h"
-#include "hardware/uart/uart.h"
+#include "kernel/kernel.h"
 
 #include <stdio.h>
 
 #define DEBUG
+
 extern void a_main();					//External entry point for application once kernel and OS has initialized.
 
 
@@ -12,8 +12,16 @@ extern void a_main();					//External entry point for application once kernel and
 /*						   RTOS API FUNCTIONS                           */
 /************************************************************************/
 
-void OS_Init(void)	{Kernel_Reset();}
-void OS_Start(void)	{Kernel_Start();}
+void OS_Init(void)	
+{
+	stdio_init();
+	Kernel_Reset();
+}
+
+void OS_Start(void)	
+{
+	Kernel_Start();
+}
 
 
 /* OS call to create a new task */
@@ -22,15 +30,15 @@ PID Task_Create(voidfuncptr f, PRIORITY py, int arg)
    //Run the task creation through kernel if it's running already
    if (KernelActive) 
    {
-     Enter_Critical_Section();
+     Disable_Interrupt();
 	 
 	 //Fill in the parameters for the new task into CP
 	 Current_Process->pri = py;
 	 Current_Process->arg = arg;
      Current_Process->request = CREATE_T;
      Current_Process->code = f;
-
-     Enter_Kernel();
+	 
+     Enter_Kernel();		//Interrupts are automatically reenabled once the kernel is exited
    } 
    else 
 	   Kernel_Create_Task(f,py,arg);		//If kernel hasn't started yet, manually create the task
@@ -54,10 +62,8 @@ void Task_Terminate()
 		err = KERNEL_INACTIVE_ERR;
 		return;
 	}
-	
-	PORTB |= (1<<PB2);
 
-	Enter_Critical_Section();
+	Disable_Interrupt();
 	Current_Process -> request = TERMINATE;
 	Enter_Kernel();			
 }
@@ -70,7 +76,7 @@ void Task_Yield()
 		return;
 	}
 
-    Enter_Critical_Section();
+    Disable_Interrupt();
     Current_Process ->request = YIELD;
     Enter_Kernel();
 }
@@ -83,34 +89,31 @@ int Task_GetArg()
 		return -1;
 }
 
-//NOTE: Calling task should not try and suspend itself!
-void Task_Suspend(PID p)
+//Calling task should not try and suspend itself?
+void Task_Suspend(voidfuncptr f)
 {
+	
 	if(!KernelActive){
 		err = KERNEL_INACTIVE_ERR;
 		return;
 	}
-	Enter_Critical_Section();
 	
-	//Sets up the kernel request fields in the PD for this task
+	Disable_Interrupt();
 	Current_Process->request = SUSPEND;
-	Current_Process->request_arg = p;
-	//printf("SUSPENDING: %u\n", Cp->request_arg);
+	Current_Process->request_arg = findPIDByFuncPtr(f);
 	Enter_Kernel();
 }
 
-void Task_Resume(PID p)
+void Task_Resume(voidfuncptr f)
 {
 	if(!KernelActive){
 		err = KERNEL_INACTIVE_ERR;
 		return;
 	}
-	Enter_Critical_Section();
 	
-	//Sets up the kernel request fields in the PD for this task
+	Disable_Interrupt();
 	Current_Process->request = RESUME;
-	Current_Process->request_arg = p;
-	//printf("RESUMING: %u\n", Cp->request_arg);
+	Current_Process->request_arg = findPIDByFuncPtr(f);
 	Enter_Kernel();
 }
 
@@ -122,11 +125,10 @@ void Task_Sleep(TICK t)
 		err = KERNEL_INACTIVE_ERR;
 		return;
 	}
-	Enter_Critical_Section();
 	
+	Disable_Interrupt();
 	Current_Process->request = SLEEP;
 	Current_Process->request_arg = t;
-
 	Enter_Kernel();
 }
 
@@ -161,8 +163,7 @@ void Event_Wait(EVENT e)
 		return;
 	}
 	
-	Enter_Critical_Section();
-	
+	Disable_Interrupt();
 	Current_Process->request = WAIT_E;
 	Current_Process->request_arg = e;
 	Enter_Kernel();
@@ -175,8 +176,8 @@ void Event_Signal(EVENT e)
 		err = KERNEL_INACTIVE_ERR;
 		return;
 	}
-	Enter_Critical_Section();
 	
+	Disable_Interrupt();
 	Current_Process->request = SIGNAL_E;
 	Current_Process->request_arg = e;
 	Enter_Kernel();	
@@ -185,10 +186,9 @@ void Event_Signal(EVENT e)
 MUTEX Mutex_Init(void)
 {
 	
-	
 	if(KernelActive)
 	{
-		Enter_Critical_Section();
+		Disable_Interrupt();
 		Current_Process->request = CREATE_M;
 		Enter_Kernel();
 	}
@@ -215,9 +215,7 @@ void Mutex_Lock(MUTEX m)
 		return;
 	}
 	
-	
-	Enter_Critical_Section();
-	
+	Disable_Interrupt();
 	Current_Process->request = LOCK_M;
 	Current_Process->request_arg = m;
 	Enter_Kernel();
@@ -229,8 +227,8 @@ void Mutex_Unlock(MUTEX m)
 		err = KERNEL_INACTIVE_ERR;
 		return;
 	}
-	Enter_Critical_Section();
 	
+	Disable_Interrupt();
 	Current_Process->request = UNLOCK_M;
 	Current_Process->request_arg = m;
 	Enter_Kernel();
@@ -238,15 +236,8 @@ void Mutex_Unlock(MUTEX m)
 
 /*Don't use main function for application code. Any mandatory kernel initialization should be done here*/
 int main() 
-{
-   //Enable STDIN/OUT to UART redirection for debugging
-   #ifdef DEBUG
-	uart_init();
-	uart_setredir();
-	printf("STDOUT->UART!\n");
-   #endif  
-   
+{   
+   //Call the user's application entry point instead
    a_main();
-   
 }
 

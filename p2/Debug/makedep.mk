@@ -2,17 +2,17 @@
 # Automatically-generated file. Do not edit or delete the file
 ################################################################################
 
-rtos\event\event.c
+rtos\kernel\event\event.c
 
-rtos\hardware\cswitch.s
+rtos\kernel\hardware\cswitch.s
 
-rtos\hardware\hw.c
+rtos\kernel\hardware\hw.c
 
-rtos\hardware\uart\uart.c
+rtos\kernel\hardware\uart\uart.c
 
-rtos\kernel.c
+rtos\kernel\kernel.c
 
-rtos\mutex\mutex.c
+rtos\kernel\mutex\mutex.c
 
 rtos\os.c
 

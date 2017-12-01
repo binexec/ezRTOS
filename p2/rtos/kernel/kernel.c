@@ -10,8 +10,8 @@ volatile static PD Process[MAXTHREAD];			//Contains the process descriptor for a
 
 /*System variables used by the kernel only*/
 volatile static unsigned int Last_Dispatched;	//Which task in the process queue was last dispatched.
-volatile static unsigned int Tick_Count;		//Number of timer ticks missed
 
+volatile unsigned int Tick_Count;				//Number of timer ticks missed
 volatile unsigned int Task_Count;				//Number of tasks created so far.
 
 
@@ -48,7 +48,6 @@ PD* findProcessByPID(int pid)
 }
 
 
-
 /************************************************************************/
 /*				   		       OS HELPERS                               */
 /************************************************************************/
@@ -82,14 +81,8 @@ void Exit_Critical_Section()
 }
 
 /************************************************************************/
-/*                  ISR FOR HANDLING SLEEP TICKS                        */
+/*                  HANDLING SLEEP TICKS								 */
 /************************************************************************/
-
-//Timer tick ISR
-ISR(TIMER1_COMPA_vect)
-{
-	++Tick_Count;
-}
 
 //Processes all tasks that are currently sleeping and decrement their sleep ticks when called. Expired sleep tasks are placed back into their old state
 void Kernel_Tick_Handler()
@@ -140,10 +133,6 @@ void Kernel_Create_Task(voidfuncptr f, PRIORITY py, int arg)
 	int x;
 	unsigned char *sp;
 	PD *p;
-
-	#ifdef DEBUG
-	int counter = 0;
-	#endif
 	
 	//Make sure the system can still have enough resources to create more tasks
 	if (Task_Count == MAXTHREAD)
@@ -163,34 +152,35 @@ void Kernel_Create_Task(voidfuncptr f, PRIORITY py, int arg)
 	++Task_Count;
 	p = &(Process[x]);
 	
-	/*The code below was agglomerated from Kernel_Create_Task_At;*/
+	/*The code below was agglomerated from Kernel_Create_Task_At;*/\
 	
 	//Initializing the workspace memory for the new task
 	sp = (unsigned char *) &(p->workSpace[WORKSPACE-1]);
 	memset(&(p->workSpace),0,WORKSPACE);
-
-	//Store terminate at the bottom of stack to protect against stack underrun.
+	
+	//Build the Task's memory 
+	//Kernel_Init_Task_Stack(sp, f);
+	
+	
+	
+	//Store the address of Task_Terminate at the bottom of stack to protect against stack underrun (eg, if the task is not a loop).
 	*(unsigned char *)sp-- = ((unsigned int)Task_Terminate) & 0xff;
 	*(unsigned char *)sp-- = (((unsigned int)Task_Terminate) >> 8) & 0xff;
 	*(unsigned char *)sp-- = 0x00;
 
-	//Place return address of function at bottom of stack
+	//Place the address of the task's main function at bottom of stack for execution
 	*(unsigned char *)sp-- = ((unsigned int)f) & 0xff;
 	*(unsigned char *)sp-- = (((unsigned int)f) >> 8) & 0xff;
 	*(unsigned char *)sp-- = 0x00;
-
-	//Allocate the stack with enough memory spaces to save the registers needed for ctxswitch
-	#ifdef DEBUG
-	 //Fill stack with initial values for development debugging
-	 for (counter = 0; counter < 34; counter++)
-	 {
-		 *(unsigned char *)sp-- = counter;
-	 }
-	#else
-	 //Place stack pointer at top of stack
-	 sp = sp - 34;
-	#endif
 	
+	//Allocate the stack with enough memory spaces to save the registers needed for ctxswitch
+	//Place stack pointer at top of stack
+	sp = sp - 34;
+	
+	
+	
+	
+
 	//Build the process descriptor for the new task
 	p->pid = ++Last_PID;
 	p->pri = py;
@@ -341,7 +331,6 @@ static void Kernel_Terminate_Task(void)
 	Current_Process->state = DEAD;			//Mark the task as DEAD so its resources will be recycled later when new tasks are created
 	--Task_Count;
 	
-	PORTB &= ~(1<<PB2);
 }
 
 /************************************************************************/
@@ -374,7 +363,7 @@ static int Kernel_Select_Next_Task()
 }
 
 /* Dispatches a new task */
-static void Dispatch()
+static void Kernel_Dispatch_Next_Task()
 {
 	unsigned int i;
 	int next_dispatch = Kernel_Select_Next_Task();
@@ -424,9 +413,9 @@ static void Dispatch()
   *
   * This is the main loop of our kernel, called by OS_Start().
   */
-static void Next_Kernel_Request() 
+static void Kernel_Handle_Request() 
 {
-	Dispatch();	//Select an initial task to run
+	Kernel_Dispatch_Next_Task();	//Select an initial task to run
 
 	//After OS initialization, THIS WILL BE KERNEL'S MAIN LOOP!
 	//NOTE: When another task makes a syscall and enters the loop, it's still in the RUNNING state!
@@ -440,8 +429,12 @@ static void Next_Kernel_Request()
 		CurrentSp = Current_Process->sp;
 		Exit_Kernel();
 
-		/* if this task makes a system call, it will return to here! */
 
+		/************************************************************************/
+		/*     if this task makes a system call, it will return to here!		*/
+		/************************************************************************/
+		
+		
 		//Save the current task's stack pointer and proceed to handle its request
 		Current_Process->sp = CurrentSp;
 		
@@ -456,7 +449,7 @@ static void Next_Kernel_Request()
 			
 			case TERMINATE:
 			Kernel_Terminate_Task();
-			Dispatch();					//Dispatch is only needed if the syscall requires running a different task  after it's done
+			Kernel_Dispatch_Next_Task();					//Dispatch is only needed if the syscall requires running a different task  after it's done
 			break;
 		   
 			case SUSPEND:
@@ -469,7 +462,7 @@ static void Next_Kernel_Request()
 			
 			case SLEEP:
 			Current_Process->state = SLEEPING;
-			Dispatch();					
+			Kernel_Dispatch_Next_Task();					
 			break;
 			
 			case CREATE_E:
@@ -478,12 +471,12 @@ static void Next_Kernel_Request()
 			
 			case WAIT_E:
 			Kernel_Wait_Event();	
-			if(Current_Process->state != RUNNING) Dispatch();	//Don't dispatch to a different task if the event is already signaled
+			if(Current_Process->state != RUNNING) Kernel_Dispatch_Next_Task();	//Don't dispatch to a different task if the event is already signaled
 			break;
 			
 			case SIGNAL_E:
 			Kernel_Signal_Event();
-			Dispatch();
+			Kernel_Dispatch_Next_Task();
 			break;
 			
 			case CREATE_M:
@@ -503,7 +496,7 @@ static void Next_Kernel_Request()
 			case YIELD:
 			case NONE:					// NONE could be caused by a timer interrupt
 			Current_Process->state = READY;
-			Dispatch();
+			Kernel_Dispatch_Next_Task();
 			break;
        
 			//Invalid request code, just ignore
@@ -518,28 +511,6 @@ static void Next_Kernel_Request()
 /************************************************************************/
 /* KERNEL BOOT                                                          */
 /************************************************************************/
-
-/*Sets up the timer needed for task_sleep*/
-void Timer_init()
-{
-	/*Timer1 is configured for the task*/
-	
-	//Use Prescaler = 256
-	TCCR1B |= (1<<CS12);
-	TCCR1B &= ~((1<<CS11)|(1<<CS10));
-	
-	//Use CTC mode (mode 4)
-	TCCR1B |= (1<<WGM12);
-	TCCR1B &= ~((1<<WGM13)|(1<<WGM11)|(1<<WGM10));
-	
-	OCR1A = TICK_LENG;			//Set timer top comparison value to ~10ms
-	TCNT1 = 0;					//Load initial value for timer
-	TIMSK1 |= (1<<OCIE1A);      //enable match for OCR1A interrupt
-	
-	#ifdef DEBUG
-	printf("Timer initialized!\n");
-	#endif
-}
 
 /*This function initializes the RTOS and must be called before any othersystem calls.*/
 void Kernel_Reset()
@@ -560,15 +531,13 @@ void Kernel_Reset()
 		Process[x].state = DEAD;
 	}
 	
-	
 	Event_Reset();
 	Mutex_Reset();
 	
 	#ifdef DEBUG
 	printf("OS initialized!\n");
 	#endif
-	
-	DDRB = (1<<PB2);	//pin 51
+
 }
 
 /* This function starts the RTOS after creating a few tasks.*/
@@ -589,7 +558,7 @@ void Kernel_Start()
 		printf("OS begins!\n");
 		#endif
 		
-		Next_Kernel_Request();
+		Kernel_Handle_Request();
 		/* NEVER RETURNS!!! */
 	}
 }

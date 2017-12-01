@@ -111,40 +111,40 @@
     </ToolchainSettings>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="rtos\event\event.c">
+    <Compile Include="rtos\kernel\event\event.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="rtos\event\event.h">
+    <Compile Include="rtos\kernel\event\event.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="rtos\hardware\cswitch.s">
+    <Compile Include="rtos\kernel\hardware\cswitch.s">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="rtos\hardware\hw.c">
+    <Compile Include="rtos\kernel\hardware\hw.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="rtos\hardware\hw.h">
+    <Compile Include="rtos\kernel\hardware\hw.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="rtos\hardware\uart\uart.c">
+    <Compile Include="rtos\kernel\hardware\uart\uart.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="rtos\hardware\uart\uart.h">
+    <Compile Include="rtos\kernel\hardware\uart\uart.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="rtos\kernel.c">
+    <Compile Include="rtos\kernel\kernel.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="rtos\kernel.h">
+    <Compile Include="rtos\kernel\kernel.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="rtos\kernel_internal.h">
+    <Compile Include="rtos\kernel\kernel_internal.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="rtos\mutex\mutex.c">
+    <Compile Include="rtos\kernel\mutex\mutex.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="rtos\mutex\mutex.h">
+    <Compile Include="rtos\kernel\mutex\mutex.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="rtos\os.c">
@@ -159,10 +159,11 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="rtos" />
-    <Folder Include="rtos\hardware" />
-    <Folder Include="rtos\hardware\uart\" />
-    <Folder Include="rtos\mutex" />
-    <Folder Include="rtos\event" />
+    <Folder Include="rtos\kernel\event\" />
+    <Folder Include="rtos\kernel\hardware\" />
+    <Folder Include="rtos\kernel\hardware\uart\" />
+    <Folder Include="rtos\kernel\mutex\" />
+    <Folder Include="rtos\kernel" />
   </ItemGroup>
   <Import Project="$(AVRSTUDIO_EXE_PATH)\\Vs\\Compiler.targets" />
 </Project>

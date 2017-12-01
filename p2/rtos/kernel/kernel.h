@@ -12,14 +12,6 @@
 #include "mutex/mutex.h"
 #include "event/event.h"
 
-#include <avr/io.h>
-#include <avr/interrupt.h>
-
-
-//Global configurations
-#define TICK_LENG 625			//The length of a tick = 10ms, using 16Mhz clock and /256 prescsaler
-
-
 
 
 /************************************************************************/
