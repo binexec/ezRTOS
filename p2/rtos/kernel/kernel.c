@@ -156,30 +156,8 @@ void Kernel_Create_Task(voidfuncptr f, PRIORITY py, int arg)
 	
 	//Initializing the workspace memory for the new task
 	sp = (unsigned char *) &(p->workSpace[WORKSPACE-1]);
-	memset(&(p->workSpace),0,WORKSPACE);
-	
-	//Build the Task's memory 
-	//Kernel_Init_Task_Stack(sp, f);
-	
-	
-	
-	//Store the address of Task_Terminate at the bottom of stack to protect against stack underrun (eg, if the task is not a loop).
-	*(unsigned char *)sp-- = ((unsigned int)Task_Terminate) & 0xff;
-	*(unsigned char *)sp-- = (((unsigned int)Task_Terminate) >> 8) & 0xff;
-	*(unsigned char *)sp-- = 0x00;
-
-	//Place the address of the task's main function at bottom of stack for execution
-	*(unsigned char *)sp-- = ((unsigned int)f) & 0xff;
-	*(unsigned char *)sp-- = (((unsigned int)f) >> 8) & 0xff;
-	*(unsigned char *)sp-- = 0x00;
-	
-	//Allocate the stack with enough memory spaces to save the registers needed for ctxswitch
-	//Place stack pointer at top of stack
-	sp = sp - 34;
-	
-	
-	
-	
+	memset(&(p->workSpace), 0, WORKSPACE);
+	Kernel_Init_Task_Stack(&sp, f);
 
 	//Build the process descriptor for the new task
 	p->pid = ++Last_PID;
