@@ -7,24 +7,28 @@
 #ifndef _OS_H_  
 #define _OS_H_  
    
-#define MAXTHREAD     16       
+#define MAXTHREAD     8       
 #define WORKSPACE     256   // in bytes, per THREAD
 #define MAXMUTEX      8 
+#define MAXSEMAPHORE  8
 #define MAXEVENT      8      
 #define MSECPERTICK   10   // resolution of a system tick in milliseconds
 #define LOWEST_PRIORITY   10   // 0 is the highest priority, 10 the lowest
 
-typedef void (*voidfuncptr) (void);      /* pointer to void f(void) */
+typedef void (*voidfuncptr) (void);      /* pointer to void f(void), used to represent the main function for a RTOS task */
 
 #ifndef NULL
 	#define NULL          0   /* undefined */
 #endif
 
-typedef unsigned int PID;        // always non-zero if it is valid
-typedef unsigned int MUTEX;      // always non-zero if it is valid
+//Identifiers for various RTOS objects. The values are always non-zero if it is valid
+typedef unsigned int PID; 
+typedef unsigned int SEMAPHORE;
+typedef unsigned int MUTEX;
 typedef unsigned char PRIORITY;
-typedef unsigned int EVENT;      // always non-zero if it is valid
+typedef unsigned int EVENT;
 typedef unsigned int TICK;
+
 
 /*OS Initialization*/
 void OS_Init(void);

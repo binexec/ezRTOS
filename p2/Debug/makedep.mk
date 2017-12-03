@@ -14,6 +14,10 @@ rtos\kernel\kernel.c
 
 rtos\kernel\mutex\mutex.c
 
+rtos\kernel\others\queue.c
+
+rtos\kernel\semaphore\semaphore.c
+
 rtos\os.c
 
 test2_provided.c

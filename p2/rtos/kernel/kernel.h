@@ -11,6 +11,7 @@
 #include "hardware/hw.h"
 #include "mutex/mutex.h"
 #include "event/event.h"
+#include "semaphore/semaphore.h"
 
 
 

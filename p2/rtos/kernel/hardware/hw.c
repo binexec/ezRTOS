@@ -53,7 +53,7 @@ void stdio_init()
 /************************************************************************/
 
 //sp_ptr is a pointer to sp, the actual stack pointer for the new task.
-//"sp" is the bottom of the memory stack for the new task to be created
+//sp points to the bottom of the memory stack for the new task to be created
 
 void Kernel_Init_Task_Stack(unsigned char **sp_ptr, voidfuncptr f)
 {

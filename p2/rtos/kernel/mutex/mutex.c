@@ -12,16 +12,11 @@ volatile unsigned int Last_MutexID;				//Last (also highest) MUTEX value created
 
 void Mutex_Reset()
 {
-	int x = 0;
-	
 	Mutex_Count = 0;
 	Last_MutexID = 0;
 	
 	//Clear and initialize the memory used for Mutex
 	memset(Mutex, 0, MAXMUTEX*sizeof(MUTEX_TYPE));
-	for (x = 0; x < MAXMUTEX; x++) {
-		Mutex[x].id = 0;
-	}
 }
 
 /************************************************************************/

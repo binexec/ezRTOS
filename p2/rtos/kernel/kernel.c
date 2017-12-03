@@ -505,12 +505,10 @@ void Kernel_Reset()
 	
 	//Clear and initialize the memory used for tasks
 	memset(Process, 0, MAXTHREAD*sizeof(PD));
-	for (x = 0; x < MAXTHREAD; x++) {
-		Process[x].state = DEAD;
-	}
 	
 	Event_Reset();
 	Mutex_Reset();
+	Semaphore_Reset();
 	
 	#ifdef DEBUG
 	printf("OS initialized!\n");

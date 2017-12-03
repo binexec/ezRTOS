@@ -5,12 +5,10 @@
 #ifndef KERNEL_INTERNAL_H_
 #define KERNEL_INTERNAL_H_
 
-#ifdef DEBUG
-#include "uart/uart.h"
-#include <string.h>
-#endif
-
 #include "../os.h"
+#include <string.h>
+#include <stdint.h>
+
   
   //Definitions for potential errors the RTOS may come across
   typedef enum error_codes
@@ -28,7 +26,9 @@
 	  EVENT_ALREADY_OWNED_ERR,
 	  SIGNAL_UNOWNED_EVENT_ERR,
 	  MAX_MUTEX_ERR,
-	  MUTEX_NOT_FOUND_ERR
+	  MUTEX_NOT_FOUND_ERR,
+	  MAX_SEMAPHORE_ERR,
+	  SEMAPHORE_NOT_FOUND_ERR
   } ERROR_TYPE;
 
   

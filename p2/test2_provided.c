@@ -2,6 +2,8 @@
 #include "rtos/kernel/kernel.h"
 #include <stdio.h>
 
+#include "rtos/kernel/others/queue.h"
+
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
@@ -130,7 +132,7 @@ void priority3()
 
 void a_main()
 {
-	int test_set = 0;				//Which set of tests to run?
+	int test_set = 9;				//Which set of tests to run?
 
 	OS_Init();
 	
@@ -143,6 +145,7 @@ void a_main()
 		Task_Create(suspend_pong, 4, 0);
 		Task_Create(Peng, 6, 205);
 		//Task_Create(dbg_task, 1, 0);
+		
 	}
 	else if(test_set == 1)
 	{
@@ -157,5 +160,57 @@ void a_main()
 		Task_Create(priority2, 2, 0);
 		Task_Create(priority3, 3, 0);
 	}
+	else if (test_set == 9)
+	{
+		Queue q;
+		
+		init_queue(&q);
+		
+		
+		printf("Enqueue 0: \t%d\n", enqueue(&q, 0));
+		printf("Enqueue 1: \t%d\n", enqueue(&q, 1));
+		printf("Enqueue 2: \t%d\n", enqueue(&q, 2));
+		printf("Enqueue 3: \t%d\n", enqueue(&q, 3));
+		printf("Enqueue 4: \t%d\n", enqueue(&q, 4));
+		printf("Enqueue 5: \t%d\n", enqueue(&q, 5));
+		printf("Enqueue 6: \t%d\n", enqueue(&q, 6));
+		printf("Enqueue 7: \t%d\n", enqueue(&q, 7));
+		printf("Enqueue 8: \t%d\n", enqueue(&q, 8));
+		printf("Enqueue 9: \t%d\n", enqueue(&q, 9));
+		
+		printf("\n\n");
+		print_queue(&q);
+		printf("\n\n");
+		
+		printf("Dequeue 0: \t%d\n", dequeue(&q));
+		printf("Dequeue 1: \t%d\n", dequeue(&q));
+		printf("Dequeue 2: \t%d\n", dequeue(&q));
+		
+		printf("\n\n");
+		print_queue(&q);
+		printf("\n\n");
+		
+		printf("Enqueue 7: \t%d\n", enqueue(&q, 7));
+		printf("Enqueue 8: \t%d\n", enqueue(&q, 8));
+		printf("Enqueue 9: \t%d\n", enqueue(&q, 9));
+		printf("Enqueue 10: \t%d\n", enqueue(&q, 10));
+		
+		printf("\n\n");
+		print_queue(&q);
+		printf("\n\n");
+		
+		while(1);
+		
+		
+
+	}
+	else
+	{
+		printf("Invalid testing set specified...\n");
+		
+		while(1);
+	}
+	
+	
 	OS_Start();
 }

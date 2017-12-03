@@ -147,6 +147,18 @@
     <Compile Include="rtos\kernel\mutex\mutex.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="rtos\kernel\others\queue.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="rtos\kernel\others\queue.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="rtos\kernel\semaphore\semaphore.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="rtos\kernel\semaphore\semaphore.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="rtos\os.c">
       <SubType>compile</SubType>
     </Compile>
@@ -164,6 +176,8 @@
     <Folder Include="rtos\kernel\hardware\uart\" />
     <Folder Include="rtos\kernel\mutex\" />
     <Folder Include="rtos\kernel" />
+    <Folder Include="rtos\kernel\others" />
+    <Folder Include="rtos\kernel\semaphore" />
   </ItemGroup>
   <Import Project="$(AVRSTUDIO_EXE_PATH)\\Vs\\Compiler.targets" />
 </Project>
