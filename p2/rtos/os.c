@@ -9,7 +9,7 @@ extern void a_main();					//External entry point for application once kernel and
 
 
 /************************************************************************/
-/*						   RTOS API FUNCTIONS                           */
+/*					RTOS Initialization Functions                       */
 /************************************************************************/
 
 void OS_Init(void)	
@@ -22,6 +22,17 @@ void OS_Start(void)
 {
 	Kernel_Start();
 }
+
+/*Don't use main function for application code. Any mandatory kernel initialization should be done here*/
+int main()
+{
+	a_main();		//Call the user's application entry point instead
+}
+
+
+/************************************************************************/
+/*						Task/Thread related API                         */
+/************************************************************************/
 
 
 /* OS call to create a new task */
@@ -100,7 +111,7 @@ void Task_Suspend(voidfuncptr f)
 	
 	Disable_Interrupt();
 	Current_Process->request = SUSPEND;
-	Current_Process->request_arg = findPIDByFuncPtr(f);
+	Current_Process->request_args[0] = findPIDByFuncPtr(f);
 	Enter_Kernel();
 }
 
@@ -113,7 +124,7 @@ void Task_Resume(voidfuncptr f)
 	
 	Disable_Interrupt();
 	Current_Process->request = RESUME;
-	Current_Process->request_arg = findPIDByFuncPtr(f);
+	Current_Process->request_args[0] = findPIDByFuncPtr(f);
 	Enter_Kernel();
 }
 
@@ -128,9 +139,15 @@ void Task_Sleep(TICK t)
 	
 	Disable_Interrupt();
 	Current_Process->request = SLEEP;
-	Current_Process->request_arg = t;
+	Current_Process->request_args[0] = t;
 	Enter_Kernel();
 }
+
+
+/************************************************************************/
+/*						Events related API			                    */
+/************************************************************************/
+
 
 /*Initialize an event object*/
 EVENT Event_Init(void)
@@ -165,7 +182,7 @@ void Event_Wait(EVENT e)
 	
 	Disable_Interrupt();
 	Current_Process->request = WAIT_E;
-	Current_Process->request_arg = e;
+	Current_Process->request_args[0] = e;
 	Enter_Kernel();
 	
 }
@@ -179,9 +196,15 @@ void Event_Signal(EVENT e)
 	
 	Disable_Interrupt();
 	Current_Process->request = SIGNAL_E;
-	Current_Process->request_arg = e;
+	Current_Process->request_args[0] = e;
 	Enter_Kernel();	
 }
+
+
+/************************************************************************/
+/*						Mutex related API			                    */
+/************************************************************************/
+
 
 MUTEX Mutex_Init(void)
 {
@@ -217,7 +240,7 @@ void Mutex_Lock(MUTEX m)
 	
 	Disable_Interrupt();
 	Current_Process->request = LOCK_M;
-	Current_Process->request_arg = m;
+	Current_Process->request_args[0] = m;
 	Enter_Kernel();
 }
 
@@ -230,14 +253,65 @@ void Mutex_Unlock(MUTEX m)
 	
 	Disable_Interrupt();
 	Current_Process->request = UNLOCK_M;
-	Current_Process->request_arg = m;
+	Current_Process->request_args[0] = m;
 	Enter_Kernel();
 }
 
-/*Don't use main function for application code. Any mandatory kernel initialization should be done here*/
-int main() 
-{   
-   //Call the user's application entry point instead
-   a_main();
+/************************************************************************/
+/*						Semaphore related API			                */
+/************************************************************************/
+
+SEMAPHORE Semaphore_Init(int initial_count, unsigned int is_binary)
+{
+	if(KernelActive)
+	{
+		Disable_Interrupt();
+		Current_Process->request = CREATE_SEM;
+		Current_Process->request_args[0] = initial_count;
+		Current_Process->request_args[1] = is_binary;
+		Enter_Kernel();
+	}
+	else
+		Kernel_Create_Semaphore(initial_count, is_binary);	//Call the kernel function directly if OS hasn't start yet
+		
+	//Return the created semaphore's ID, or 0 if failed
+	if(err != NO_ERR)
+		return 0;
+	
+	#ifdef DEBUG
+	printf("Created Semaphore: %d\n", Last_SemaphoreID);
+	#endif
+	
+	return Last_SemaphoreID;
+	
+	
 }
 
+void Semaphore_Give(SEMAPHORE s, unsigned int amount)
+{
+	if(!KernelActive){
+		err = KERNEL_INACTIVE_ERR;
+		return;
+	}
+	
+	Disable_Interrupt();
+	Current_Process->request = GIVE_SEM;
+	Current_Process->request_args[0] = s;
+	Current_Process->request_args[1] = amount;
+	Enter_Kernel();
+	
+}
+
+void Semaphore_Get(SEMAPHORE s, unsigned int amount)
+{
+	if(!KernelActive){
+		err = KERNEL_INACTIVE_ERR;
+		return;
+	}
+	
+	Disable_Interrupt();
+	Current_Process->request = GET_SEM;
+	Current_Process->request_args[0] = s;
+	Current_Process->request_args[1] = amount;
+	Enter_Kernel();
+}

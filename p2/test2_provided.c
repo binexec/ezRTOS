@@ -14,7 +14,7 @@ EVENT evt;
 MUTEX mut;
 
 /************************************************************************/
-/*							CODE FOR TESTING                            */
+/*								Test 0			                        */
 /************************************************************************/
 
 void Ping()
@@ -67,6 +67,20 @@ void suspend_pong()
 	
 }
 
+void test0()
+{
+	DDRB = LED_PIN_MASK;			//Set pin 13 as output
+	Task_Create(Ping, 6, 210);
+	Task_Create(Pong, 6, 205);
+	Task_Create(suspend_pong, 4, 0);
+	Task_Create(Peng, 6, 205);
+}
+
+
+/************************************************************************/
+/*								Test 1			                        */
+/************************************************************************/
+
 
 void event_wait_test()
 {
@@ -101,6 +115,19 @@ void event_signal_test()
 	Task_Yield();
 }
 
+void test1()
+{
+	//These tasks tests events
+	Task_Create(event_wait_test, 4, 0);
+	Task_Create(event_signal_test, 5, 0);
+}
+
+
+/************************************************************************/
+/*								Test 2			                        */
+/************************************************************************/
+
+
 void priority1()
 {
 	for(;;)
@@ -128,86 +155,79 @@ void priority3()
 	}
 }
 
-/*Entry point for application*/
+void test2()
+{
+	//These tasks tests priority scheduling
+	Task_Create(priority1, 1, 0);
+	Task_Create(priority2, 2, 0);
+	Task_Create(priority3, 3, 0);
+}
+
+
+/************************************************************************/
+/*								Test 3			                        */
+/************************************************************************/
+
+SEMAPHORE s1;
+
+void sem_task0()		//producer
+{
+	while(1)
+	{
+		Semaphore_Give(s1, 5);
+		printf("***GAVE 5\n");
+		Task_Sleep(1000);
+	}
+}
+
+void sem_task1()		//consumer
+{
+	while(1)
+	{
+		printf("GETTING 1...\n");
+		Semaphore_Get(s1, 2);
+		printf("GOT 1\n");
+		Task_Sleep(100);
+	}
+}
+
+void test3()
+{
+	s1 = Semaphore_Init(0, 0);
+	Task_Create(sem_task0, 4, 0);
+	Task_Create(sem_task1, 5, 0);
+	Task_Create(sem_task1, 5, 0);
+	Task_Create(sem_task1, 5, 0);
+	Task_Create(sem_task1, 5, 0);
+	Task_Create(sem_task1, 5, 0);
+	Task_Create(sem_task1, 5, 0);
+}
+
+
+
+/************************************************************************/
+/*						Entry point for application		                */
+/************************************************************************/
 
 void a_main()
 {
-	int test_set = 9;				//Which set of tests to run?
+	int test_set = 3;				//Which set of tests to run?
 
 	OS_Init();
 	
 	//These tasks tests ctxswitching, suspension, resume, and sleep
 	if(test_set == 0)
-	{
-		DDRB = LED_PIN_MASK;			//Set pin 13 as output
-		Task_Create(Ping, 6, 210);
-		Task_Create(Pong, 6, 205);
-		Task_Create(suspend_pong, 4, 0);
-		Task_Create(Peng, 6, 205);
-		//Task_Create(dbg_task, 1, 0);
-		
-	}
+		test0();
 	else if(test_set == 1)
-	{
-		//These tasks tests events
-		Task_Create(event_wait_test, 4, 0);
-		Task_Create(event_signal_test, 5, 0);
-	}
+		test1();	
 	else if(test_set == 2)
-	{
-		//These tasks tests priority scheduling
-		Task_Create(priority1, 1, 0);
-		Task_Create(priority2, 2, 0);
-		Task_Create(priority3, 3, 0);
-	}
-	else if (test_set == 9)
-	{
-		Queue q;
-		
-		init_queue(&q);
-		
-		
-		printf("Enqueue 0: \t%d\n", enqueue(&q, 0));
-		printf("Enqueue 1: \t%d\n", enqueue(&q, 1));
-		printf("Enqueue 2: \t%d\n", enqueue(&q, 2));
-		printf("Enqueue 3: \t%d\n", enqueue(&q, 3));
-		printf("Enqueue 4: \t%d\n", enqueue(&q, 4));
-		printf("Enqueue 5: \t%d\n", enqueue(&q, 5));
-		printf("Enqueue 6: \t%d\n", enqueue(&q, 6));
-		printf("Enqueue 7: \t%d\n", enqueue(&q, 7));
-		printf("Enqueue 8: \t%d\n", enqueue(&q, 8));
-		printf("Enqueue 9: \t%d\n", enqueue(&q, 9));
-		
-		printf("\n\n");
-		print_queue(&q);
-		printf("\n\n");
-		
-		printf("Dequeue 0: \t%d\n", dequeue(&q));
-		printf("Dequeue 1: \t%d\n", dequeue(&q));
-		printf("Dequeue 2: \t%d\n", dequeue(&q));
-		
-		printf("\n\n");
-		print_queue(&q);
-		printf("\n\n");
-		
-		printf("Enqueue 7: \t%d\n", enqueue(&q, 7));
-		printf("Enqueue 8: \t%d\n", enqueue(&q, 8));
-		printf("Enqueue 9: \t%d\n", enqueue(&q, 9));
-		printf("Enqueue 10: \t%d\n", enqueue(&q, 10));
-		
-		printf("\n\n");
-		print_queue(&q);
-		printf("\n\n");
-		
-		while(1);
-		
-		
-
-	}
+		test2();
+	else if(test_set == 3)
+		test3();
+	
 	else
 	{
 		printf("Invalid testing set specified...\n");
-		
 		while(1);
 	}
 	

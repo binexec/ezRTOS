@@ -9,6 +9,8 @@
 #include <string.h>
 #include <stdint.h>
 
+#define MAX_KERNEL_ARGS		3
+
   
   //Definitions for potential errors the RTOS may come across
   typedef enum error_codes
@@ -40,7 +42,8 @@
 	  SUSPENDED,
 	  SLEEPING,
 	  WAIT_EVENT,
-	  WAIT_MUTEX
+	  WAIT_MUTEX,
+	  WAIT_SEMAPHORE
   } PROCESS_STATES;
 
 
@@ -58,7 +61,10 @@
 	  SIGNAL_E,
 	  CREATE_M,							//Initialize a mutex object
 	  LOCK_M,
-	  UNLOCK_M
+	  UNLOCK_M,
+	  CREATE_SEM,						//semaphores
+	  GIVE_SEM,
+	  GET_SEM
   } KERNEL_REQUEST_TYPE;
 
 
@@ -66,19 +72,19 @@
 typedef struct ProcessDescriptor
 {
 	PID pid;									//An unique process ID for this task.
-	PRIORITY pri;							//The priority of this task, from 0 (highest) to 10 (lowest).
-	PROCESS_STATES state;					//What's the current state of this task?
-	PROCESS_STATES last_state;				//What's the PREVIOUS state of this task? Used for task suspension/resume.
+	PRIORITY pri;								//The priority of this task, from 0 (highest) to 10 (lowest).
+	PROCESS_STATES state;						//What's the current state of this task?
+	PROCESS_STATES last_state;					//What's the PREVIOUS state of this task? Used for task suspension/resume.
 	KERNEL_REQUEST_TYPE request;				//What the task want the kernel to do (when needed).
-	int request_arg;							//What value is needed for the specified kernel request.
+	int request_args[MAX_KERNEL_ARGS];			//What values are needed for the specified kernel request.
 	int arg;									//Initial argument for the task (if specified).
-	unsigned char *sp;						//stack pointer into the "workSpace".
-	unsigned char workSpace[WORKSPACE];		//Data memory allocated to this process.
-	voidfuncptr  code;						//The function to be executed when this process is running.
+	unsigned char *sp;							//stack pointer into the "workSpace".
+	unsigned char workSpace[WORKSPACE];			//Data memory allocated to this process.
+	voidfuncptr  code;							//The function to be executed when this process is running.
 } PD;
 
 
-/*Shared Variables*/
+/*Kernel variables accessible by other kernel modules*/
 //extern volatile PD Process[MAXTHREAD];			//Contains the process descriptor for all tasks, regardless of their current state.
 extern volatile PD* Current_Process;					//Process descriptor for the last running process before entering the kernel
 extern volatile ERROR_TYPE err;						//Error code for the previous kernel operation (if any)

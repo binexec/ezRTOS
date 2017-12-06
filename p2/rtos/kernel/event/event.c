@@ -102,7 +102,7 @@ void Kernel_Create_Event(void)
 
 void Kernel_Wait_Event(void)
 {
-	EVENT_TYPE* e = findEventByEventID(Current_Process->request_arg);
+	EVENT_TYPE* e = findEventByEventID(Current_Process->request_args[0]);
 	
 	if(e == NULL)
 	{
@@ -142,7 +142,7 @@ void Kernel_Wait_Event(void)
 
 void Kernel_Signal_Event(void)
 {
-	EVENT_TYPE* e = findEventByEventID(Current_Process->request_arg);
+	EVENT_TYPE* e = findEventByEventID(Current_Process->request_args[0]);
 	PD *e_owner;
 	
 	if(e == NULL)

@@ -13,14 +13,14 @@ typedef struct {
 	unsigned int tail;	
 } Queue;
 
-//Queue new_queue(void);
-void init_queue(Queue *q);
+Queue new_queue(void);
+//void init_queue(Queue *q);
 
 int enqueue(Queue *q, PID val);
 PID dequeue(Queue *q);
-PID peek(Queue *q);
+PID queue_peek(Queue *q);
 
-void print_queue(Queue *q);
+//void print_queue(Queue *q);
 
 
 

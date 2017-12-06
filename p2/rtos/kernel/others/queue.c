@@ -1,6 +1,6 @@
 #include "queue.h"
 
-/*
+
 Queue new_queue(void)
 {
 	Queue q;
@@ -12,8 +12,9 @@ Queue new_queue(void)
 	
 	return q;
 }
-*/
 
+
+/*
 void init_queue(Queue *q)
 {
 	q->count = 0;
@@ -21,6 +22,7 @@ void init_queue(Queue *q)
 	q->tail = 0;
 	memset(q->queue, 0, sizeof(PID)*QUEUE_LENGTH);
 }
+*/
 
 int enqueue(Queue *q, PID val)
 {
@@ -74,11 +76,12 @@ PID dequeue(Queue *q)
 	return val;
 }
 
-PID peek(Queue *q)
+PID queue_peek(Queue *q)
 {
 	return q->queue[q->head];
 }
 
+/*
 void print_queue(Queue *q)
 {
 	int i, j;
@@ -104,3 +107,4 @@ void print_queue(Queue *q)
 	printf("\n");
 	
 }
+*/

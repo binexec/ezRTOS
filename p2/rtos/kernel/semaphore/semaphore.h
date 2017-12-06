@@ -9,7 +9,7 @@ typedef struct {
 	SEMAPHORE id;
 	int count;					
 	unsigned int is_binary;				//0 if it's a counting semaphore; 1 if it's a binary semaphore
-	PID wait_queue[MAXTHREAD];
+	Queue wait_queue;
 
 } SEMAPHORE_TYPE;
 
@@ -19,8 +19,7 @@ extern volatile unsigned int Semaphore_Count;		//Number of Mutexes created so fa
 extern volatile unsigned int Last_SemaphoreID;
 
 
-SEMAPHORE Kernel_Create_Semaphore(int initial_count); 
-SEMAPHORE Kernel_Create_Binary_Semaphore(int initial_count); 
+SEMAPHORE Kernel_Create_Semaphore(int initial_count, unsigned int is_binary);
 
 
 void Semaphore_Reset(void);

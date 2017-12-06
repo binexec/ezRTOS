@@ -99,11 +99,11 @@ void Kernel_Tick_Handler()
 		if(Process[i].state == SLEEPING)
 		{
 			//If the current sleeping task's tick count expires, put it back into its READY state
-			Process[i].request_arg -= Tick_Count;
-			if(Process[i].request_arg <= 0)
+			Process[i].request_args[0] -= Tick_Count;
+			if(Process[i].request_args[0] <= 0)
 			{
 				Process[i].state = READY;
-				Process[i].request_arg = 0;
+				Process[i].request_args[0] = 0;
 			}
 		}
 		
@@ -111,11 +111,11 @@ void Kernel_Tick_Handler()
 		else if(Process[i].last_state == SLEEPING)
 		{
 			//When task_resume is called again, the task will be back into its READY state instead if its sleep ticks expired.
-			Process[i].request_arg -= Tick_Count;
-			if(Process[i].request_arg <= 0)
+			Process[i].request_args[0] -= Tick_Count;
+			if(Process[i].request_args[0] <= 0)
 			{
 				Process[i].last_state = READY;
-				Process[i].request_arg = 0;
+				Process[i].request_args[0] = 0;
 			}
 		}
 	}
@@ -177,7 +177,7 @@ void Kernel_Create_Task(voidfuncptr f, PRIORITY py, int arg)
 static void Kernel_Suspend_Task() 
 {
 	//Finds the process descriptor for the specified PID
-	PD* p = findProcessByPID(Current_Process->request_arg);
+	PD* p = findProcessByPID(Current_Process->request_args[0]);
 	
 	//Ensure the PID specified in the PD currently exists in the global process list
 	if(p == NULL)
@@ -223,7 +223,7 @@ static void Kernel_Suspend_Task()
 static void Kernel_Resume_Task()
 {
 	//Finds the process descriptor for the specified PID
-	PD* p = findProcessByPID(Current_Process->request_arg);
+	PD* p = findProcessByPID(Current_Process->request_args[0]);
 	
 	//Ensure the PID specified in the PD currently exists in the global process list
 	if(p == NULL)
@@ -449,7 +449,8 @@ static void Kernel_Handle_Request()
 			
 			case WAIT_E:
 			Kernel_Wait_Event();	
-			if(Current_Process->state != RUNNING) Kernel_Dispatch_Next_Task();	//Don't dispatch to a different task if the event is already signaled
+			if(Current_Process->state != RUNNING) 
+				Kernel_Dispatch_Next_Task();	//Don't dispatch to a different task if the event is already signaled
 			break;
 			
 			case SIGNAL_E:
@@ -470,6 +471,26 @@ static void Kernel_Handle_Request()
 			Kernel_Unlock_Mutex();
 			//Does this need dispatch under any circumstances?
 			break;
+			
+			
+			case CREATE_SEM:
+			Kernel_Create_Semaphore(Current_Process->request_args[0], Current_Process->request_args[1]);
+			break;
+			
+			case GIVE_SEM:
+			Kernel_Semaphore_Give(Current_Process->request_args[0], Current_Process->request_args[1]);
+			break;
+			
+			case GET_SEM:
+			Kernel_Semaphore_Get(Current_Process->request_args[0], Current_Process->request_args[1]);
+			//printf("GET_SEM Current State: %d\n", Current_Process->state);
+			if(Current_Process->state != RUNNING) 
+			{
+				//printf("GET_SEM Current State: %d\n", Current_Process->state);
+				Kernel_Dispatch_Next_Task();		//Switch task if the process is now waiting for the semaphore
+			}
+			break;
+			
 		   
 			case YIELD:
 			case NONE:					// NONE could be caused by a timer interrupt
@@ -493,8 +514,6 @@ static void Kernel_Handle_Request()
 /*This function initializes the RTOS and must be called before any othersystem calls.*/
 void Kernel_Reset()
 {
-	int x;
-	
 	Task_Count = 0;
 	KernelActive = 0;
 	Tick_Count = 0;

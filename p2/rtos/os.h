@@ -7,7 +7,8 @@
 #ifndef _OS_H_  
 #define _OS_H_  
    
-#define MAXTHREAD     8       
+//#define MAXTHREAD     16       
+#define MAXTHREAD     8     
 #define WORKSPACE     256   // in bytes, per THREAD
 #define MAXMUTEX      8 
 #define MAXSEMAPHORE  8
@@ -55,5 +56,12 @@ void Mutex_Unlock(MUTEX m);
 EVENT Event_Init(void);
 void Event_Wait(EVENT e);
 void Event_Signal(EVENT e);
+
+
+/*SEMAPHORE related functions*/
+SEMAPHORE Semaphore_Init(int initial_count, unsigned int is_binary);
+void Semaphore_Give(SEMAPHORE s, unsigned int amount);
+void Semaphore_Get(SEMAPHORE s, unsigned int amount);
+
 
 #endif /* _OS_H_ */

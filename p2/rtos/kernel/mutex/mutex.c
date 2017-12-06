@@ -100,7 +100,7 @@ void Kernel_Create_Mutex(void)
 
 void Kernel_Lock_Mutex(void)
 {
-	MUTEX_TYPE* m = findMutexByMutexID(Current_Process->request_arg);
+	MUTEX_TYPE* m = findMutexByMutexID(Current_Process->request_args[0]);
 	PD *m_owner = findProcessByPID(m->owner);
 	
 	if(m == NULL)
@@ -153,7 +153,7 @@ void Kernel_Lock_Mutex(void)
 
 void Kernel_Unlock_Mutex(void)
 {
-	MUTEX_TYPE* m = findMutexByMutexID(Current_Process->request_arg);
+	MUTEX_TYPE* m = findMutexByMutexID(Current_Process->request_args[0]);
 	PD *m_owner = findProcessByPID(m->owner);
 	
 	if(m == NULL)
