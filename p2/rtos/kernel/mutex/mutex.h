@@ -9,12 +9,9 @@ typedef struct mutex_type
 	MUTEX id;								//unique id for this mutex, 0 = uninitialized
 	PID owner;								//the current owner of the event, 0 = free
 	unsigned int count;						//mutex can be recursively locked
-	PID blocked_stack [MAXTHREAD];			//stack for blocked
-	PRIORITY priority_stack [MAXTHREAD];	//priority of the processes
-	unsigned int order[MAXTHREAD];			//order of task came into the stack
-	unsigned int num_of_process;			//number of processes waiting on the mutex
-	unsigned int total_num;					//total number of process has waitted on this mutex
-	PRIORITY own_pri;						//original priority of the owner
+	
+	
+	
 } MUTEX_TYPE;
 
 /*Variables Accessible by the OS*/

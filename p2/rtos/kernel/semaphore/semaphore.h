@@ -9,7 +9,7 @@ typedef struct {
 	SEMAPHORE id;
 	int count;					
 	unsigned int is_binary;				//0 if it's a counting semaphore; 1 if it's a binary semaphore
-	Queue wait_queue;
+	PID_Queue wait_queue;
 
 } SEMAPHORE_TYPE;
 

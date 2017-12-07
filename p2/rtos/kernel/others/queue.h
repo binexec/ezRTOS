@@ -11,14 +11,14 @@ typedef struct {
 	unsigned int count;
 	unsigned int head;
 	unsigned int tail;	
-} Queue;
+} PID_Queue;
 
-Queue new_queue(void);
-//void init_queue(Queue *q);
+PID_Queue new_queue(void);
 
-int enqueue(Queue *q, PID val);
-PID dequeue(Queue *q);
-PID queue_peek(Queue *q);
+int enqueue(PID_Queue *q, PID val);
+PID dequeue(PID_Queue *q);
+PID queue_peek(PID_Queue *q);
+PID iterate_queue(PID_Queue *q);
 
 //void print_queue(Queue *q);
 

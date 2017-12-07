@@ -1,9 +1,9 @@
 #include "queue.h"
 
 
-Queue new_queue(void)
+PID_Queue new_queue(void)
 {
-	Queue q;
+	PID_Queue q;
 	
 	q.count = 0;
 	q.head = 0;
@@ -13,18 +13,7 @@ Queue new_queue(void)
 	return q;
 }
 
-
-/*
-void init_queue(Queue *q)
-{
-	q->count = 0;
-	q->head = 0;
-	q->tail = 0;
-	memset(q->queue, 0, sizeof(PID)*QUEUE_LENGTH);
-}
-*/
-
-int enqueue(Queue *q, PID val)
+int enqueue(PID_Queue *q, PID val)
 {
 	if(q->count >= QUEUE_LENGTH)
 		return -1;
@@ -50,7 +39,7 @@ int enqueue(Queue *q, PID val)
 	return 0;
 }
 
-PID dequeue(Queue *q)
+PID dequeue(PID_Queue *q)
 {
 	int val;
 	
@@ -76,7 +65,7 @@ PID dequeue(Queue *q)
 	return val;
 }
 
-PID queue_peek(Queue *q)
+PID queue_peek(PID_Queue *q)
 {
 	return q->queue[q->head];
 }
@@ -108,3 +97,38 @@ void print_queue(Queue *q)
 	
 }
 */
+
+PID iterate_queue(PID_Queue *q)
+{
+	static PID_Queue *last_queue;
+	static int last_idx;
+	static int iterated;
+	
+	//Work like strtok, keep iterating last queue if q is NULL
+	if(q != NULL)
+	{
+		//Don't iterate the new queue if it's empty
+		if(q->count <= 0)
+			return 0;
+			
+		last_queue = q;
+		last_idx = q->head;
+		iterated = 0;
+	}
+	else
+	{
+		//Don't return anything further if the entire queue has been iterated
+		if(iterated == last_queue->count)
+			return 0;
+		
+		//increment the index
+		if(last_idx == QUEUE_LENGTH-1)
+			last_idx = 0;
+		else
+			last_idx++;
+	}
+	
+	++iterated;
+	printf("%d ", last_queue->queue[last_idx]);
+	return last_queue->queue[last_idx];
+}

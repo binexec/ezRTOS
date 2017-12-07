@@ -211,7 +211,7 @@ void test3()
 
 void a_main()
 {
-	int test_set = 3;				//Which set of tests to run?
+	int test_set = 9;				//Which set of tests to run?
 
 	OS_Init();
 	
@@ -224,6 +224,57 @@ void a_main()
 		test2();
 	else if(test_set == 3)
 		test3();
+		
+		else if (test_set == 9)
+		{
+			PID_Queue q = new_queue();
+			int i;
+			
+			
+			printf("Enqueue 0: \t%d\n", enqueue(&q, 0));
+			printf("Enqueue 1: \t%d\n", enqueue(&q, 1));
+			printf("Enqueue 2: \t%d\n", enqueue(&q, 2));
+			printf("Enqueue 3: \t%d\n", enqueue(&q, 3));
+			printf("Enqueue 4: \t%d\n", enqueue(&q, 4));
+			printf("Enqueue 5: \t%d\n", enqueue(&q, 5));
+			printf("Enqueue 6: \t%d\n", enqueue(&q, 6));
+			printf("Enqueue 7: \t%d\n", enqueue(&q, 7));
+			printf("Enqueue 8: \t%d\n", enqueue(&q, 8));
+			printf("Enqueue 9: \t%d\n", enqueue(&q, 9));
+			
+			printf("\n\n");
+				iterate_queue(&q);
+				for(i=0; i<q.count-1; i++)
+					iterate_queue(NULL);
+			printf("\n\n");
+			
+			printf("Dequeue 0: \t%d\n", dequeue(&q));
+			printf("Dequeue 1: \t%d\n", dequeue(&q));
+			printf("Dequeue 2: \t%d\n", dequeue(&q));
+			
+			printf("\n\n");
+				iterate_queue(&q);
+				for(i=0; i<q.count-1; i++)
+					iterate_queue(NULL);
+			printf("\n\n");
+			
+			printf("Enqueue 7: \t%d\n", enqueue(&q, 7));
+			printf("Enqueue 8: \t%d\n", enqueue(&q, 8));
+			printf("Enqueue 9: \t%d\n", enqueue(&q, 9));
+			printf("Enqueue 10: \t%d\n", enqueue(&q, 10));
+			
+			printf("\n\n");
+				iterate_queue(&q);
+				for(i=0; i<q.count-1; i++)
+					iterate_queue(NULL);
+			printf("\n\n");
+			
+			while(1);
+			
+			
+
+		}
+		
 	
 	else
 	{
