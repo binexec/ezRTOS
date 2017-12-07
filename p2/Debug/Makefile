@@ -50,7 +50,7 @@ C_SRCS +=  \
 ../rtos/kernel/hardware/uart/uart.c \
 ../rtos/kernel/kernel.c \
 ../rtos/kernel/mutex/mutex.c \
-../rtos/kernel/others/queue.c \
+../rtos/kernel/others/pid_queue.c \
 ../rtos/kernel/semaphore/semaphore.c \
 ../rtos/os.c \
 ../test2_provided.c
@@ -70,7 +70,7 @@ rtos/kernel/hardware/hw.o \
 rtos/kernel/hardware/uart/uart.o \
 rtos/kernel/kernel.o \
 rtos/kernel/mutex/mutex.o \
-rtos/kernel/others/queue.o \
+rtos/kernel/others/pid_queue.o \
 rtos/kernel/semaphore/semaphore.o \
 rtos/os.o \
 test2_provided.o
@@ -82,7 +82,7 @@ rtos/kernel/hardware/hw.o \
 rtos/kernel/hardware/uart/uart.o \
 rtos/kernel/kernel.o \
 rtos/kernel/mutex/mutex.o \
-rtos/kernel/others/queue.o \
+rtos/kernel/others/pid_queue.o \
 rtos/kernel/semaphore/semaphore.o \
 rtos/os.o \
 test2_provided.o
@@ -94,7 +94,7 @@ rtos/kernel/hardware/hw.d \
 rtos/kernel/hardware/uart/uart.d \
 rtos/kernel/kernel.d \
 rtos/kernel/mutex/mutex.d \
-rtos/kernel/others/queue.d \
+rtos/kernel/others/pid_queue.d \
 rtos/kernel/semaphore/semaphore.d \
 rtos/os.d \
 test2_provided.d
@@ -106,7 +106,7 @@ rtos/kernel/hardware/hw.d \
 rtos/kernel/hardware/uart/uart.d \
 rtos/kernel/kernel.d \
 rtos/kernel/mutex/mutex.d \
-rtos/kernel/others/queue.d \
+rtos/kernel/others/pid_queue.d \
 rtos/kernel/semaphore/semaphore.d \
 rtos/os.d \
 test2_provided.d

@@ -19,8 +19,7 @@ int enqueue(PID_Queue *q, PID val);
 PID dequeue(PID_Queue *q);
 PID queue_peek(PID_Queue *q);
 PID iterate_queue(PID_Queue *q);
-
-//void print_queue(Queue *q);
+void print_queue(PID_Queue *q);
 
 
 

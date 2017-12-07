@@ -147,10 +147,10 @@
     <Compile Include="rtos\kernel\mutex\mutex.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="rtos\kernel\others\queue.c">
+    <Compile Include="rtos\kernel\others\pid_queue.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="rtos\kernel\others\queue.h">
+    <Compile Include="rtos\kernel\others\pid_queue.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="rtos\kernel\semaphore\semaphore.c">

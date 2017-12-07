@@ -2,7 +2,7 @@
 #define SEMAPHORE_H_
 
 #include "../kernel_internal.h"
-#include "../others/queue.h"
+#include "../others/pid_queue.h"
 
 typedef struct {
 	

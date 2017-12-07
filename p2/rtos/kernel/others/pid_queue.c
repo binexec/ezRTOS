@@ -1,4 +1,4 @@
-#include "queue.h"
+#include "pid_queue.h"
 
 
 PID_Queue new_queue(void)
@@ -70,33 +70,6 @@ PID queue_peek(PID_Queue *q)
 	return q->queue[q->head];
 }
 
-/*
-void print_queue(Queue *q)
-{
-	int i, j;
-	
-	if(q->count <= 0)
-	{
-		printf("*Empty queue*");
-		return;
-	}
-	
-	j = q->head;
-	for(i=0; i<q->count; i++)
-	{
-		printf("%d ", q->queue[j]);
-		
-		//increment j
-		if(j == QUEUE_LENGTH-1)
-			j = 0;
-		else
-			j++;
-	}
-	
-	printf("\n");
-	
-}
-*/
 
 PID iterate_queue(PID_Queue *q)
 {
@@ -131,4 +104,15 @@ PID iterate_queue(PID_Queue *q)
 	++iterated;
 	printf("%d ", last_queue->queue[last_idx]);
 	return last_queue->queue[last_idx];
+}
+
+
+void print_queue(PID_Queue *q)
+{
+	int i;
+	
+	iterate_queue(q);
+	
+	for(i=0; i<q->count-1; i++)
+		iterate_queue(NULL);
 }

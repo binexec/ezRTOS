@@ -2,7 +2,7 @@
 #include "rtos/kernel/kernel.h"
 #include <stdio.h>
 
-#include "rtos/kernel/others/queue.h"
+#include "rtos/kernel/others/pid_queue.h"
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
@@ -228,8 +228,6 @@ void a_main()
 		else if (test_set == 9)
 		{
 			PID_Queue q = new_queue();
-			int i;
-			
 			
 			printf("Enqueue 0: \t%d\n", enqueue(&q, 0));
 			printf("Enqueue 1: \t%d\n", enqueue(&q, 1));
@@ -243,9 +241,7 @@ void a_main()
 			printf("Enqueue 9: \t%d\n", enqueue(&q, 9));
 			
 			printf("\n\n");
-				iterate_queue(&q);
-				for(i=0; i<q.count-1; i++)
-					iterate_queue(NULL);
+			print_queue(&q);
 			printf("\n\n");
 			
 			printf("Dequeue 0: \t%d\n", dequeue(&q));
@@ -253,9 +249,7 @@ void a_main()
 			printf("Dequeue 2: \t%d\n", dequeue(&q));
 			
 			printf("\n\n");
-				iterate_queue(&q);
-				for(i=0; i<q.count-1; i++)
-					iterate_queue(NULL);
+			print_queue(&q);
 			printf("\n\n");
 			
 			printf("Enqueue 7: \t%d\n", enqueue(&q, 7));
@@ -264,9 +258,7 @@ void a_main()
 			printf("Enqueue 10: \t%d\n", enqueue(&q, 10));
 			
 			printf("\n\n");
-				iterate_queue(&q);
-				for(i=0; i<q.count-1; i++)
-					iterate_queue(NULL);
+			print_queue(&q);
 			printf("\n\n");
 			
 			while(1);

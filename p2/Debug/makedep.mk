@@ -14,7 +14,7 @@ rtos\kernel\kernel.c
 
 rtos\kernel\mutex\mutex.c
 
-rtos\kernel\others\queue.c
+rtos\kernel\others\pid_queue.c
 
 rtos\kernel\semaphore\semaphore.c
 
