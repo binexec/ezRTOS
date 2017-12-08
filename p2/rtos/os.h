@@ -8,13 +8,14 @@
 #define _OS_H_  
    
 //#define MAXTHREAD     16       
-#define MAXTHREAD     8     
-#define WORKSPACE     256   // in bytes, per THREAD
-#define MAXMUTEX      8 
-#define MAXSEMAPHORE  8
-#define MAXEVENT      8      
-#define MSECPERTICK   10   // resolution of a system tick in milliseconds
-#define LOWEST_PRIORITY   10   // 0 is the highest priority, 10 the lowest
+#define MAXTHREAD			8     
+#define WORKSPACE			256		// in bytes, per THREAD
+#define MAXMUTEX			8 
+#define MAXSEMAPHORE		8
+#define MAXEVENT			8      
+#define MSECPERTICK			10		// resolution of a system tick in milliseconds
+#define LOWEST_PRIORITY		10		// 0 is the highest priority, 10 the lowest
+#define CSWITCH_FREQ		25		//How many ticks does preemptive scheduling kick in?
 
 typedef void (*voidfuncptr) (void);      /* pointer to void f(void), used to represent the main function for a RTOS task */
 

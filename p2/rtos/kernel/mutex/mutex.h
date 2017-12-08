@@ -2,14 +2,18 @@
 #define MUTEX_H_
 
 #include "../kernel_internal.h"
+#include "../others/pid_queue.h"
 
 //For the ease of manageability, we're making a new mutex data type. The old MUTEX type defined in OS.h will simply serve as an identifier.
-typedef struct mutex_type
-{
-	MUTEX id;								//unique id for this mutex, 0 = uninitialized
-	PID owner;								//the current owner of the event, 0 = free
-	unsigned int count;						//mutex can be recursively locked
+typedef struct {
 	
+	MUTEX id;								//unique id for this mutex, 0 = uninitialized
+	PID owner;								//the process that locked the mutex; 0 = free
+	unsigned int lock_count;				//mutex can be recursively locked
+	unsigned int highest_priority;
+	PRIORITY owner_orig_priority;
+	PID_Queue wait_queue;
+	PID_Queue orig_priority;
 	
 	
 } MUTEX_TYPE;

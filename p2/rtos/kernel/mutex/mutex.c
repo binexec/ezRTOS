@@ -20,7 +20,7 @@ void Mutex_Reset()
 }
 
 /************************************************************************/
-/*						  KERNEL-ONLY HELPERS                           */
+/*						HELPER FUNCTIONS	                            */
 /************************************************************************/
 
 MUTEX_TYPE* findMutexByMutexID(MUTEX m)
@@ -41,7 +41,7 @@ MUTEX_TYPE* findMutexByMutexID(MUTEX m)
 	for(i=0; i<MAXMUTEX; i++)
 	{
 		if(Mutex[i].id == m)
-		return &Mutex[i];
+			return &Mutex[i];
 	}
 	
 	//mutex wasn't found
@@ -52,8 +52,38 @@ MUTEX_TYPE* findMutexByMutexID(MUTEX m)
 	return NULL;
 }
 
+
+
+static PRIORITY findHighestFromQueue(PID_Queue *q)
+{
+	int i;
+	PRIORITY current;
+	PRIORITY highest = iterate_queue(q);
+	
+	for(i=0; i < q->count-2; i++)
+	{
+		current = iterate_queue(NULL);
+		if(highest < current)
+			highest = current;
+	}
+	
+	return highest;
+}
+
+static void applyNewPriorityToWaitQueue(PID_Queue *q, PRIORITY pri)
+{
+	int i;
+	PD *p = findProcessByPID(iterate_queue(q));
+	
+	for(i=0; i < q->count-1; i++)
+	{
+		p->pri = pri;
+		p = findProcessByPID(iterate_queue(NULL));
+	}
+}
+
 /************************************************************************/
-/*                  MUTEX RELATED KERNEL FUNCTIONS                      */
+/*							MUTEX Operations		                    */
 /************************************************************************/
 
 void Kernel_Create_Mutex(void)
@@ -74,12 +104,13 @@ void Kernel_Create_Mutex(void)
 	for(i=0; i<MAXMUTEX; i++)
 		if(Mutex[i].id == 0) break;
 	
-	//Assign a new unique ID to the mutex. Note that the smallest valid mutex ID is 1.
-	Mutex[i].id = ++Last_MutexID;
-	Mutex[i].owner = 0;		// note when mutex's owner is 0, it is free
 	
-
-
+	Mutex[i].id = ++Last_MutexID;
+	Mutex[i].owner = 0;		
+	Mutex[i].lock_count = 0;
+	Mutex[i].highest_priority = LOWEST_PRIORITY;
+	Mutex[i].wait_queue = new_queue();
+	Mutex[i].orig_priority = new_queue();
 	
 	#ifdef DEBUG
 	printf("Kernel_Create_Mutex: Created Mutex %d!\n", Last_MutexID);
@@ -91,8 +122,7 @@ void Kernel_Create_Mutex(void)
 
 void Kernel_Lock_Mutex(void)
 {
-	MUTEX_TYPE* m = findMutexByMutexID(Current_Process->request_args[0]);
-	PD *m_owner = findProcessByPID(m->owner);
+	MUTEX_TYPE *m = findMutexByMutexID(Current_Process->request_args[0]);
 	
 	if(m == NULL)
 	{
@@ -102,12 +132,80 @@ void Kernel_Lock_Mutex(void)
 		return;
 	}
 	
+	//Mutex is unowned: lock mutex 
+	if(m->owner == 0)
+	{
+		m->owner = Current_Process->pid;
+		m->owner_orig_priority = Current_Process->pri;
+		m->highest_priority = Current_Process->pri;
+		++m->lock_count;
+		return;
+	}
+	
+	//If I'm already the owner: recursive lock
+	if(m->owner == Current_Process->pid)
+	{
+		++m->lock_count;
+		return;
+	}
+		
+	
+	//If I'm not the owner (mutex already locked): Add the current process to the wait queue
+	Current_Process->state = WAIT_MUTEX;
+	enqueue(&m->wait_queue, Current_Process->pid);
+	enqueue(&m->orig_priority, Current_Process->pri);
+	
+	//Inherit the highest priority if mine's not the highest
+	if(m->highest_priority < Current_Process->pri)
+		Current_Process->pri = m->highest_priority;
+		
+	//Let all other tasks waiting for the same mutex inherit my priority, since I have the highest
+	else if(Current_Process->pri < m->highest_priority)
+	{
+		m->highest_priority = Current_Process->pri;
+		applyNewPriorityToWaitQueue(&m->wait_queue, m->highest_priority);
+	}
+	
+	
+	
 }
+
+
+
+static void Kernel_Lock_Mutex_From_Queue(MUTEX_TYPE *m)
+{
+	PRIORITY new_highest = findHighestFromQueue(&m->orig_priority);
+	PD *p;
+	
+	//Find the highest priority in the new wait queue, and apply it to all others
+	if(new_highest != m->highest_priority)
+	{
+		m->highest_priority = new_highest;
+		applyNewPriorityToWaitQueue(&m->wait_queue, new_highest);
+	}
+	
+	//Pass the mutex to the head of the wait queue
+	m->owner = dequeue(&m->wait_queue);
+	m->owner_orig_priority = dequeue(&m->orig_priority);
+	
+	//Wake up the new mutex owner from its waiting state	
+	p = findProcessByPID(m->owner);
+	printf("Waking up PID %d from WAIT_MUTEX\n", p->pid);
+	
+	if(p->state != WAIT_MUTEX)
+		printf("PID %d IS NOT IN WAIT_MUTEX\n", p->pid);
+	
+	p->state = READY;
+	printf("PID %d is now in %d state\n", p->pid, p->state);
+	
+	
+}
+
+
 
 void Kernel_Unlock_Mutex(void)
 {
 	MUTEX_TYPE* m = findMutexByMutexID(Current_Process->request_args[0]);
-	PD *m_owner = findProcessByPID(m->owner);
 	
 	if(m == NULL)
 	{
@@ -117,4 +215,31 @@ void Kernel_Unlock_Mutex(void)
 		return;
 	}
 	
+	//Only the mutex owner can unlock the mutex
+	if(m->owner != Current_Process->pid)
+	{
+		#ifdef DEBUG
+		printf("Kernel_Unlock_Mutex: Mutex was attempted to be unlocked not by its owner!\n");
+		#endif
+		err = MUTEX_NOT_FOUND_ERR;
+		return;
+	}
+	
+	//Decrement the lock if it's recursively locked
+	if(--m->lock_count > 0)
+		return;
+	
+	//If not recursively locked, the current owner will now give up the mutex (with its original priority restored in its PD)
+	Current_Process->pri = m->owner_orig_priority;		
+	m->lock_count = 0;
+	
+	//If there is no one else waiting to lock this mutex, leave it unlocked and unowned
+	if(m->wait_queue.count == 0)
+	{
+		m->owner = 0;
+		return;
+	}
+	
+	//If there are other tasks waiting for the mutex
+	Kernel_Lock_Mutex_From_Queue(m);
 }

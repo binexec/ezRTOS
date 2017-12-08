@@ -39,6 +39,7 @@ SUBDIRS :=  \
 ../rtos/kernel/hardware/uart/ \
 ../rtos/kernel/mutex/ \
 ../rtos/kernel \
+../rtos/kernel/task \
 ../rtos/kernel/others \
 ../rtos/kernel/semaphore
 
@@ -52,6 +53,7 @@ C_SRCS +=  \
 ../rtos/kernel/mutex/mutex.c \
 ../rtos/kernel/others/pid_queue.c \
 ../rtos/kernel/semaphore/semaphore.c \
+../rtos/kernel/task/task.c \
 ../rtos/os.c \
 ../test2_provided.c
 
@@ -72,6 +74,7 @@ rtos/kernel/kernel.o \
 rtos/kernel/mutex/mutex.o \
 rtos/kernel/others/pid_queue.o \
 rtos/kernel/semaphore/semaphore.o \
+rtos/kernel/task/task.o \
 rtos/os.o \
 test2_provided.o
 
@@ -84,6 +87,7 @@ rtos/kernel/kernel.o \
 rtos/kernel/mutex/mutex.o \
 rtos/kernel/others/pid_queue.o \
 rtos/kernel/semaphore/semaphore.o \
+rtos/kernel/task/task.o \
 rtos/os.o \
 test2_provided.o
 
@@ -96,6 +100,7 @@ rtos/kernel/kernel.d \
 rtos/kernel/mutex/mutex.d \
 rtos/kernel/others/pid_queue.d \
 rtos/kernel/semaphore/semaphore.d \
+rtos/kernel/task/task.d \
 rtos/os.d \
 test2_provided.d
 
@@ -108,6 +113,7 @@ rtos/kernel/kernel.d \
 rtos/kernel/mutex/mutex.d \
 rtos/kernel/others/pid_queue.d \
 rtos/kernel/semaphore/semaphore.d \
+rtos/kernel/task/task.d \
 rtos/os.d \
 test2_provided.d
 
@@ -125,6 +131,8 @@ LINKER_SCRIPT_DEP+=
 
 
 # AVR32/GNU C Compiler
+
+
 
 
 
@@ -187,6 +195,13 @@ rtos/kernel/others/%.o: ../rtos/kernel/others/%.c
 	
 
 rtos/kernel/semaphore/%.o: ../rtos/kernel/semaphore/%.c
+	@echo Building file: $<
+	@echo Invoking: AVR/GNU C Compiler : 5.4.0
+	$(QUOTE)C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr8\avr8-gnu-toolchain\bin\avr-gcc.exe$(QUOTE)  -x c -funsigned-char -funsigned-bitfields -DF_CPU=16000000 -DBAUD=9600  -I"C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.0.90\include"  -O1 -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -mrelax -g2 -Wall -mmcu=atmega2560 -B "C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.0.90\gcc\dev\atmega2560" -c -std=gnu99 -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 
+	@echo Finished building: $<
+	
+
+rtos/kernel/task/%.o: ../rtos/kernel/task/%.c
 	@echo Building file: $<
 	@echo Invoking: AVR/GNU C Compiler : 5.4.0
 	$(QUOTE)C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr8\avr8-gnu-toolchain\bin\avr-gcc.exe$(QUOTE)  -x c -funsigned-char -funsigned-bitfields -DF_CPU=16000000 -DBAUD=9600  -I"C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.0.90\include"  -O1 -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -mrelax -g2 -Wall -mmcu=atmega2560 -B "C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.0.90\gcc\dev\atmega2560" -c -std=gnu99 -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 

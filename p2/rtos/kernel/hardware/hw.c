@@ -10,7 +10,7 @@
 
 ISR(TIMER1_COMPA_vect)
 {
-	++Tick_Count;
+	Kernel_Tick_ISR();
 }
 
 

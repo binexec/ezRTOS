@@ -102,7 +102,7 @@ PID iterate_queue(PID_Queue *q)
 	}
 	
 	++iterated;
-	printf("%d ", last_queue->queue[last_idx]);
+	//printf("%d ", last_queue->queue[last_idx]);
 	return last_queue->queue[last_idx];
 }
 
@@ -111,8 +111,9 @@ void print_queue(PID_Queue *q)
 {
 	int i;
 	
-	iterate_queue(q);
+	printf("%d ", iterate_queue(q));
 	
 	for(i=0; i<q->count-1; i++)
-		iterate_queue(NULL);
+		printf("%d ", iterate_queue(NULL));
+		
 }

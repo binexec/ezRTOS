@@ -8,9 +8,6 @@
 #include <avr/interrupt.h>
 #include "uart/uart.h"
 
-//Kernel Variables needed
-extern volatile unsigned int Tick_Count;		//Timer Tick counter, declared in kernel.h
-
 
 //Let the current code enter/exist an atomic, uninterrupted state
 #define Disable_Interrupt()		asm volatile ("cli"::)

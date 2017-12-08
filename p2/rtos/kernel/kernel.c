@@ -5,14 +5,12 @@
 
 #define LED_PIN_MASK 0x80			//Pin 13 = PB7
 
-/*Variables shared within the kernel only*/
-volatile static PD Process[MAXTHREAD];			//Contains the process descriptor for all tasks, regardless of their current state.
 
 /*System variables used by the kernel only*/
 volatile static unsigned int Last_Dispatched;	//Which task in the process queue was last dispatched.
 
 volatile unsigned int Tick_Count;				//Number of timer ticks missed
-volatile unsigned int Task_Count;				//Number of tasks created so far.
+volatile unsigned int Ticks_Since_Last_Cswitch;
 
 
 /*Variables accessible by OS*/
@@ -20,8 +18,10 @@ volatile PD* Current_Process;					//Process descriptor for the last running proc
 volatile unsigned char *KernelSp;				//Pointer to the Kernel's own stack location.
 volatile unsigned char *CurrentSp;				//Pointer to the stack location of the current running task. Used for saving into PD during ctxswitch.						//The process descriptor of the currently RUNNING task. CP is used to pass information from OS calls to the kernel telling it what to do.
 volatile unsigned int KernelActive;				//Indicates if kernel has been initialzied by OS_Start().
-volatile unsigned int Last_PID;					//Last (also highest) PID value created so far.
 volatile ERROR_TYPE err;						//Error code for the previous kernel operation (if any)
+
+
+extern volatile PD Process[MAXTHREAD];
 
 
 /************************************************************************/
@@ -67,29 +67,41 @@ int findPIDByFuncPtr(voidfuncptr f)
 	return -1;
 }
 
-/*
-CRITICAL SECTION
-*/
-void Enter_Critical_Section()
-{
-	Enable_Interrupt();	
-}
-
-void Exit_Critical_Section()
-{
-	Disable_Interrupt();
-}
-
 /************************************************************************/
 /*                  HANDLING SLEEP TICKS								 */
 /************************************************************************/
+
+static void Kernel_Dispatch_Next_Task();
+
+void Kernel_Tick_ISR()
+{
+	++Tick_Count;
+}
+
+//This function is called ONLY by the timer ISR. Therefore, it will not enter the kernel through regular modes
+/*void Kernel_Tick_ISR()
+{
+	Disable_Interrupt();
+	
+	++Tick_Count;
+	++Ticks_Since_Last_Cswitch;
+
+	//Preemptive Scheduling: Has it been a long time since we switched to a new task?
+	if(Ticks_Since_Last_Cswitch >= CSWITCH_FREQ)
+	{
+		Kernel_Dispatch_Next_Task();
+		CSwitch();						//same as Exit_Kernel(), interrupts are automatically enabled at the end
+	}
+		
+	Enable_Interrupt();
+}*/
 
 //Processes all tasks that are currently sleeping and decrement their sleep ticks when called. Expired sleep tasks are placed back into their old state
 void Kernel_Tick_Handler()
 {
 	int i;
 	
-	//No ticks has been issued yet, skipping...
+	//No new ticks has been issued yet, skipping...
 	if(Tick_Count == 0)
 		return;
 	
@@ -120,196 +132,8 @@ void Kernel_Tick_Handler()
 		}
 	}
 	Tick_Count = 0;
-
 }
 
-/************************************************************************/
-/*                   TASK RELATED KERNEL FUNCTIONS                      */
-/************************************************************************/
-
-/* Handles all low level operations for creating a new task */
-void Kernel_Create_Task(voidfuncptr f, PRIORITY py, int arg)
-{
-	int x;
-	unsigned char *sp;
-	PD *p;
-	
-	//Make sure the system can still have enough resources to create more tasks
-	if (Task_Count == MAXTHREAD)
-	{
-		#ifdef DEBUG
-		printf("Task_Create: Failed to create task. The system is at its process threshold.\n");
-		#endif
-		
-		err = MAX_PROCESS_ERR;
-		return;
-	}
-
-	//Find a dead or empty PD slot to allocate our new task
-	for (x = 0; x < MAXTHREAD; x++)
-	if (Process[x].state == DEAD) break;
-	
-	++Task_Count;
-	p = &(Process[x]);
-	
-	/*The code below was agglomerated from Kernel_Create_Task_At;*/\
-	
-	//Initializing the workspace memory for the new task
-	sp = (unsigned char *) &(p->workSpace[WORKSPACE-1]);
-	memset(&(p->workSpace), 0, WORKSPACE);
-	Kernel_Init_Task_Stack(&sp, f);
-
-	//Build the process descriptor for the new task
-	p->pid = ++Last_PID;
-	p->pri = py;
-	p->arg = arg;
-	p->request = NONE;
-	p->state = READY;
-	p->sp = sp;					/* stack pointer into the "workSpace" */
-	p->code = f;				/* function to be executed as a task */
-	
-	//No errors occured
-	err = NO_ERR;
-	
-}
-
-/*TODO: Check for mutex ownership. If PID owns any mutex, ignore this request*/
-static void Kernel_Suspend_Task() 
-{
-	//Finds the process descriptor for the specified PID
-	PD* p = findProcessByPID(Current_Process->request_args[0]);
-	
-	//Ensure the PID specified in the PD currently exists in the global process list
-	if(p == NULL)
-	{
-		#ifdef DEBUG
-			printf("Kernel_Suspend_Task: PID not found in global process list!\n");
-		#endif
-		err = PID_NOT_FOUND_ERR;
-		return;
-	}
-	
-	//Ensure the task is not in a unsuspendable state
-	if(p->state == DEAD || p->state == SUSPENDED)
-	{
-		#ifdef DEBUG
-		printf("Kernel_Suspend_Task: Trying to suspend a task that's in an unsuspendable state %d!\n", p->state);
-		#endif
-		err = SUSPEND_NONRUNNING_TASK_ERR;
-		return;
-	}
-	
-	//Ensure the task is not currently owning a mutex
-	/*for(int i=0; i<MAXMUTEX; i++) {
-		if (Mutex[i].owner == p->pid) {
-			#ifdef DEBUG
-			printf("Kernel_Suspend_Task: Trying to suspend a task that currently owns a mutex\n");
-			#endif
-			err = SUSPEND_NONRUNNING_TASK_ERR;
-			return;
-		}
-	}*/
-	
-	//Save the process state, and set its current state to SUSPENDED
-	if(p->state == RUNNING)
-		p->last_state = READY;
-	else
-		p->last_state = p->state;
-		
-	p->state = SUSPENDED;
-	err = NO_ERR;
-}
-
-static void Kernel_Resume_Task()
-{
-	//Finds the process descriptor for the specified PID
-	PD* p = findProcessByPID(Current_Process->request_args[0]);
-	
-	//Ensure the PID specified in the PD currently exists in the global process list
-	if(p == NULL)
-	{
-		#ifdef DEBUG
-			printf("Kernel_Resume_Task: PID not found in global process list!\n");
-		#endif
-		err = PID_NOT_FOUND_ERR;
-		return;
-	}
-	
-	//Ensure the task is currently in the SUSPENDED state
-	if(p->state != SUSPENDED)
-	{
-		#ifdef DEBUG
-		printf("Kernel_Resume_Task: Trying to resume a task that's not SUSPENDED!\n");
-		printf("CURRENT STATE: %d\n", p->state);
-		#endif
-		err = RESUME_NONSUSPENDED_TASK_ERR;
-		return;
-	}
-	
-	//Restore the previous state of the task
-	if(p->last_state == RUNNING)
-		p->state = READY;
-	else
-		p->state = p->last_state;
-		
-	p->last_state = SUSPENDED;		//last_state is not needed once a task has resumed, but whatever	
-	err = NO_ERR;
-	
-}
-
-
-
-/************************************************************************/
-/*                     TASK TERMINATE FUNCTION                         */
-/************************************************************************/
-
-static void Kernel_Terminate_Task(void)
-{
-	MUTEX_TYPE* m;
-	// go through all mutex check if it owns a mutex
-	/*int index;
-	for (index=0; index<MAXMUTEX; index++) 
-	{
-		if (Mutex[index].owner == Current_Process->pid) {
-			// it owns a mutex unlock the mutex
-			if (Mutex[index].num_of_process > 0) {
-				// if there are other process waiting on the mutex
-				PID p_dequeue = 0;
-				unsigned int temp_order = Mutex[index].total_num + 1;
-				PRIORITY temp_pri = LOWEST_PRIORITY + 1;
-				int i;
-				for (i=0; i<MAXTHREAD; i++) {
-					if (Mutex[index].priority_stack[i] < temp_pri) {
-						// found a task with higher priority
-						temp_pri = Mutex[index].priority_stack[i];
-						temp_order = Mutex[index].order[i];
-						p_dequeue = Mutex[index].blocked_stack[i];
-						} else if (Mutex[index].priority_stack[i] == temp_pri && temp_order < Mutex[index].order[i]) {
-						// same priority and came into the queue earlier
-						temp_order = Mutex[index].order[i];
-						p_dequeue = Mutex[index].blocked_stack[i];
-					}
-				}
-				//dequeue index i
-				Mutex[index].blocked_stack[i] = -1;
-				Mutex[index].priority_stack[i] = LOWEST_PRIORITY+1;
-				Mutex[index].order[i] = 0;
-				--(Mutex[index].num_of_process);
-				PD* target_p = findProcessByPID(p_dequeue);
-				Mutex[index].owner = p_dequeue;
-				Mutex[index].own_pri = temp_pri;			//keep track of new owner's priority;
-				target_p->state = READY;
-			} else {
-				Mutex[index].owner = 0;
-				Mutex[index].count = 0;
-			}
-		}
-	}*/
-	
-	Current_Process->state = DEAD;			//Mark the task as DEAD so its resources will be recycled later when new tasks are created
-	--Task_Count;
-	
-}
 
 /************************************************************************/
 /*                     KERNEL SCHEDULING FUNCTIONS                      */
@@ -345,7 +169,7 @@ static void Kernel_Dispatch_Next_Task()
 {
 	unsigned int i;
 	int next_dispatch = Kernel_Select_Next_Task();
-
+	
 	//When none of the tasks in the process list is ready
 	if(next_dispatch < 0)
 	{
@@ -375,12 +199,18 @@ static void Kernel_Dispatch_Next_Task()
 		
 	}
 	
+	Ticks_Since_Last_Cswitch = 0;
+	
+	if(Current_Process->state == RUNNING)
+		Current_Process->state = READY;
 
 	//Load the next selected task's process descriptor into Cp
 	Last_Dispatched = next_dispatch;
 	Current_Process = &(Process[Last_Dispatched]);
 	CurrentSp = Current_Process->sp;
 	Current_Process->state = RUNNING;
+	
+	printf("Dispatching PID:%d\n", Current_Process->pid);
 }
 
 /**
@@ -464,7 +294,9 @@ static void Kernel_Handle_Request()
 			
 			case LOCK_M:
 			Kernel_Lock_Mutex();
-			//Maybe add a dispatch() here if lock fails?
+			if(Current_Process->state != RUNNING)
+				Kernel_Dispatch_Next_Task();		//Task is now waiting for mutex lock
+				
 			break;
 			
 			case UNLOCK_M:
@@ -483,18 +315,14 @@ static void Kernel_Handle_Request()
 			
 			case GET_SEM:
 			Kernel_Semaphore_Get(Current_Process->request_args[0], Current_Process->request_args[1]);
-			//printf("GET_SEM Current State: %d\n", Current_Process->state);
 			if(Current_Process->state != RUNNING) 
-			{
-				//printf("GET_SEM Current State: %d\n", Current_Process->state);
 				Kernel_Dispatch_Next_Task();		//Switch task if the process is now waiting for the semaphore
-			}
 			break;
 			
 		   
 			case YIELD:
 			case NONE:					// NONE could be caused by a timer interrupt
-			Current_Process->state = READY;
+			//Current_Process->state = READY;
 			Kernel_Dispatch_Next_Task();
 			break;
        
@@ -503,6 +331,7 @@ static void Kernel_Handle_Request()
 				err = INVALID_KERNET_REQUEST_ERR;
 			break;
        }
+	   
     } 
 }
 
@@ -514,17 +343,15 @@ static void Kernel_Handle_Request()
 /*This function initializes the RTOS and must be called before any othersystem calls.*/
 void Kernel_Reset()
 {
-	Task_Count = 0;
 	KernelActive = 0;
 	Tick_Count = 0;
+	Ticks_Since_Last_Cswitch = 0;
 	Last_Dispatched = 0;
 	Last_PID = 0;
 	
 	err = NO_ERR;
 	
-	//Clear and initialize the memory used for tasks
-	memset(Process, 0, MAXTHREAD*sizeof(PD));
-	
+	Task_Reset();
 	Event_Reset();
 	Mutex_Reset();
 	Semaphore_Reset();
@@ -538,7 +365,7 @@ void Kernel_Reset()
 /* This function starts the RTOS after creating a few tasks.*/
 void Kernel_Start()
 {
-	if ( (!KernelActive) && (Task_Count > 0))
+	if (!KernelActive && Task_Count > 0)
 	{
 		Disable_Interrupt();
 		

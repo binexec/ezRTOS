@@ -123,6 +123,11 @@ EIND   = 0X3C
         .global Enter_Kernel
         .extern  KernelSp
         .extern  CurrentSp
+
+
+
+
+
 /*
   * The actual CSwitch() code begins here.
   *
@@ -167,6 +172,11 @@ Exit_Kernel:
           */
         RESTORECTX
         reti         /* re-enable all global interrupts */
+
+
+
+
+
 /*
   * All system call eventually enters here!
   * There are two possibilities how we get here: 

@@ -14,7 +14,7 @@ EVENT evt;
 MUTEX mut;
 
 /************************************************************************/
-/*								Test 0			                        */
+/*				Test 0: Task Suspension, Resume, Sleep, Yield		    */
 /************************************************************************/
 
 void Ping()
@@ -78,7 +78,7 @@ void test0()
 
 
 /************************************************************************/
-/*								Test 1			                        */
+/*							Test 1: Events			                    */
 /************************************************************************/
 
 
@@ -124,7 +124,7 @@ void test1()
 
 
 /************************************************************************/
-/*								Test 2			                        */
+/*						Test 2: Priority			                    */
 /************************************************************************/
 
 
@@ -204,6 +204,93 @@ void test3()
 }
 
 
+/************************************************************************/
+/*								Test 4			                        */
+/************************************************************************/
+
+
+MUTEX m1;
+
+void mut_t1()
+{
+	printf("T1 locking m1...\n");
+	Mutex_Lock(m1);
+	printf("T1 locked m1!\n");
+	Task_Sleep(250);
+	printf("T1 unlocking m1...\n");
+	Mutex_Unlock(m1);
+	printf("T1 unlocked m1!\n");
+	//Task_Yield();
+    for(;;);
+}
+
+void mut_t2()
+{
+	Task_Sleep(50);
+	printf("T2 locking m1...\n");
+	Mutex_Lock(m1);
+	printf("T2 locked m1!\n");
+	Task_Sleep(250);
+	printf("T2 unlocking m1...\n");
+	Mutex_Unlock(m1);
+	printf("T2 unlocked m1!\n");
+	
+    for(;;);
+}
+
+
+void test4()
+{
+    m1 = Mutex_Init();
+
+    Task_Create(mut_t1, 1, 0);
+    Task_Create(mut_t2, 2, 0);
+
+    //Task_Terminate();
+	//for(;;);
+}
+
+
+/************************************************************************/
+/*					Test 5: Preemptive Schedulling		                */
+/************************************************************************/
+
+
+void ps1()
+{
+	for(;;)
+		puts("A");
+
+}
+
+void ps2()
+{
+	for(;;)
+		puts("B");
+}
+
+void ps3()
+{
+	for(;;)
+		puts("C");
+}
+
+void ps4()
+{
+	for(;;)
+		puts("D");
+}
+
+void test5()
+{
+	//These tasks tests priority scheduling
+	Task_Create(ps1, 1, 0);
+	Task_Create(ps2, 1, 0);
+	Task_Create(ps3, 1, 0);
+	Task_Create(ps4, 1, 0);
+}
+
+
 
 /************************************************************************/
 /*						Entry point for application		                */
@@ -211,7 +298,7 @@ void test3()
 
 void a_main()
 {
-	int test_set = 9;				//Which set of tests to run?
+	int test_set = 2;				//Which set of tests to run?
 
 	OS_Init();
 	
@@ -224,50 +311,11 @@ void a_main()
 		test2();
 	else if(test_set == 3)
 		test3();
-		
-		else if (test_set == 9)
-		{
-			PID_Queue q = new_queue();
-			
-			printf("Enqueue 0: \t%d\n", enqueue(&q, 0));
-			printf("Enqueue 1: \t%d\n", enqueue(&q, 1));
-			printf("Enqueue 2: \t%d\n", enqueue(&q, 2));
-			printf("Enqueue 3: \t%d\n", enqueue(&q, 3));
-			printf("Enqueue 4: \t%d\n", enqueue(&q, 4));
-			printf("Enqueue 5: \t%d\n", enqueue(&q, 5));
-			printf("Enqueue 6: \t%d\n", enqueue(&q, 6));
-			printf("Enqueue 7: \t%d\n", enqueue(&q, 7));
-			printf("Enqueue 8: \t%d\n", enqueue(&q, 8));
-			printf("Enqueue 9: \t%d\n", enqueue(&q, 9));
-			
-			printf("\n\n");
-			print_queue(&q);
-			printf("\n\n");
-			
-			printf("Dequeue 0: \t%d\n", dequeue(&q));
-			printf("Dequeue 1: \t%d\n", dequeue(&q));
-			printf("Dequeue 2: \t%d\n", dequeue(&q));
-			
-			printf("\n\n");
-			print_queue(&q);
-			printf("\n\n");
-			
-			printf("Enqueue 7: \t%d\n", enqueue(&q, 7));
-			printf("Enqueue 8: \t%d\n", enqueue(&q, 8));
-			printf("Enqueue 9: \t%d\n", enqueue(&q, 9));
-			printf("Enqueue 10: \t%d\n", enqueue(&q, 10));
-			
-			printf("\n\n");
-			print_queue(&q);
-			printf("\n\n");
-			
-			while(1);
-			
-			
+	else if(test_set == 4)
+		test4();
+	else if(test_set == 5)
+		test5();
 
-		}
-		
-	
 	else
 	{
 		printf("Invalid testing set specified...\n");

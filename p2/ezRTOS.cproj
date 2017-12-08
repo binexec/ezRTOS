@@ -159,6 +159,12 @@
     <Compile Include="rtos\kernel\semaphore\semaphore.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="rtos\kernel\task\task.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="rtos\kernel\task\task.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="rtos\os.c">
       <SubType>compile</SubType>
     </Compile>
@@ -176,6 +182,7 @@
     <Folder Include="rtos\kernel\hardware\uart\" />
     <Folder Include="rtos\kernel\mutex\" />
     <Folder Include="rtos\kernel" />
+    <Folder Include="rtos\kernel\task" />
     <Folder Include="rtos\kernel\others" />
     <Folder Include="rtos\kernel\semaphore" />
   </ItemGroup>
