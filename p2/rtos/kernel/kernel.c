@@ -5,12 +5,18 @@
 
 #define LED_PIN_MASK 0x80			//Pin 13 = PB7
 
+/*User configurations*/
+unsigned int Preemptive_Cswitch_Enabled = 1;			//Does the user wants preemptive multi-tasking enabled?
+
 
 /*System variables used by the kernel only*/
-volatile static unsigned int Last_Dispatched;	//Which task in the process queue was last dispatched.
+volatile static unsigned int Last_Dispatched;			//Which task in the process queue was last dispatched.
+volatile static unsigned int Tick_Count;				//Number of timer ticks missed
 
-volatile unsigned int Tick_Count;				//Number of timer ticks missed
-volatile unsigned int Ticks_Since_Last_Cswitch;
+//For Preemptive Cswitch
+volatile static unsigned int Preemptive_Cswitch_Allowed;
+volatile static unsigned int Ticks_Since_Last_Cswitch;
+
 
 
 /*Variables accessible by OS*/
@@ -73,28 +79,23 @@ int findPIDByFuncPtr(voidfuncptr f)
 
 static void Kernel_Dispatch_Next_Task();
 
+//This function is called ONLY by the timer ISR. Therefore, it will not enter the kernel through regular modes
 void Kernel_Tick_ISR()
 {
 	++Tick_Count;
-}
-
-//This function is called ONLY by the timer ISR. Therefore, it will not enter the kernel through regular modes
-/*void Kernel_Tick_ISR()
-{
-	Disable_Interrupt();
 	
-	++Tick_Count;
-	++Ticks_Since_Last_Cswitch;
+	if(!Preemptive_Cswitch_Allowed)
+		return;
 
 	//Preemptive Scheduling: Has it been a long time since we switched to a new task?
-	if(Ticks_Since_Last_Cswitch >= CSWITCH_FREQ)
+	if(++Ticks_Since_Last_Cswitch >= CSWITCH_FREQ)
 	{
+		Disable_Interrupt();
 		Kernel_Dispatch_Next_Task();
 		CSwitch();						//same as Exit_Kernel(), interrupts are automatically enabled at the end
+		Enable_Interrupt();
 	}
-		
-	Enable_Interrupt();
-}*/
+}
 
 //Processes all tasks that are currently sleeping and decrement their sleep ticks when called. Expired sleep tasks are placed back into their old state
 void Kernel_Tick_Handler()
@@ -167,40 +168,43 @@ static int Kernel_Select_Next_Task()
 /* Dispatches a new task */
 static void Kernel_Dispatch_Next_Task()
 {
-	unsigned int i;
+	unsigned int i, j;
 	int next_dispatch = Kernel_Select_Next_Task();
 	
+	//Don't allow preemptive cswitch to kick in again while we're waiting for a task to be ready
+	Preemptive_Cswitch_Allowed = 0;
+
 	//When none of the tasks in the process list is ready
 	if(next_dispatch < 0)
 	{
 		i = Last_Dispatched;
-		
+		j = 0;
+
 		//We'll temporarily re-enable interrupt in case if one or more task is waiting on events/interrupts or sleeping
 		Enable_Interrupt();
 		
 		//Looping through the process list until any process becomes ready
 		while(Process[i].state != READY)
-		{
+		{			
 			//Increment process index
 			i = (i+1) % MAXTHREAD;
 			
-			//Check if any timer ticks came in
-			Disable_Interrupt();
-			Kernel_Tick_Handler();	
-			Enable_Interrupt();
+			//Check if any timer ticks came in periodically
+			if(j++ >= MAXTHREAD*10)
+			{
+				Disable_Interrupt();
+				Kernel_Tick_Handler();
+				j = 0;
+				Enable_Interrupt();
+			}
 		}
 		
 		//Now that we have some ready tasks, interrupts must be disabled for the kernel to function properly again.
 		Disable_Interrupt();
-		next_dispatch = Kernel_Select_Next_Task();
-		
-		if(next_dispatch < 0)
-			printf("SOMETHING WENT WRONG WITH SCHEDULLER!\n");
-		
+		next_dispatch = Kernel_Select_Next_Task();		
 	}
 	
-	Ticks_Since_Last_Cswitch = 0;
-	
+	//Stash away the current running task into the ready queue
 	if(Current_Process->state == RUNNING)
 		Current_Process->state = READY;
 
@@ -210,7 +214,14 @@ static void Kernel_Dispatch_Next_Task()
 	CurrentSp = Current_Process->sp;
 	Current_Process->state = RUNNING;
 	
-	printf("Dispatching PID:%d\n", Current_Process->pid);
+	//printf("Dispatching PID:%d\n", Current_Process->pid);
+		
+	//Reset Preemptive cswitch
+	if(Preemptive_Cswitch_Enabled)
+	{
+		Ticks_Since_Last_Cswitch = 0;
+		Preemptive_Cswitch_Allowed = 1;
+	}
 }
 
 /**
@@ -346,6 +357,8 @@ void Kernel_Reset()
 	KernelActive = 0;
 	Tick_Count = 0;
 	Ticks_Since_Last_Cswitch = 0;
+	//Preemptive_Cswitch_Enabled = 1;
+	Preemptive_Cswitch_Allowed = Preemptive_Cswitch_Enabled;
 	Last_Dispatched = 0;
 	Last_PID = 0;
 	

@@ -6,9 +6,9 @@
 
 #ifndef _OS_H_  
 #define _OS_H_  
-   
-//#define MAXTHREAD     16       
-#define MAXTHREAD			8     
+      
+	  
+#define MAXTHREAD			16     
 #define WORKSPACE			256		// in bytes, per THREAD
 #define MAXMUTEX			8 
 #define MAXSEMAPHORE		8
@@ -17,11 +17,14 @@
 #define LOWEST_PRIORITY		10		// 0 is the highest priority, 10 the lowest
 #define CSWITCH_FREQ		25		//How many ticks does preemptive scheduling kick in?
 
+
+
 typedef void (*voidfuncptr) (void);      /* pointer to void f(void), used to represent the main function for a RTOS task */
 
 #ifndef NULL
-	#define NULL          0   /* undefined */
+	#define NULL          0				/* undefined */
 #endif
+
 
 //Identifiers for various RTOS objects. The values are always non-zero if it is valid
 typedef unsigned int PID; 
@@ -37,10 +40,9 @@ void OS_Init(void);
 void OS_Start(void);
 void OS_Abort(void);
 
+
 /*Task/Thread related functions*/
 PID  Task_Create(voidfuncptr f, PRIORITY py, int arg);
-//void Task_Suspend( PID p );
-//void Task_Resume( PID p );
 void Task_Suspend(voidfuncptr f);		//Suspend/Resume tasks by the function name instead
 void Task_Resume(voidfuncptr f);
 void Task_Terminate(void);
@@ -48,10 +50,12 @@ void Task_Yield(void);
 int  Task_GetArg(void);
 void Task_Sleep(TICK t);		// sleep time is at least t*MSECPERTICK
 
+
 /*Mutex related functions*/
 MUTEX Mutex_Init(void);
 void Mutex_Lock(MUTEX m);
 void Mutex_Unlock(MUTEX m);
+
 
 /*EVENT related functions*/
 EVENT Event_Init(void);

@@ -11,6 +11,7 @@ void Kernel_Resume_Task(void);
 void Kernel_Terminate_Task(void);
 
 
+/*Variables shared with the main kernel module*/
 extern volatile PD Process[MAXTHREAD];	
 extern volatile unsigned int Task_Count;	
 

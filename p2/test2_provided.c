@@ -298,7 +298,7 @@ void test5()
 
 void a_main()
 {
-	int test_set = 2;				//Which set of tests to run?
+	int test_set = 5;				//Which set of tests to run?
 
 	OS_Init();
 	

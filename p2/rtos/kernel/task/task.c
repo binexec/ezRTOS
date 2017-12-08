@@ -39,7 +39,7 @@ void Kernel_Create_Task(voidfuncptr f, PRIORITY py, int arg)
 
 	//Find a dead or empty PD slot to allocate our new task
 	for (x = 0; x < MAXTHREAD; x++)
-	if (Process[x].state == DEAD) break;
+		if(Process[x].state == DEAD) break;
 	
 	++Task_Count;
 	p = &(Process[x]);
