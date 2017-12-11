@@ -6,7 +6,8 @@
 #define LED_PIN_MASK 0x80			//Pin 13 = PB7
 
 /*User configurations*/
-unsigned int Preemptive_Cswitch_Enabled = 1;			//Does the user wants preemptive multi-tasking enabled?
+unsigned int Preemptive_Cswitch_Enabled = 0;			//Does the user wants preemptive multi-tasking enabled?
+//unsigned int Starvation_Scheduling_Enabled = 1;	
 
 
 /*System variables used by the kernel only*/
@@ -53,6 +54,18 @@ PD* findProcessByPID(int pid)
 	return NULL;
 }
 
+
+static void print_processes()
+{
+	int i;
+	
+	for(i=0; i<MAXTHREAD; i++)
+	{
+		if(Process[i].state != DEAD)
+			printf("\tPID: %d\t State: %d\t Priority: %d\n", Process[i].pid, Process[i].state, Process[i].pri);
+	}
+	printf("\n");
+}
 
 /************************************************************************/
 /*				   		       OS HELPERS                               */
@@ -207,6 +220,8 @@ static void Kernel_Dispatch_Next_Task()
 	//Stash away the current running task into the ready queue
 	if(Current_Process->state == RUNNING)
 		Current_Process->state = READY;
+		
+	//printf("\tLast Dispatch:%d \t Next Dispatch: %d\n", Process[Last_Dispatched].pid, Process[next_dispatch].pid);
 
 	//Load the next selected task's process descriptor into Cp
 	Last_Dispatched = next_dispatch;
@@ -223,6 +238,10 @@ static void Kernel_Dispatch_Next_Task()
 		Preemptive_Cswitch_Allowed = 1;
 	}
 }
+
+
+
+
 
 /**
   * This internal kernel function is the "main" driving loop of this full-served
@@ -312,7 +331,8 @@ static void Kernel_Handle_Request()
 			
 			case UNLOCK_M:
 			Kernel_Unlock_Mutex();
-			//Does this need dispatch under any circumstances?
+			if(Current_Process->request == YIELD)		//There are others waiting on the same mutex as well
+					Kernel_Dispatch_Next_Task();
 			break;
 			
 			

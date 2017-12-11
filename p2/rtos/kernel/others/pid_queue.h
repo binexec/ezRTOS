@@ -3,6 +3,7 @@
 
 #include "../../os.h"
 #include <string.h>
+#include <stdio.h>
 
 #define QUEUE_LENGTH	MAXTHREAD		//Maximum length of each queue
 

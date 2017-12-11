@@ -10,6 +10,7 @@
 #include "kernel_internal.h"
 #include "task/task.h"
 #include "hardware/hw.h"
+#include "hardware/cpuarch.h"
 #include "mutex/mutex.h"
 #include "event/event.h"
 #include "semaphore/semaphore.h"
@@ -32,8 +33,7 @@ int findPIDByFuncPtr(voidfuncptr f);
 
 /*Hardware Related*/
 void Kernel_Tick_ISR();
-void Enter_Critical_Section();
-void Exit_Critical_Section();
+
 
 
 

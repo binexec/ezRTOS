@@ -2,12 +2,13 @@
 #define TASK_H_
 
 #include "../kernel_internal.h"
+#include "../hardware/cpuarch.h"
 
 
 void Task_Reset(void);
 void Kernel_Create_Task(voidfuncptr f, PRIORITY py, int arg);
 void Kernel_Suspend_Task(void);
-void Kernel_Resume_Task(void);
+void Kernel_Resume_Task(void); 
 void Kernel_Terminate_Task(void);
 
 

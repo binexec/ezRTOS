@@ -149,7 +149,6 @@ void Kernel_Lock_Mutex(void)
 		return;
 	}
 		
-	
 	//If I'm not the owner (mutex already locked): Add the current process to the wait queue
 	Current_Process->state = WAIT_MUTEX;
 	enqueue(&m->wait_queue, Current_Process->pid);
@@ -161,12 +160,7 @@ void Kernel_Lock_Mutex(void)
 		
 	//Let all other tasks waiting for the same mutex inherit my priority, since I have the highest
 	else if(Current_Process->pri < m->highest_priority)
-	{
-		m->highest_priority = Current_Process->pri;
-		applyNewPriorityToWaitQueue(&m->wait_queue, m->highest_priority);
-	}
-	
-	
+		m->highest_priority = Current_Process->pri;	
 	
 }
 
@@ -177,27 +171,26 @@ static void Kernel_Lock_Mutex_From_Queue(MUTEX_TYPE *m)
 	PRIORITY new_highest = findHighestFromQueue(&m->orig_priority);
 	PD *p;
 	
-	//Find the highest priority in the new wait queue, and apply it to all others
-	if(new_highest != m->highest_priority)
-	{
-		m->highest_priority = new_highest;
-		applyNewPriorityToWaitQueue(&m->wait_queue, new_highest);
-	}
-	
-	//Pass the mutex to the head of the wait queue
+	//Pass the mutex to the head of the wait queue and lock it
 	m->owner = dequeue(&m->wait_queue);
 	m->owner_orig_priority = dequeue(&m->orig_priority);
-	
+	m->lock_count++;
+
 	//Wake up the new mutex owner from its waiting state	
 	p = findProcessByPID(m->owner);
-	printf("Waking up PID %d from WAIT_MUTEX\n", p->pid);
 	
 	if(p->state != WAIT_MUTEX)
+	{
 		printf("PID %d IS NOT IN WAIT_MUTEX\n", p->pid);
+		return;
+	}
 	
 	p->state = READY;
-	printf("PID %d is now in %d state\n", p->pid, p->state);
+	p->pri = m->highest_priority;		//Inherit the highest priority when entering the task's critical section
 	
+	//Tell the kernel to switch to another task if there are others waiting on this mutex
+	Current_Process->state = READY;
+	Current_Process->request = YIELD;
 	
 }
 
@@ -226,9 +219,12 @@ void Kernel_Unlock_Mutex(void)
 	}
 	
 	//Decrement the lock if it's recursively locked
-	if(--m->lock_count > 0)
+	--m->lock_count;
+	if(m->lock_count > 0)
+	{
 		return;
-	
+	}
+		
 	//If not recursively locked, the current owner will now give up the mutex (with its original priority restored in its PD)
 	Current_Process->pri = m->owner_orig_priority;		
 	m->lock_count = 0;
@@ -239,7 +235,7 @@ void Kernel_Unlock_Mutex(void)
 		m->owner = 0;
 		return;
 	}
-	
+
 	//If there are other tasks waiting for the mutex
 	Kernel_Lock_Mutex_From_Queue(m);
 }

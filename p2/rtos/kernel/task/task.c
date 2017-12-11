@@ -9,7 +9,7 @@ volatile unsigned int Last_PID;					//Last (also highest) PID value created so f
 void Task_Reset()
 {
 	Task_Count = 0;
-	
+
 	//Clear and initialize the memory used for tasks
 	memset(Process, 0, MAXTHREAD*sizeof(PD));
 }

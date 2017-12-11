@@ -154,7 +154,7 @@ EVENT Event_Init(void)
 {
 	if(KernelActive)
 	{
-		Enter_Critical_Section();
+		Disable_Interrupt();
 		Current_Process->request = CREATE_E;
 		Enter_Kernel();
 	}
