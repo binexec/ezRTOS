@@ -259,26 +259,38 @@ void test4()
 void ps1()
 {
 	for(;;)
+	{
 		puts("A");
+		Task_Yield();
+	}
 
 }
 
 void ps2()
 {
 	for(;;)
+	{
 		puts("B");
+		//Task_Yield();
+	}
 }
 
 void ps3()
 {
 	for(;;)
+	{
 		puts("C");
+		//Task_Yield();
+	}
 }
 
 void ps4()
 {
 	for(;;)
+	{
 		puts("D");
+		//Task_Yield();
+	}
 }
 
 void test5()
@@ -309,6 +321,7 @@ MUTEX mut;
 
 void task_r()
 {
+	printf("r: terminating\n");
 	Task_Terminate();
 }
 
@@ -345,6 +358,19 @@ void test6()
 }
 
 
+/************************************************************************/
+/*					Test 7: Starvation Prevention		                */
+/************************************************************************/
+
+void test7()
+{
+	//These tasks tests priority scheduling
+	Task_Create(ps1, 1, 0);
+	Task_Create(ps2, 2, 0);
+	Task_Create(ps3, 3, 0);
+	Task_Create(ps4, 4, 0);
+}
+
 
 /************************************************************************/
 /*						Entry point for application		                */
@@ -352,7 +378,7 @@ void test6()
 
 void a_main()
 {
-	int test_set = 6;				//Which set of tests to run?
+	int test_set = 7;				//Which set of tests to run?
 
 	OS_Init();
 	
@@ -371,6 +397,8 @@ void a_main()
 		test5();
 	else if(test_set == 6)
 		test6();
+	else if(test_set == 7)
+		test7();
 
 	else
 	{

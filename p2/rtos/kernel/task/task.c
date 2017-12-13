@@ -60,6 +60,10 @@ void Kernel_Create_Task(voidfuncptr f, PRIORITY py, int arg)
 	p->sp = sp;					/* stack pointer into the "workSpace" */
 	p->code = f;				/* function to be executed as a task */
 	
+	#ifdef PREVENT_STARVATION
+	p->starvation_ticks = 0;
+	#endif
+	
 	//No errors occured
 	err = NO_ERR;
 	

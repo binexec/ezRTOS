@@ -15,7 +15,13 @@
 #define MAXEVENT			8      
 #define MSECPERTICK			10		// resolution of a system tick in milliseconds
 #define LOWEST_PRIORITY		10		// 0 is the highest priority, 10 the lowest
-#define CSWITCH_FREQ		25		//How many ticks does preemptive scheduling kick in?
+
+/*Scheduling*/
+#define MAX_TICK_MISSED				10
+#define PREEMPTIVE_CSWITCH							//Enable preemptive multi-tasking
+#define PREEMPTIVE_CSWITCH_FREQ		25				//How frequently (in ticks) does preemptive scheduling kick in?
+#define PREVENT_STARVATION							//Enable starvation prevention in the scheduler
+#define STARVATION_MAX				MAXTHREAD*10	//Maximum amount of ticks missed before a task is considered starving
 
 
 

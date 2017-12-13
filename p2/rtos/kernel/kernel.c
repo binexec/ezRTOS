@@ -5,18 +5,17 @@
 
 #define LED_PIN_MASK 0x80			//Pin 13 = PB7
 
-/*User configurations*/
-unsigned int Preemptive_Cswitch_Enabled = 0;			//Does the user wants preemptive multi-tasking enabled?
-//unsigned int Starvation_Scheduling_Enabled = 1;	
-
 
 /*System variables used by the kernel only*/
 volatile static unsigned int Last_Dispatched;			//Which task in the process queue was last dispatched.
 volatile static unsigned int Tick_Count;				//Number of timer ticks missed
 
+
 //For Preemptive Cswitch
+#ifdef PREEMPTIVE_CSWITCH_FREQ
 volatile static unsigned int Preemptive_Cswitch_Allowed;
 volatile static unsigned int Ticks_Since_Last_Cswitch;
+#endif
 
 
 
@@ -91,27 +90,36 @@ int findPIDByFuncPtr(voidfuncptr f)
 /************************************************************************/
 
 static void Kernel_Dispatch_Next_Task();
+static void Kernel_Tick_Handler();
 
 //This function is called ONLY by the timer ISR. Therefore, it will not enter the kernel through regular modes
 void Kernel_Tick_ISR()
 {
-	++Tick_Count;
+	//Automatically invoke the tick handler if it hasn't been serviced in a long time
+	if(++Tick_Count >=  MAX_TICK_MISSED)
+	{
+		Disable_Interrupt();
+		Kernel_Tick_Handler();
+		Enable_Interrupt();
+	}
 	
+	#ifdef PREEMPTIVE_CSWITCH	
 	if(!Preemptive_Cswitch_Allowed)
 		return;
 
 	//Preemptive Scheduling: Has it been a long time since we switched to a new task?
-	if(++Ticks_Since_Last_Cswitch >= CSWITCH_FREQ)
+	if(++Ticks_Since_Last_Cswitch >= PREEMPTIVE_CSWITCH_FREQ)
 	{
 		Disable_Interrupt();
 		Kernel_Dispatch_Next_Task();
 		CSwitch();						//same as Exit_Kernel(), interrupts are automatically enabled at the end
 		Enable_Interrupt();
 	}
+	#endif
 }
 
 //Processes all tasks that are currently sleeping and decrement their sleep ticks when called. Expired sleep tasks are placed back into their old state
-void Kernel_Tick_Handler()
+static void Kernel_Tick_Handler()
 {
 	int i;
 	
@@ -144,6 +152,12 @@ void Kernel_Tick_Handler()
 				Process[i].request_args[0] = 0;
 			}
 		}
+		
+		//Increment tick count for starvation prevention
+		#ifdef PREVENT_STARVATION
+		else if(Process[i].state == READY)
+			Process[i].starvation_ticks += Tick_Count;
+		#endif
 	}
 	Tick_Count = 0;
 }
@@ -168,10 +182,23 @@ static int Kernel_Select_Next_Task()
 		j = (j+1) % MAXTHREAD;
 		
 		//Select the READY process with the highest priority
-		if(Process[j].state == READY && Process[j].pri < highest_priority)
+		if(Process[j].state == READY)
 		{
-			next_dispatch = j;
-			highest_priority = Process[next_dispatch].pri;
+			if(Process[j].pri < highest_priority)
+			{
+				next_dispatch = j;
+				highest_priority = Process[next_dispatch].pri;
+			}
+			
+			//If a READY task is found to be starving, select it immediately regardless of its priority
+			#ifdef PREVENT_STARVATION
+			else if(Process[j].starvation_ticks >= STARVATION_MAX)
+			{
+				printf("Found Starving task %d, tick count %d!\n", Process[j].pid, Process[j].starvation_ticks);
+				next_dispatch = j;
+				break;
+			}
+			#endif
 		}
 	}
 	
@@ -182,10 +209,15 @@ static int Kernel_Select_Next_Task()
 static void Kernel_Dispatch_Next_Task()
 {
 	unsigned int i, j;
-	int next_dispatch = Kernel_Select_Next_Task();
+	int next_dispatch;
 	
 	//Don't allow preemptive cswitch to kick in again while we're waiting for a task to be ready
+	#ifdef PREEMPTIVE_CSWITCH
 	Preemptive_Cswitch_Allowed = 0;
+	#endif
+	
+	Current_Process->state = READY;		//Mark the current task from RUNNING to READY, so it can be considered by the scheduler again
+	next_dispatch = Kernel_Select_Next_Task();
 
 	//When none of the tasks in the process list is ready
 	if(next_dispatch < 0)
@@ -218,10 +250,8 @@ static void Kernel_Dispatch_Next_Task()
 	}
 	
 	//Stash away the current running task into the ready queue
-	if(Current_Process->state == RUNNING)
-		Current_Process->state = READY;
-		
-	//printf("\tLast Dispatch:%d \t Next Dispatch: %d\n", Process[Last_Dispatched].pid, Process[next_dispatch].pid);
+	/*if(Current_Process->state == RUNNING)
+		Current_Process->state = READY;*/
 
 	//Load the next selected task's process descriptor into Cp
 	Last_Dispatched = next_dispatch;
@@ -232,11 +262,15 @@ static void Kernel_Dispatch_Next_Task()
 	//printf("Dispatching PID:%d\n", Current_Process->pid);
 		
 	//Reset Preemptive cswitch
-	if(Preemptive_Cswitch_Enabled)
-	{
-		Ticks_Since_Last_Cswitch = 0;
-		Preemptive_Cswitch_Allowed = 1;
-	}
+	#ifdef PREEMPTIVE_CSWITCH
+	Ticks_Since_Last_Cswitch = 0;
+	Preemptive_Cswitch_Allowed = 1;
+	#endif
+	
+	//Reset Starvation Count
+	#ifdef PREVENT_STARVATION
+	Current_Process->starvation_ticks = 0;
+	#endif
 }
 
 
@@ -376,11 +410,13 @@ void Kernel_Reset()
 {
 	KernelActive = 0;
 	Tick_Count = 0;
-	Ticks_Since_Last_Cswitch = 0;
-	//Preemptive_Cswitch_Enabled = 1;
-	Preemptive_Cswitch_Allowed = Preemptive_Cswitch_Enabled;
 	Last_Dispatched = 0;
 	Last_PID = 0;
+	
+	#ifdef PREEMPTIVE_CSWITCH
+	Preemptive_Cswitch_Allowed = 1;
+	Ticks_Since_Last_Cswitch = 0;
+	#endif
 	
 	err = NO_ERR;
 	

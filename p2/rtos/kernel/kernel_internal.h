@@ -82,6 +82,10 @@ typedef struct ProcessDescriptor
 	unsigned char *sp;							//stack pointer into the "workSpace".
 	unsigned char workSpace[WORKSPACE];			//Data memory allocated to this process.
 	voidfuncptr  code;							//The function to be executed when this process is running.
+	
+	#ifdef PREVENT_STARVATION
+	unsigned int starvation_ticks;
+	#endif
 } PD;
 
 
