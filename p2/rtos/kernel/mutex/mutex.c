@@ -168,7 +168,6 @@ void Kernel_Lock_Mutex(void)
 
 static void Kernel_Lock_Mutex_From_Queue(MUTEX_TYPE *m)
 {
-	PRIORITY new_highest = findHighestFromQueue(&m->orig_priority);
 	PD *p;
 	
 	//Pass the mutex to the head of the wait queue and lock it

@@ -20,6 +20,8 @@ rtos\kernel\others\pid_queue.c
 
 rtos\kernel\semaphore\semaphore.c
 
+rtos\kernel\task\scheduler.c
+
 rtos\kernel\task\task.c
 
 rtos\os.c
