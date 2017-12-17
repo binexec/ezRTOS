@@ -252,7 +252,7 @@ void test4()
 
 
 /************************************************************************/
-/*					Test 5: Preemptive Scheduling		                */
+/*					Test 5: Preemptive Schedulling		                */
 /************************************************************************/
 
 
@@ -378,7 +378,7 @@ void test7()
 
 void a_main()
 {
-	int test_set = 7;				//Which set of tests to run?
+	int test_set = 6;				//Which set of tests to run?
 
 	OS_Init();
 	

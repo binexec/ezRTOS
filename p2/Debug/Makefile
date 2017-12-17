@@ -54,7 +54,6 @@ C_SRCS +=  \
 ../rtos/kernel/mutex/mutex.c \
 ../rtos/kernel/others/pid_queue.c \
 ../rtos/kernel/semaphore/semaphore.c \
-../rtos/kernel/task/scheduler.c \
 ../rtos/kernel/task/task.c \
 ../rtos/os.c \
 ../test2_provided.c
@@ -77,7 +76,6 @@ rtos/kernel/kernel.o \
 rtos/kernel/mutex/mutex.o \
 rtos/kernel/others/pid_queue.o \
 rtos/kernel/semaphore/semaphore.o \
-rtos/kernel/task/scheduler.o \
 rtos/kernel/task/task.o \
 rtos/os.o \
 test2_provided.o
@@ -92,7 +90,6 @@ rtos/kernel/kernel.o \
 rtos/kernel/mutex/mutex.o \
 rtos/kernel/others/pid_queue.o \
 rtos/kernel/semaphore/semaphore.o \
-rtos/kernel/task/scheduler.o \
 rtos/kernel/task/task.o \
 rtos/os.o \
 test2_provided.o
@@ -107,7 +104,6 @@ rtos/kernel/kernel.d \
 rtos/kernel/mutex/mutex.d \
 rtos/kernel/others/pid_queue.d \
 rtos/kernel/semaphore/semaphore.d \
-rtos/kernel/task/scheduler.d \
 rtos/kernel/task/task.d \
 rtos/os.d \
 test2_provided.d
@@ -122,7 +118,6 @@ rtos/kernel/kernel.d \
 rtos/kernel/mutex/mutex.d \
 rtos/kernel/others/pid_queue.d \
 rtos/kernel/semaphore/semaphore.d \
-rtos/kernel/task/scheduler.d \
 rtos/kernel/task/task.d \
 rtos/os.d \
 test2_provided.d
@@ -141,8 +136,6 @@ LINKER_SCRIPT_DEP+=
 
 
 # AVR32/GNU C Compiler
-
-
 
 
 

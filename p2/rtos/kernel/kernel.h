@@ -8,7 +8,6 @@
 #define KERNEL_H_
 
 #include "kernel_internal.h"
-#include "task/scheduler.h"
 #include "task/task.h"
 #include "hardware/hw.h"
 #include "hardware/cpuarch.h"
@@ -32,6 +31,10 @@ void Kernel_Create_Task(voidfuncptr f, PRIORITY py, int arg);
 int findPIDByFuncPtr(voidfuncptr f);
 
 
+/*Hardware Related*/
+void Kernel_Tick_ISR();
+
+
 
 
 /*Kernel variables accessible by the OS*/
@@ -40,6 +43,7 @@ extern volatile unsigned char *KernelSp;
 extern volatile unsigned char *CurrentSp;
 extern volatile unsigned int KernelActive;
 extern volatile ERROR_TYPE err;
+extern volatile unsigned int Last_PID;
 
 
 

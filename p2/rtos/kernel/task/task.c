@@ -1,7 +1,7 @@
 #include "task.h"
 
 
-volatile PD Process[MAXTHREAD];					//Contains the process descriptor for all tasks, regardless of their current state.
+volatile PD Process[MAXTHREAD];			//Contains the process descriptor for all tasks, regardless of their current state.
 volatile unsigned int Task_Count;				//Number of tasks created so far.
 volatile unsigned int Last_PID;					//Last (also highest) PID value created so far.
 
@@ -9,7 +9,6 @@ volatile unsigned int Last_PID;					//Last (also highest) PID value created so f
 void Task_Reset()
 {
 	Task_Count = 0;
-	Last_PID = 0;
 
 	//Clear and initialize the memory used for tasks
 	memset(Process, 0, MAXTHREAD*sizeof(PD));
@@ -154,54 +153,10 @@ void Kernel_Resume_Task()
 	
 }
 
+
+
 void Kernel_Terminate_Task(void)
 {
 	Current_Process->state = DEAD;			//Mark the task as DEAD so its resources will be recycled later when new tasks are created
 	--Task_Count;
-}
-
-
-/************************************************************************/
-/*					 Handle Missed Timer Ticks for Tasks                */
-/************************************************************************/
-
-extern volatile unsigned int Tick_Count;		//Declared in kernel
-
-//Processes all tasks that are currently sleeping and decrement their sleep ticks when called. Expired sleep tasks are placed back into their old state
-void Task_Tick_Handler()
-{
-	int i;
-	
-	for(i=0; i<MAXTHREAD; i++)
-	{
-		//Process any active tasks that are sleeping
-		if(Process[i].state == SLEEPING)
-		{
-			//If the current sleeping task's tick count expires, put it back into its READY state
-			Process[i].request_args[0] -= Tick_Count;
-			if(Process[i].request_args[0] <= 0)
-			{
-				Process[i].state = READY;
-				Process[i].request_args[0] = 0;
-			}
-		}
-		
-		//Process any SUSPENDED tasks that were previously sleeping
-		else if(Process[i].last_state == SLEEPING)
-		{
-			//When task_resume is called again, the task will be back into its READY state instead if its sleep ticks expired.
-			Process[i].request_args[0] -= Tick_Count;
-			if(Process[i].request_args[0] <= 0)
-			{
-				Process[i].last_state = READY;
-				Process[i].request_args[0] = 0;
-			}
-		}
-		
-		//Increment tick count for starvation prevention
-		#ifdef PREVENT_STARVATION
-		else if(Process[i].state == READY)
-			Process[i].starvation_ticks += Tick_Count;
-		#endif
-	}
 }
