@@ -13,6 +13,11 @@ MUTEX m1;
 EVENT evt;
 MUTEX mut;
 
+void Idle()
+{
+	for(;;);
+};
+
 /************************************************************************/
 /*				Test 0: Task Suspension, Resume, Sleep, Yield		    */
 /************************************************************************/
@@ -372,33 +377,115 @@ void test7()
 }
 
 
+
+/************************************************************************/
+/*						Test 8: Event Groups				            */
+/************************************************************************/
+
+EVENT_GROUP eg1;
+
+void egt1()
+{
+	printf("Waking up event 0...\n");
+	Event_Group_Set_Bits(eg1, (1<<0));
+	
+	//printf("T1 sleeping...");
+	Task_Sleep(100);
+	//print_processes();
+	printf("Waking up event 6...\n");
+	Event_Group_Set_Bits(eg1, (1<<6));
+	//print_processes();
+	Task_Sleep(100);
+	
+	printf("Waking up event 9...\n");
+	Event_Group_Set_Bits(eg1, (1<<9));
+	//print_processes();
+	Task_Sleep(100);
+	
+	printf("Waking up event 3...\n");
+	Event_Group_Set_Bits(eg1, (1<<3));
+	//print_processes();
+	
+	//Task_Terminate();
+	
+	for(;;)
+	{
+		Task_Yield();
+	}
+}
+
+void egt2()
+{
+	//Task_Sleep(500);
+	printf("T2 waiting...\n");
+	Event_Group_Wait_Bits(eg1, (1<<3) | (1<<6), 1, 0);
+	printf("T2 got bit 3 and 6!\n");
+	
+	//Task_Terminate();
+	
+	for(;;)
+	{
+		Task_Yield();
+	}
+}
+
+void egt3()
+{
+	//Task_Sleep(500);
+	printf("T3 waiting...\n");
+	Event_Group_Wait_Bits(eg1, (1<<6) | (1<<9), 0, 0);
+	printf("T3 got bit 6 OR 9!\n");
+	
+	//Task_Terminate();
+	
+	for(;;)
+	{
+		Task_Yield();
+	}
+}
+
+void test8()
+{
+	eg1 = Event_Group_Init();
+	
+	Task_Create(egt1, 1, 0);
+	Task_Create(egt2, 1, 0);
+	Task_Create(egt3, 1, 0);
+	//Task_Create(Idle, 10, 0);
+	
+	//Task_Terminate();
+}
+
+
 /************************************************************************/
 /*						Entry point for application		                */
 /************************************************************************/
 
 void a_main()
 {
-	int test_set = 6;				//Which set of tests to run?
+	int test_set = 8;				//Which set of tests to run?
 
 	OS_Init();
 	
 	//These tasks tests ctxswitching, suspension, resume, and sleep
 	if(test_set == 0)
-		test0();
+	test0();
 	else if(test_set == 1)
-		test1();	
+	test1();
 	else if(test_set == 2)
-		test2();
+	test2();
 	else if(test_set == 3)
-		test3();
+	test3();
 	else if(test_set == 4)
-		test4();
+	test4();
 	else if(test_set == 5)
-		test5();
+	test5();
 	else if(test_set == 6)
-		test6();
+	test6();
 	else if(test_set == 7)
-		test7();
+	test7();
+	else if(test_set == 8)
+	test8();
 
 	else
 	{

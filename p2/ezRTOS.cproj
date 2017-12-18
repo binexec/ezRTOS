@@ -117,6 +117,12 @@
     <Compile Include="rtos\kernel\event\event.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="rtos\kernel\event\event_group.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="rtos\kernel\event\event_group.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="rtos\kernel\hardware\cpuarch.c">
       <SubType>compile</SubType>
     </Compile>

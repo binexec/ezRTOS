@@ -10,7 +10,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#define MAX_KERNEL_ARGS		3
+#define MAX_KERNEL_ARGS		5
 
   
   //Definitions for potential errors the RTOS may come across
@@ -35,58 +35,71 @@
   } ERROR_TYPE;
 
   
-  typedef enum process_states
-  {
-	  DEAD = 0,
-	  READY,
-	  RUNNING,
-	  SUSPENDED,
-	  SLEEPING,
-	  WAIT_EVENT,
-	  WAIT_MUTEX,
-	  WAIT_SEMAPHORE
-  } PROCESS_STATES;
+   typedef enum process_states
+   {
+	   DEAD = 0,
+	   READY,
+	   RUNNING,
+	   SUSPENDED,
+	   SLEEPING,
+	   WAIT_EVENT,
+	   WAIT_EVENTG,
+	   WAIT_MUTEX,
+	   WAIT_SEMAPHORE
+   } PROCESS_STATES;
 
 
-  typedef enum kernel_request_type
-  {
-	  NONE = 0,
-	  CREATE_T,								//Create a task
-	  YIELD,
-	  TERMINATE,
-	  SUSPEND,
-	  RESUME,
-	  SLEEP,
-	  CREATE_E,							//Initialize an event object
-	  WAIT_E,
-	  SIGNAL_E,
-	  CREATE_M,							//Initialize a mutex object
-	  LOCK_M,
-	  UNLOCK_M,
-	  CREATE_SEM,						//semaphores
-	  GIVE_SEM,
-	  GET_SEM
-  } KERNEL_REQUEST_TYPE;
+   typedef enum kernel_request_type
+   {
+	   NONE = 0,
+	   CREATE_T,							//Create a task
+	   YIELD,
+	   TERMINATE,
+	   SUSPEND,
+	   RESUME,
+	   SLEEP,
+	   CREATE_E,							//Initialize an event object
+	   WAIT_E,
+	   SIGNAL_E,
+	   CREATE_M,							//Initialize a mutex object
+	   LOCK_M,
+	   UNLOCK_M,
+	   CREATE_SEM,						//semaphores
+	   GIVE_SEM,
+	   GET_SEM,
+	   CREATE_EG,						//event groups
+	   SET_EG_BITS,
+	   CLEAR_EG_BITS,
+	   WAIT_EG,
+	   GET_EG_BITS
+   } KERNEL_REQUEST_TYPE;
 
 
-/*Process descriptor for a task*/
-typedef struct ProcessDescriptor
-{
-	PID pid;									//An unique process ID for this task.
-	PRIORITY pri;								//The priority of this task, from 0 (highest) to 10 (lowest).
-	PROCESS_STATES state;						//What's the current state of this task?
-	PROCESS_STATES last_state;					//What's the PREVIOUS state of this task? Used for task suspension/resume.
-	KERNEL_REQUEST_TYPE request;				//What the task want the kernel to do (when needed).
-	int request_args[MAX_KERNEL_ARGS];			//What values are needed for the specified kernel request.
-	int arg;									//Initial argument for the task (if specified).
-	unsigned char *sp;							//stack pointer into the "workSpace".
-	unsigned char workSpace[WORKSPACE];			//Data memory allocated to this process.
-	voidfuncptr  code;							//The function to be executed when this process is running.
-	
-	#ifdef PREVENT_STARVATION
-	unsigned int starvation_ticks;
-	#endif
-} PD;
+   /*Process descriptor for a task*/
+   typedef struct ProcessDescriptor
+   {
+	   PID pid;									//An unique process ID for this task.
+	   PRIORITY pri;								//The priority of this task, from 0 (highest) to 10 (lowest).
+	   PROCESS_STATES state;						//What's the current state of this task?
+	   unsigned char *sp;							//stack pointer into the "workSpace".
+	   unsigned char workSpace[WORKSPACE];			//Data memory allocated to this process.
+	   voidfuncptr code;							//The function to be executed when this process is running.
+	   int arg;									//Initial argument for the task (if specified).
+	   
+	   /*Used to pass requests from task to kernel*/
+	   KERNEL_REQUEST_TYPE request;				//What the task want the kernel to do (when needed).
+	   int request_args[MAX_KERNEL_ARGS];			//What values are needed for the specified kernel request.
+	   int request_ret;							//Value returned by the kernel after handling the request
+	   
+	   /*Used for task suspension/resuming*/
+	   PROCESS_STATES last_state;					//What's the PREVIOUS state of this task? Used for task suspension/resume.
+	   
+	   /*Used for other scheduling modes*/
+	   #ifdef PREVENT_STARVATION
+	   unsigned int starvation_ticks;
+	   #endif
+	   
+   } PD;
 
 
 /*Kernel variables accessible by other kernel modules*/

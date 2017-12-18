@@ -8,6 +8,8 @@
 /*						Timer                                */
 /************************************************************************/
 
+extern void Kernel_Tick_ISR();
+
 ISR(TIMER1_COMPA_vect)
 {
 	Kernel_Tick_ISR();

@@ -14,6 +14,7 @@
 #include "mutex/mutex.h"
 #include "event/event.h"
 #include "semaphore/semaphore.h"
+#include "event/event_group.h"
 
 
 
@@ -29,6 +30,7 @@ void Kernel_Start();
 /*Create kernel objects before */
 void Kernel_Create_Task(voidfuncptr f, PRIORITY py, int arg);
 int findPIDByFuncPtr(voidfuncptr f);
+void print_processes();
 
 
 /*Hardware Related*/

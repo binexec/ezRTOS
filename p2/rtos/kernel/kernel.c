@@ -54,7 +54,7 @@ PD* findProcessByPID(int pid)
 }
 
 
-static void print_processes()
+void print_processes()
 {
 	int i;
 	
@@ -113,7 +113,7 @@ void Kernel_Tick_ISR()
 		Disable_Interrupt();
 		Kernel_Dispatch_Next_Task();
 		CSwitch();						//same as Exit_Kernel(), interrupts are automatically enabled at the end
-		Enable_Interrupt();
+		//Enable_Interrupt();
 	}
 	#endif
 }
@@ -142,7 +142,7 @@ static void Kernel_Tick_Handler()
 		}
 		
 		//Process any SUSPENDED tasks that were previously sleeping
-		else if(Process[i].last_state == SLEEPING)
+		else if(Process[i].state == SUSPENDED && Process[i].last_state == SLEEPING)
 		{
 			//When task_resume is called again, the task will be back into its READY state instead if its sleep ticks expired.
 			Process[i].request_args[0] -= Tick_Count;
@@ -361,7 +361,6 @@ static void Kernel_Handle_Request()
 			Kernel_Lock_Mutex();
 			if(Current_Process->state != RUNNING)
 				Kernel_Dispatch_Next_Task();		//Task is now waiting for mutex lock
-				
 			break;
 			
 			case UNLOCK_M:
@@ -369,7 +368,6 @@ static void Kernel_Handle_Request()
 			if(Current_Process->request == YIELD)		//There are others waiting on the same mutex as well
 					Kernel_Dispatch_Next_Task();
 			break;
-			
 			
 			case CREATE_SEM:
 			Kernel_Create_Semaphore(Current_Process->request_args[0], Current_Process->request_args[1]);
@@ -385,6 +383,31 @@ static void Kernel_Handle_Request()
 				Kernel_Dispatch_Next_Task();		//Switch task if the process is now waiting for the semaphore
 			break;
 			
+			
+			case CREATE_EG:
+			Kernel_Create_Event_Group();
+			break;
+			
+			case SET_EG_BITS:
+			Kernel_Event_Group_Set_Bits(Current_Process->request_args[0], Current_Process->request_args[1]);
+			//printf("SET_EG_BITS\n");
+			break;
+			
+			case CLEAR_EG_BITS:
+			Kernel_Event_Group_Clear_Bits(Current_Process->request_args[0], Current_Process->request_args[1]);
+			break;
+			
+			case WAIT_EG:
+			Kernel_Event_Group_Wait_Bits(Current_Process->request_args[0], Current_Process->request_args[1], Current_Process->request_args[2], Current_Process->request_args[3]);
+			if(Current_Process->state != RUNNING)
+				Kernel_Dispatch_Next_Task();
+			break;
+			
+			case GET_EG_BITS:
+			Current_Process->request_ret = Kernel_Event_Group_Get_Bits(Current_Process->request_args[0]);
+			break;
+		   
+		   
 		   
 			case YIELD:
 			case NONE:					// NONE could be caused by a timer interrupt
@@ -395,6 +418,7 @@ static void Kernel_Handle_Request()
 			//Invalid request code, just ignore
 			default:
 				err = INVALID_KERNET_REQUEST_ERR;
+				printf("***INVALID KERNEL REQUEST!***\n");
 			break;
        }
 	   
@@ -423,6 +447,7 @@ void Kernel_Reset()
 	
 	Task_Reset();
 	Event_Reset();
+	Event_Group_Reset();
 	Mutex_Reset();
 	Semaphore_Reset();
 	

@@ -315,3 +315,90 @@ void Semaphore_Get(SEMAPHORE s, unsigned int amount)
 	Current_Process->request_args[1] = amount;
 	Enter_Kernel();
 }
+
+
+/************************************************************************/
+/*						Event Group related API			                */
+/************************************************************************/
+
+EVENT_GROUP Event_Group_Init()
+{
+	if(KernelActive)
+	{
+		Disable_Interrupt();
+		Current_Process->request = CREATE_EG;
+		Enter_Kernel();
+	}
+	else
+	Kernel_Create_Event_Group();	//Call the kernel function directly if kernel has not started yet.
+	
+	
+	//Return zero as Event ID if the event creation process gave errors. Note that the smallest valid event ID is 1
+	if (err == MAX_EVENT_ERR)
+	return 0;
+	
+	#ifdef DEBUG
+	printf("Created Event Group: %d\n", Last_Event_Group_ID);
+	#endif
+	
+	return Last_Event_Group_ID;
+}
+
+void Event_Group_Set_Bits(EVENT_GROUP e, unsigned int bits_to_set)
+{
+	if(!KernelActive){
+		err = KERNEL_INACTIVE_ERR;
+		return;
+	}
+	
+	Disable_Interrupt();
+	Current_Process->request = SET_EG_BITS;
+	Current_Process->request_args[0] = e;
+	Current_Process->request_args[1] = bits_to_set;
+	Enter_Kernel();
+}
+
+void Event_Group_Clear_Bits(EVENT_GROUP e, unsigned int bits_to_clear)
+{
+	if(!KernelActive){
+		err = KERNEL_INACTIVE_ERR;
+		return;
+	}
+	
+	Disable_Interrupt();
+	Current_Process->request = CLEAR_EG_BITS;
+	Current_Process->request_args[0] = e;
+	Current_Process->request_args[1] = bits_to_clear;
+	Enter_Kernel();
+}
+
+void Event_Group_Wait_Bits(EVENT_GROUP e, unsigned int bits_to_wait, unsigned int wait_all_bits, TICK timeout)
+{
+	if(!KernelActive){
+		err = KERNEL_INACTIVE_ERR;
+		return;
+	}
+	
+	Disable_Interrupt();
+	Current_Process->request = WAIT_EG;
+	Current_Process->request_args[0] = e;
+	Current_Process->request_args[1] = bits_to_wait;
+	Current_Process->request_args[2] = wait_all_bits;
+	Current_Process->request_args[3] = timeout;
+	Enter_Kernel();
+}
+
+
+unsigned int Event_Group_Get_Bits(EVENT_GROUP e)
+{
+	if(!KernelActive){
+		err = KERNEL_INACTIVE_ERR;
+		return 0;
+	}
+	
+	Disable_Interrupt();
+	Current_Process->request = GET_EG_BITS;
+	Enter_Kernel();
+	
+	return Current_Process->request_ret;
+}

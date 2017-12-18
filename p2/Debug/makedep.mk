@@ -4,6 +4,8 @@
 
 rtos\kernel\event\event.c
 
+rtos\kernel\event\event_group.c
+
 rtos\kernel\hardware\cpuarch.c
 
 rtos\kernel\hardware\cswitch.s
