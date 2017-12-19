@@ -153,6 +153,21 @@ static void Kernel_Tick_Handler()
 			}
 		}
 		
+		//Process tasks waiting for event groups that has timeout specified
+		else if(Process[i].state == WAIT_EVENTG)
+		{
+			//Ignore tasks with a 0 tick counter. These tasks have no timeout
+			if (Process[i].request_args[3] == 0)
+				continue;
+				
+			else if (--Process[i].request_args[3] <= 0)
+			{
+				Process[i].state = READY;
+				Process[i].request_args[3] = 0;
+			}
+		}
+		
+		
 		//Increment tick count for starvation prevention
 		#ifdef PREVENT_STARVATION
 		else if(Process[i].state == READY)

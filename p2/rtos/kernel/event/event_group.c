@@ -92,14 +92,14 @@ void Kernel_Event_Group_Set_Bits(EVENT_GROUP e, unsigned int bits_to_set)
 			
 			if(current_events > 0 && ps_wait_all_bits == 0)
 			{
-				printf("Set_Bits: SOME events are ready for task %d!\n", Process[i].pid);
+				//printf("Set_Bits: SOME events are ready for task %d!\n", Process[i].pid);
 				Process[i].state = READY;
 				continue;
 			}
 				
 			if(current_events == ps_bits_waiting)
 			{
-				printf("Set_Bits: ALL events are ready for task %d!\n", Process[i].pid);
+				//printf("Set_Bits: ALL events are ready for task %d!\n", Process[i].pid);
 				Process[i].state = READY;
 			}
 			

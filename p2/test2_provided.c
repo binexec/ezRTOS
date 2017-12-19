@@ -386,62 +386,63 @@ EVENT_GROUP eg1;
 
 void egt1()
 {
-	printf("Waking up event 0...\n");
+	printf("T1 waking up event 0...\n");
 	Event_Group_Set_Bits(eg1, (1<<0));
 	
 	//printf("T1 sleeping...");
 	Task_Sleep(100);
 	//print_processes();
-	printf("Waking up event 6...\n");
+	printf("T1 waking up event 6...\n");
 	Event_Group_Set_Bits(eg1, (1<<6));
 	//print_processes();
 	Task_Sleep(100);
 	
-	printf("Waking up event 9...\n");
+	printf("T1 waking up event 9...\n");
 	Event_Group_Set_Bits(eg1, (1<<9));
 	//print_processes();
 	Task_Sleep(100);
 	
-	printf("Waking up event 3...\n");
+	printf("T1 waking up event 3...\n");
 	Event_Group_Set_Bits(eg1, (1<<3));
 	//print_processes();
 	
-	//Task_Terminate();
+	Task_Terminate();
 	
-	for(;;)
-	{
-		Task_Yield();
-	}
+	//for(;;)	Task_Yield();
 }
 
 void egt2()
 {
-	//Task_Sleep(500);
-	printf("T2 waiting...\n");
+	printf("T2 waiting for event 3, 6...\n");
 	Event_Group_Wait_Bits(eg1, (1<<3) | (1<<6), 1, 0);
 	printf("T2 got bit 3 and 6!\n");
 	
 	//Task_Terminate();
 	
-	for(;;)
-	{
-		Task_Yield();
-	}
+	for(;;)	Task_Yield();
 }
 
 void egt3()
 {
-	//Task_Sleep(500);
-	printf("T3 waiting...\n");
+	printf("T3 waiting for event 6, 9...\n");
 	Event_Group_Wait_Bits(eg1, (1<<6) | (1<<9), 0, 0);
 	printf("T3 got bit 6 OR 9!\n");
 	
 	//Task_Terminate();
 	
-	for(;;)
-	{
-		Task_Yield();
-	}
+	for(;;)	Task_Yield();
+}
+
+void egt4()
+{
+	printf("T4 waiting for event 10...\n");
+	Event_Group_Wait_Bits(eg1, (1<<10), 0, 500);
+	printf("T4 Timed out!\n");
+	
+	//Task_Terminate();
+	
+	for(;;)	Task_Yield();
+
 }
 
 void test8()
@@ -451,7 +452,7 @@ void test8()
 	Task_Create(egt1, 1, 0);
 	Task_Create(egt2, 1, 0);
 	Task_Create(egt3, 1, 0);
-	//Task_Create(Idle, 10, 0);
+	Task_Create(egt4, 1, 0);
 	
 	//Task_Terminate();
 }
