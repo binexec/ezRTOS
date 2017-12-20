@@ -36,7 +36,19 @@ int findSemaphoreByID(SEMAPHORE s)
 /*						Semaphore Creation                              */
 /************************************************************************/
 
-SEMAPHORE Kernel_Create_Semaphore(int initial_count, unsigned int is_binary)
+SEMAPHORE Kernel_Create_Semaphore()
+{
+	#define req_initial_count		Current_Process->request_args[0]
+	#define req_is_binary			Current_Process->request_args[1]
+	
+	return Kernel_Create_Semaphore_Direct(req_initial_count, req_is_binary);
+	
+	#undef req_initial_count
+	#undef req_is_binary
+}
+
+//Create a semaphore before the kernel was active
+SEMAPHORE Kernel_Create_Semaphore_Direct(int initial_count, unsigned int is_binary)
 {
 	int i;
 	
@@ -54,7 +66,7 @@ SEMAPHORE Kernel_Create_Semaphore(int initial_count, unsigned int is_binary)
 	for(i=0; i<MAXSEMAPHORE; i++)
 	{
 		if (Semaphore[i].id == 0)
-			break;
+		break;
 	}
 	
 	//Creating a binary semaphore
@@ -62,9 +74,9 @@ SEMAPHORE Kernel_Create_Semaphore(int initial_count, unsigned int is_binary)
 	{
 		//Make sure initial_count is either a 1 or 0 for a binary semaphore
 		if(initial_count >= 1)
-			Semaphore[i].count = 1;
+		Semaphore[i].count = 1;
 		else
-			Semaphore[i].count = 0;
+		Semaphore[i].count = 0;
 		
 		Semaphore[i].is_binary = 1;
 	}
@@ -87,9 +99,12 @@ SEMAPHORE Kernel_Create_Semaphore(int initial_count, unsigned int is_binary)
 /*						Semaphore Operations                            */
 /************************************************************************/
 
-void Kernel_Semaphore_Get(SEMAPHORE s, unsigned int amount)
+void Kernel_Semaphore_Get()
 {
-	int idx = findSemaphoreByID(s);
+	#define req_sem_id		Current_Process->request_args[0]
+	#define req_amount		Current_Process->request_args[1]
+	
+	int idx = findSemaphoreByID(req_sem_id);
 	int has_enough;
 	SEMAPHORE_TYPE *sem;
 	
@@ -107,26 +122,24 @@ void Kernel_Semaphore_Get(SEMAPHORE s, unsigned int amount)
 	//If it's a binary semaphore, do not allow more than 1 counts to be taken
 	if(sem->is_binary)
 	{
-		if(amount > 1)
+		if(req_amount > 1)
 		{
-			amount = 1;
+			req_amount = 1;
 			Current_Process->request_args[1] = 1;
 		}
-		else if (amount > 0)
+		else if (req_amount > 0)
 			
 		{
-			amount = 0;
+			req_amount = 0;
 			Current_Process->request_args[1] = 0;
 		}
 	}	
 	
-	has_enough = sem->count - amount;
+	has_enough = sem->count - req_amount;
 	
 	//Are there enough counts in the semaphore to handle this request?
 	if(has_enough < 0)				//Putting "sem->count - amount" directly into the if statement doesn't work for some reason
 	{
-		//printf("Enqueuing...\n");
-		
 		//Add this process to the semaphore's wait queue
 		enqueue(&sem->wait_queue, Current_Process->pid);
 		
@@ -135,19 +148,20 @@ void Kernel_Semaphore_Get(SEMAPHORE s, unsigned int amount)
 		return;
 	}
 	
-	sem->count -= amount;
-	
-	//printf("count - amount: %d\n", t);
-	//printf("Current GET count: %d\n", sem->count);
+	sem->count -= req_amount;
 
+	#undef req_sem_id	
+	#undef req_amount	
 }
 
 static inline void Kernel_Semaphore_Get_From_Queue(SEMAPHORE_TYPE *sem, unsigned int amount)
 {
 	PD *head = findProcessByPID(queue_peek(&sem->wait_queue));	
+
+	#define head_req_amount		head->request_args[1]
 	
 	//See if the semaphore has enough counts to fulfill the amount wanted by the head(s) of the wait queue
-	while(sem->count - head->request_args[1] >= 0)
+	while(sem->count - head_req_amount >= 0)
 	{
 		
 		if(head->state != WAIT_SEMAPHORE)
@@ -159,39 +173,44 @@ static inline void Kernel_Semaphore_Get_From_Queue(SEMAPHORE_TYPE *sem, unsigned
 			return;
 		}
 		
-		sem->count -= head->request_args[1];
+		sem->count -= head_req_amount;
 		head->state = READY;
 		
 		dequeue(&sem->wait_queue);
 		head = findProcessByPID(queue_peek(&sem->wait_queue));
 	}
+	
+	#undef head_req_amount
 }
 
-void Kernel_Semaphore_Give(SEMAPHORE s, unsigned int amount)
+void Kernel_Semaphore_Give()
 {
-	int idx = findSemaphoreByID(s);
+	#define req_sem_id		Current_Process->request_args[0]
+	#define req_amount		Current_Process->request_args[1]
+	
+	int idx = findSemaphoreByID(req_sem_id);
 	SEMAPHORE_TYPE *sem;
 	
 	if(idx > 0)
 	{
 		#ifdef DEBUG
-		printf("Kernel_Semaphore_Give: The requested Semaphore %d was not found!\n", s);
+		printf("Kernel_Semaphore_Give: The requested Semaphore %d was not found!\n", req_sem_id);
 		#endif
 		err = SEMAPHORE_NOT_FOUND_ERR;
 		return;
 	}
+	
 	sem = &Semaphore[idx];
-	
-	sem->count += amount;
-	
-	printf("Current count (GIVE): %d\n", sem->count);
-	
+	sem->count += req_amount;
+
 	//Ensure binary semaphores do not exceed 1 for its count
 	if(sem->is_binary && sem->count > 1)
 		sem->count = 1;
 	
 	//Check if any processes are currently waiting for this semaphore, if it's now positive
 	if(sem->count > 0 && sem->wait_queue.count > 0)
-		Kernel_Semaphore_Get_From_Queue(sem, amount);
-
+		Kernel_Semaphore_Get_From_Queue(sem, req_amount);
+		
+	#undef req_sem_id
+	#undef req_amount
 }

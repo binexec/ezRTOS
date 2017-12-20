@@ -28,7 +28,6 @@ void Kernel_Start();
 
 
 /*Create kernel objects before */
-void Kernel_Create_Task(voidfuncptr f, PRIORITY py, int arg);
 int findPIDByFuncPtr(voidfuncptr f);
 void print_processes();
 

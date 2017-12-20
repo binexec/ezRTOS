@@ -3,20 +3,22 @@
 
 #include "../kernel_internal.h"
 
-#define EVENT_BITS		16
+#define MAX_EVENT_BITS		16				//Maximum number of events represented within a event group
 
 typedef struct {	
+	
 	EVENT_GROUP id;
-	unsigned int events :EVENT_BITS;
+	unsigned int events :MAX_EVENT_BITS;
+	
 } EVENT_GROUP_TYPE;
 
 
 void Event_Group_Reset(void);
 unsigned int Kernel_Create_Event_Group(void);
-void Kernel_Event_Group_Set_Bits(EVENT_GROUP e, unsigned int bits_to_set);
-void Kernel_Event_Group_Clear_Bits(EVENT_GROUP e, unsigned int bits_to_clear);
-void Kernel_Event_Group_Wait_Bits(EVENT_GROUP e, unsigned int bits_to_wait, unsigned int wait_all_bits, TICK timeout);
-unsigned int Kernel_Event_Group_Get_Bits(EVENT_GROUP e);
+void Kernel_Event_Group_Set_Bits(void);
+void Kernel_Event_Group_Clear_Bits(void);
+void Kernel_Event_Group_Wait_Bits(void);
+unsigned int Kernel_Event_Group_Get_Bits(void);
 
 
 extern volatile unsigned int Event_Group_Count;

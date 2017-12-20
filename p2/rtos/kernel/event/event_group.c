@@ -27,6 +27,10 @@ void Event_Group_Reset(void)
 }
 
 
+/************************************************************************/
+/*						EVENT GROUP OPERATIONS                          */
+/************************************************************************/
+
 unsigned int Kernel_Create_Event_Group(void)
 {
 	int i;
@@ -50,30 +54,32 @@ unsigned int Kernel_Create_Event_Group(void)
 }
 
 
-extern volatile PD Process[MAXTHREAD];	
+extern volatile PD Process[MAXTHREAD];
 
-#define ps_eventgroup_id	Process[i].request_args[0]
-#define ps_bits_waiting		Process[i].request_args[1]
-#define ps_wait_all_bits	Process[i].request_args[2]	
-
-void Kernel_Event_Group_Set_Bits(EVENT_GROUP e, unsigned int bits_to_set)
+void Kernel_Event_Group_Set_Bits()
 {
-	EVENT_GROUP_TYPE *eg = findEventGroupByID(e);
+	//Request args for the kernel call
+	#define req_event_id		Current_Process->request_args[0]
+	#define req_bits_to_set		Current_Process->request_args[1]
 	
 	int i;
 	unsigned int current_events;
+	EVENT_GROUP_TYPE *eg = findEventGroupByID(req_event_id);
 	
 	if(eg == NULL)
 	{
-		printf("Event_Group_Set_Bits: Event group %d was not found!\n", e);
+		printf("Event_Group_Set_Bits: Event group %d was not found!\n", req_event_id);
 		return;
 	}
 	
-	eg->events |= bits_to_set;
+	eg->events |= req_bits_to_set;
 	
-	//printf("Set_Bits: ID: %d, Current events: %d\n", eg->id, eg->events);
+	/*Wake up any tasks waiting for this event group*/
 	
-	//Wake up any tasks waiting for this event group
+	#define ps_eventgroup_id	Process[i].request_args[0]
+	#define ps_bits_waiting		Process[i].request_args[1]
+	#define ps_wait_all_bits	Process[i].request_args[2]
+	
 	for(i=0; i<MAXTHREAD; i++)
 	{
 		//Find all tasks currently waiting for this event group
@@ -87,8 +93,6 @@ void Kernel_Event_Group_Set_Bits(EVENT_GROUP e, unsigned int bits_to_set)
 
 			/*if((current_events > 0 && !ps_wait_all_bits) || (current_events == ps_bits_waiting))
 				Process[i].state = READY;*/
-			
-			//printf("\t Task %d; current_event: %d; bits_waiting: %d\n\n", Process[i].pid, current_events, ps_bits_waiting);
 			
 			if(current_events > 0 && ps_wait_all_bits == 0)
 			{
@@ -105,62 +109,82 @@ void Kernel_Event_Group_Set_Bits(EVENT_GROUP e, unsigned int bits_to_set)
 			
 		}
 	}
+	
+	#undef req_event_id		
+	#undef req_bits_to_set	
+	#undef ps_eventgroup_id	
+	#undef ps_bits_waiting
+	#undef ps_wait_all_bits
 }
 
-void Kernel_Event_Group_Clear_Bits(EVENT_GROUP e, unsigned int bits_to_clear)
+void Kernel_Event_Group_Clear_Bits()
 {
-	EVENT_GROUP_TYPE *eg = findEventGroupByID(e);
+	//Request args for the kernel call
+	#define req_event_id		Current_Process->request_args[0]
+	#define req_bits_to_clear	Current_Process->request_args[1]
+	
+	EVENT_GROUP_TYPE *eg = findEventGroupByID(req_event_id);
 	
 	if(eg == NULL)
 	{
-		printf("Event_Group_Set_Bits: Event group %d was not found!\n", e);
+		printf("Event_Group_Set_Bits: Event group %d was not found!\n", req_event_id);
 		return;
 	}
 	
-	eg->events &= (~bits_to_clear);
+	eg->events &= (~req_bits_to_clear);
+	
+	#undef req_event_id
+	#undef req_bits_to_clear
 }
 
-void Kernel_Event_Group_Wait_Bits(EVENT_GROUP e, unsigned int bits_to_wait, unsigned int wait_all_bits, TICK timeout)
+void Kernel_Event_Group_Wait_Bits()
 {
-	EVENT_GROUP_TYPE *eg = findEventGroupByID(e);
+	//Request args for the kernel call
+	#define req_event_id		Current_Process->request_args[0]
+	#define req_bits_to_wait	Current_Process->request_args[1]
+	#define req_wait_all_bits	Current_Process->request_args[2]
+	
+	EVENT_GROUP_TYPE *eg = findEventGroupByID(req_event_id);
 	unsigned int current_events;
 	
 	if(eg == NULL)
 	{
-		printf("Event_Group_Set_Bits: Event group %d was not found!\n", e);
+		printf("Event_Group_Set_Bits: Event group %d was not found!\n", req_event_id);
 		return;
 	}
 	
-	current_events = eg->events & bits_to_wait;
+	current_events = eg->events & req_bits_to_wait;
 		
 	//No need to wait if some event bits are set, but we're not requiring to wait for all event bits to be set
-	if(current_events > 0 && !wait_all_bits)
-	{
-		//printf("Wait_Bits: SOME events are already ready for task %d!\n", Current_Process->pid);
+	if(current_events > 0 && !req_wait_all_bits)
 		return;
-	}
 	
 	//No need to wait If all event bits are already set
-	if(current_events == bits_to_wait)
-	{
-		//printf("Wait_Bits: ALL events are already ready for task %d!\n", Current_Process->pid);
+	if(current_events == req_bits_to_wait)
 		return;
-	}
 	
 	//If the event bits are not yet ready, put the process in WAIT_EVENTG state
-	//printf("Wait_Bits: Task %d is now in WAIT_EVENTG...\n", Current_Process->pid);
 	Current_Process->state = WAIT_EVENTG;
+	
+	#undef req_event_id
+	#undef req_bits_to_wait
+	#undef req_wait_all_bits
 }
 
-unsigned int Kernel_Event_Group_Get_Bits(EVENT_GROUP e)
+unsigned int Kernel_Event_Group_Get_Bits()
 {
-	EVENT_GROUP_TYPE *eg = findEventGroupByID(e);
+	//Request args for the kernel call
+	#define req_event_id		Current_Process->request_args[0]
+	
+	EVENT_GROUP_TYPE *eg = findEventGroupByID(req_event_id);
 	
 	if(eg == NULL)
 	{
-		printf("Event_Group_Set_Bits: Event group %d was not found!\n", e);
+		printf("Event_Group_Set_Bits: Event group %d was not found!\n", req_event_id);
 		return 0;
 	}
 	
 	return eg->events;
+	
+	#undef req_event_id
 }

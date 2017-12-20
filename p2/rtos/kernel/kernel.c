@@ -332,7 +332,7 @@ static void Kernel_Handle_Request()
 		switch(Current_Process->request)
 		{
 			case CREATE_T:
-			Kernel_Create_Task(Current_Process->code, Current_Process->pri, Current_Process->arg);
+			Kernel_Create_Task();	//Dispatch after?
 			break;
 			
 			case TERMINATE:
@@ -349,7 +349,7 @@ static void Kernel_Handle_Request()
 			break;
 			
 			case SLEEP:
-			Current_Process->state = SLEEPING;
+			Kernel_Sleep_Task();
 			Kernel_Dispatch_Next_Task();					
 			break;
 			
@@ -385,41 +385,39 @@ static void Kernel_Handle_Request()
 			break;
 			
 			case CREATE_SEM:
-			Kernel_Create_Semaphore(Current_Process->request_args[0], Current_Process->request_args[1]);
+			Kernel_Create_Semaphore();
 			break;
 			
 			case GIVE_SEM:
-			Kernel_Semaphore_Give(Current_Process->request_args[0], Current_Process->request_args[1]);
+			Kernel_Semaphore_Give();
 			break;
 			
 			case GET_SEM:
-			Kernel_Semaphore_Get(Current_Process->request_args[0], Current_Process->request_args[1]);
+			Kernel_Semaphore_Get();
 			if(Current_Process->state != RUNNING) 
 				Kernel_Dispatch_Next_Task();		//Switch task if the process is now waiting for the semaphore
 			break;
-			
 			
 			case CREATE_EG:
 			Kernel_Create_Event_Group();
 			break;
 			
 			case SET_EG_BITS:
-			Kernel_Event_Group_Set_Bits(Current_Process->request_args[0], Current_Process->request_args[1]);
-			//printf("SET_EG_BITS\n");
+			Kernel_Event_Group_Set_Bits();
 			break;
 			
 			case CLEAR_EG_BITS:
-			Kernel_Event_Group_Clear_Bits(Current_Process->request_args[0], Current_Process->request_args[1]);
+			Kernel_Event_Group_Clear_Bits();
 			break;
 			
 			case WAIT_EG:
-			Kernel_Event_Group_Wait_Bits(Current_Process->request_args[0], Current_Process->request_args[1], Current_Process->request_args[2], Current_Process->request_args[3]);
+			Kernel_Event_Group_Wait_Bits();
 			if(Current_Process->state != RUNNING)
 				Kernel_Dispatch_Next_Task();
 			break;
 			
 			case GET_EG_BITS:
-			Current_Process->request_ret = Kernel_Event_Group_Get_Bits(Current_Process->request_args[0]);
+			Current_Process->request_ret = Kernel_Event_Group_Get_Bits();
 			break;
 		   
 		   

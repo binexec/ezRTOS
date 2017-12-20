@@ -5,10 +5,12 @@
 #include "../hardware/cpuarch.h"
 
 
+PID Kernel_Create_Task(void);
+PID Kernel_Create_Task_Direct(voidfuncptr f, PRIORITY py, int arg);
 void Task_Reset(void);
-void Kernel_Create_Task(voidfuncptr f, PRIORITY py, int arg);
 void Kernel_Suspend_Task(void);
 void Kernel_Resume_Task(void); 
+void Kernel_Sleep_Task(void);
 void Kernel_Terminate_Task(void);
 
 

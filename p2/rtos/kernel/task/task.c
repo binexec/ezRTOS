@@ -19,8 +19,21 @@ void Task_Reset()
 /*                   TASK RELATED KERNEL FUNCTIONS                      */
 /************************************************************************/
 
-/* Handles all low level operations for creating a new task */
-void Kernel_Create_Task(voidfuncptr f, PRIORITY py, int arg)
+//For creating a new task dynamically when the kernel is already running
+PID Kernel_Create_Task()
+{
+	#define req_func_pointer	(voidfuncptr)Current_Process->request_args[0]
+	#define req_priority		Current_Process->request_args[1]
+	#define req_taskarg			Current_Process->request_args[2]
+	
+	return Kernel_Create_Task_Direct(req_func_pointer, req_priority, req_taskarg);
+	
+	#undef req_func_pointer
+	#undef req_priority
+	#undef req_taskarg
+}
+
+PID Kernel_Create_Task_Direct(voidfuncptr f, PRIORITY py, int arg)
 {
 	int x;
 	unsigned char *sp;
@@ -34,7 +47,7 @@ void Kernel_Create_Task(voidfuncptr f, PRIORITY py, int arg)
 		#endif
 		
 		err = MAX_PROCESS_ERR;
-		return;
+		return 0;
 	}
 
 	//Find a dead or empty PD slot to allocate our new task
@@ -66,6 +79,7 @@ void Kernel_Create_Task(voidfuncptr f, PRIORITY py, int arg)
 	
 	//No errors occured
 	err = NO_ERR;
+	return Task_Count;
 	
 }
 
@@ -153,7 +167,11 @@ void Kernel_Resume_Task()
 	
 }
 
-
+void Kernel_Sleep_Task(void)
+{
+	//Sleep ticks is already set by the OS call
+	Current_Process->state = SLEEPING;
+}
 
 void Kernel_Terminate_Task(void)
 {

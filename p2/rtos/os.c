@@ -42,17 +42,14 @@ PID Task_Create(voidfuncptr f, PRIORITY py, int arg)
    if (KernelActive) 
    {
      Disable_Interrupt();
-	 
-	 //Fill in the parameters for the new task into CP
-	 Current_Process->pri = py;
-	 Current_Process->arg = arg;
-     Current_Process->request = CREATE_T;
-     Current_Process->code = f;
-	 
-     Enter_Kernel();		//Interrupts are automatically reenabled once the kernel is exited
+	 Current_Process->request_args[0] = f;				//Will throw warning about converting from pointer to int; just ignore it
+	 Current_Process->request_args[1] = py;
+	 Current_Process->request_args[2] = arg;
+	 Current_Process->request = CREATE_T;
+     Enter_Kernel();									//Interrupts are automatically reenabled once the kernel is exited
    } 
    else 
-	   Kernel_Create_Task(f,py,arg);		//If kernel hasn't started yet, manually create the task
+	   Kernel_Create_Task_Direct(f,py,arg);				//If kernel hasn't started yet, manually create the task
    
    //Return zero as PID if the task creation process gave errors. Note that the smallest valid PID is 1
    if (err == MAX_PROCESS_ERR)
@@ -66,7 +63,6 @@ PID Task_Create(voidfuncptr f, PRIORITY py, int arg)
 }
 
 /* The calling task terminates itself. */
-/*TODO: CLEAN UP EVENTS AND MUTEXES*/
 void Task_Terminate()
 {
 	if(!KernelActive){
@@ -103,7 +99,6 @@ int Task_GetArg()
 //Calling task should not try and suspend itself?
 void Task_Suspend(voidfuncptr f)
 {
-	
 	if(!KernelActive){
 		err = KERNEL_INACTIVE_ERR;
 		return;
@@ -131,7 +126,6 @@ void Task_Resume(voidfuncptr f)
 /*Puts the calling task to sleep for AT LEAST t ticks.*/
 void Task_Sleep(TICK t)
 {
-	
 	if(!KernelActive){
 		err = KERNEL_INACTIVE_ERR;
 		return;
@@ -272,7 +266,7 @@ SEMAPHORE Semaphore_Init(int initial_count, unsigned int is_binary)
 		Enter_Kernel();
 	}
 	else
-		Kernel_Create_Semaphore(initial_count, is_binary);	//Call the kernel function directly if OS hasn't start yet
+		Kernel_Create_Semaphore_Direct(initial_count, is_binary);		//Call the kernel function directly if OS hasn't start yet
 		
 	//Return the created semaphore's ID, or 0 if failed
 	if(err != NO_ERR)
