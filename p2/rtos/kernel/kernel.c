@@ -18,13 +18,12 @@ volatile static unsigned int Ticks_Since_Last_Cswitch;
 #endif
 
 
-
 /*Variables accessible by OS*/
 volatile PD* Current_Process;					//Process descriptor for the last running process before entering the kernel
 volatile unsigned char *KernelSp;				//Pointer to the Kernel's own stack location.
 volatile unsigned char *CurrentSp;				//Pointer to the stack location of the current running task. Used for saving into PD during ctxswitch.						//The process descriptor of the currently RUNNING task. CP is used to pass information from OS calls to the kernel telling it what to do.
 volatile unsigned int KernelActive;				//Indicates if kernel has been initialzied by OS_Start().
-volatile ERROR_TYPE err;						//Error code for the previous kernel operation (if any)
+volatile ERROR_CODE err;						//Error code for the previous kernel operation (if any)
 
 
 extern volatile PD Process[MAXTHREAD];
@@ -71,7 +70,7 @@ void print_processes()
 /************************************************************************/
 
 /*Returns the PID associated with a function's memory address*/
-int findPIDByFuncPtr(voidfuncptr f)
+int findPIDByFuncPtr(taskfuncptr f)
 {
 	int i;
 	
@@ -122,6 +121,7 @@ void Kernel_Tick_ISR()
 static void Kernel_Tick_Handler()
 {
 	int i;
+	int remaining_ticks;
 	
 	//No new ticks has been issued yet, skipping...
 	if(Tick_Count == 0)
@@ -129,50 +129,37 @@ static void Kernel_Tick_Handler()
 	
 	for(i=0; i<MAXTHREAD; i++)
 	{
-		//Process any active tasks that are sleeping
-		if(Process[i].state == SLEEPING)
-		{
-			//If the current sleeping task's tick count expires, put it back into its READY state
-			Process[i].request_args[0] -= Tick_Count;
-			if(Process[i].request_args[0] <= 0)
-			{
-				Process[i].state = READY;
-				Process[i].request_args[0] = 0;
-			}
-		}
-		
-		//Process any SUSPENDED tasks that were previously sleeping
-		else if(Process[i].state == SUSPENDED && Process[i].last_state == SLEEPING)
-		{
-			//When task_resume is called again, the task will be back into its READY state instead if its sleep ticks expired.
-			Process[i].request_args[0] -= Tick_Count;
-			if(Process[i].request_args[0] <= 0)
-			{
-				Process[i].last_state = READY;
-				Process[i].request_args[0] = 0;
-			}
-		}
-		
-		//Process tasks waiting for event groups that has timeout specified
-		else if(Process[i].state == WAIT_EVENTG)
-		{
-			//Ignore tasks with a 0 tick counter. These tasks have no timeout
-			if (Process[i].request_args[3] == 0)
-				continue;
-				
-			else if (--Process[i].request_args[3] <= 0)
-			{
-				Process[i].state = READY;
-				Process[i].request_args[3] = 0;
-			}
-		}
-		
-		
 		//Increment tick count for starvation prevention
 		#ifdef PREVENT_STARVATION
-		else if(Process[i].state == READY)
+		if(Process[i].state == READY)
 			Process[i].starvation_ticks += Tick_Count;
 		#endif
+		
+		//Skip tasks that do not have any outstanding ticks remaining (or at all in the first place)
+		if(Process[i].request_timeout == 0)
+			continue;
+		
+		remaining_ticks = Process[i].request_timeout - Tick_Count;
+		if(remaining_ticks > 0)
+		{
+			Process[i].request_timeout = remaining_ticks;
+			continue;
+		}
+		
+		//Wake up the task once its timer has expired
+		Process[i].request_timeout = 0;
+			
+		if(Process[i].state == SLEEPING)		//Wake up sleeping tasks
+			Process[i].state = READY;
+				
+		else if(Process[i].state == SUSPENDED && Process[i].last_state == SLEEPING)		//Wake up SUSPENDED sleeping tasks
+			Process[i].last_state = READY;
+			
+		else	//Wake up any other tasks timing out from its request, and set its return value to 0 indicate a failure.
+		{
+			Process[i].state = READY;
+			Process[i].request_ret = 0;
+		}
 	}
 	Tick_Count = 0;
 }

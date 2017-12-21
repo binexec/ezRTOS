@@ -5,7 +5,7 @@
 
 
 
-void Kernel_Init_Task_Stack(unsigned char **sp_ptr, voidfuncptr f);
+void Kernel_Init_Task_Stack(unsigned char **sp_ptr, taskfuncptr f);
 
 
 

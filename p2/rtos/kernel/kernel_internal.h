@@ -13,8 +13,8 @@
 #define MAX_KERNEL_ARGS		5
 
   
-  //Definitions for potential errors the RTOS may come across
-  typedef enum error_codes
+ /*Definitions for potential errors the RTOS may come across*/
+  typedef enum 
   {
 	  NO_ERR  = 0,
 	  INVALID_ARG_ERR,
@@ -32,10 +32,10 @@
 	  MUTEX_NOT_FOUND_ERR,
 	  MAX_SEMAPHORE_ERR,
 	  SEMAPHORE_NOT_FOUND_ERR
-  } ERROR_TYPE;
+  } ERROR_CODE;
 
-  
-   typedef enum process_states
+  /*Definitions for all possible states a process can be in*/
+   typedef enum
    {
 	   DEAD = 0,
 	   READY,
@@ -46,53 +46,56 @@
 	   WAIT_EVENTG,
 	   WAIT_MUTEX,
 	   WAIT_SEMAPHORE
-   } PROCESS_STATES;
+   } PROCESS_STATE;
 
 
-   typedef enum kernel_request_type
+/*Definitions for all available kernel requests.*/
+/*The numerical value for each request is equivalent to its "kernel call code"*/
+   typedef enum 
    {
 	   NONE = 0,
-	   CREATE_T,							//Create a task
+	   CREATE_T,						//task
 	   YIELD,
 	   TERMINATE,
 	   SUSPEND,
 	   RESUME,
 	   SLEEP,
-	   CREATE_E,							//Initialize an event object
+	   CREATE_E,						//event
 	   WAIT_E,
 	   SIGNAL_E,
-	   CREATE_M,							//Initialize a mutex object
-	   LOCK_M,
-	   UNLOCK_M,
-	   CREATE_SEM,						//semaphores
-	   GIVE_SEM,
-	   GET_SEM,
 	   CREATE_EG,						//event groups
 	   SET_EG_BITS,
 	   CLEAR_EG_BITS,
 	   WAIT_EG,
-	   GET_EG_BITS
-   } KERNEL_REQUEST_TYPE;
+	   GET_EG_BITS,
+	   CREATE_M,						//mutex
+	   LOCK_M,
+	   UNLOCK_M,
+	   CREATE_SEM,						//semaphores
+	   GIVE_SEM,
+	   GET_SEM  
+   } KERNEL_REQUEST;
 
 
    /*Process descriptor for a task*/
    typedef struct ProcessDescriptor
    {
-	   PID pid;									//An unique process ID for this task.
+	   PID pid;										//An unique process ID for this task.
 	   PRIORITY pri;								//The priority of this task, from 0 (highest) to 10 (lowest).
-	   PROCESS_STATES state;						//What's the current state of this task?
-	   unsigned char *sp;							//stack pointer into the "workSpace".
+	   PROCESS_STATE state;							//What's the current state of this task?
 	   unsigned char workSpace[WORKSPACE];			//Data memory allocated to this process.
-	   voidfuncptr code;							//The function to be executed when this process is running.
-	   int arg;									//Initial argument for the task (if specified).
+	   unsigned char *sp;							//stack pointer into the "workSpace".
+	   taskfuncptr code;							//The function to be executed when this process is running.
+	   int arg;										//User specified arg for the task 
 	   
 	   /*Used to pass requests from task to kernel*/
-	   KERNEL_REQUEST_TYPE request;				//What the task want the kernel to do (when needed).
+	   KERNEL_REQUEST request;						//What the task want the kernel to do (when needed).
 	   int request_args[MAX_KERNEL_ARGS];			//What values are needed for the specified kernel request.
-	   int request_ret;							//Value returned by the kernel after handling the request
+	   int request_ret;								//Value returned by the kernel after handling the request
+	   TICK request_timeout;						
 	   
 	   /*Used for task suspension/resuming*/
-	   PROCESS_STATES last_state;					//What's the PREVIOUS state of this task? Used for task suspension/resume.
+	   PROCESS_STATE last_state;					//What's the PREVIOUS state of this task? Used for task suspension/resume.
 	   
 	   /*Used for other scheduling modes*/
 	   #ifdef PREVENT_STARVATION
@@ -104,8 +107,8 @@
 
 /*Kernel variables accessible by other kernel modules*/
 //extern volatile PD Process[MAXTHREAD];			//Contains the process descriptor for all tasks, regardless of their current state.
-extern volatile PD* Current_Process;					//Process descriptor for the last running process before entering the kernel
-extern volatile ERROR_TYPE err;						//Error code for the previous kernel operation (if any)
+extern volatile PD* Current_Process;				//Process descriptor for the last running process before entering the kernel
+extern volatile ERROR_CODE err;						//Error code for the previous kernel operation (if any)
 
 /*Shared functions*/
 PD* findProcessByPID(int pid);

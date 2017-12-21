@@ -36,7 +36,7 @@ int main()
 
 
 /* OS call to create a new task */
-PID Task_Create(voidfuncptr f, PRIORITY py, int arg)
+PID Task_Create(taskfuncptr f, PRIORITY py, int arg)
 {
    //Run the task creation through kernel if it's running already
    if (KernelActive) 
@@ -97,7 +97,7 @@ int Task_GetArg()
 }
 
 //Calling task should not try and suspend itself?
-void Task_Suspend(voidfuncptr f)
+void Task_Suspend(taskfuncptr f)
 {
 	if(!KernelActive){
 		err = KERNEL_INACTIVE_ERR;
@@ -110,7 +110,7 @@ void Task_Suspend(voidfuncptr f)
 	Enter_Kernel();
 }
 
-void Task_Resume(voidfuncptr f)
+void Task_Resume(taskfuncptr f)
 {
 	if(!KernelActive){
 		err = KERNEL_INACTIVE_ERR;
@@ -133,7 +133,7 @@ void Task_Sleep(TICK t)
 	
 	Disable_Interrupt();
 	Current_Process->request = SLEEP;
-	Current_Process->request_args[0] = t;
+	Current_Process->request_timeout = t;
 	Enter_Kernel();
 }
 
@@ -378,7 +378,7 @@ void Event_Group_Wait_Bits(EVENT_GROUP e, unsigned int bits_to_wait, unsigned in
 	Current_Process->request_args[0] = e;
 	Current_Process->request_args[1] = bits_to_wait;
 	Current_Process->request_args[2] = wait_all_bits;
-	Current_Process->request_args[3] = timeout;
+	Current_Process->request_timeout = timeout;
 	Enter_Kernel();
 }
 

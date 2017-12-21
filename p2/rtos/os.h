@@ -39,7 +39,7 @@ typedef unsigned int EVENT;
 typedef unsigned int EVENT_GROUP;
 typedef unsigned int TICK;
 
-typedef void (*voidfuncptr) (void);      /* pointer to void f(void), used to represent the main function for a RTOS task */
+typedef void (*taskfuncptr) (void);      /* pointer to void f(void), used to represent the main function for a RTOS task */
 
 #ifndef NULL
 #define NULL          0					/* undefined */
@@ -62,9 +62,9 @@ void OS_Abort(void);
 
 
 /*Task/Thread related functions*/
-PID  Task_Create(voidfuncptr f, PRIORITY py, int arg);
-void Task_Suspend(voidfuncptr f);		//Suspend/Resume tasks by the function name instead
-void Task_Resume(voidfuncptr f);
+PID  Task_Create(taskfuncptr f, PRIORITY py, int arg);
+void Task_Suspend(taskfuncptr f);		//Suspend/Resume tasks by the function name instead
+void Task_Resume(taskfuncptr f);
 void Task_Terminate(void);
 void Task_Yield(void);
 int  Task_GetArg(void);

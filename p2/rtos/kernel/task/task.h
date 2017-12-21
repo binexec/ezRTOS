@@ -6,7 +6,7 @@
 
 
 PID Kernel_Create_Task(void);
-PID Kernel_Create_Task_Direct(voidfuncptr f, PRIORITY py, int arg);
+PID Kernel_Create_Task_Direct(taskfuncptr f, PRIORITY py, int arg);
 void Task_Reset(void);
 void Kernel_Suspend_Task(void);
 void Kernel_Resume_Task(void); 

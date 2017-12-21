@@ -28,7 +28,7 @@ void Kernel_Start();
 
 
 /*Create kernel objects before */
-int findPIDByFuncPtr(voidfuncptr f);
+int findPIDByFuncPtr(taskfuncptr f);
 void print_processes();
 
 
@@ -43,7 +43,7 @@ extern volatile PD* Current_Process;
 extern volatile unsigned char *KernelSp;
 extern volatile unsigned char *CurrentSp;
 extern volatile unsigned int KernelActive;
-extern volatile ERROR_TYPE err;
+extern volatile ERROR_CODE err;
 extern volatile unsigned int Last_PID;
 
 

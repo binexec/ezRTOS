@@ -22,7 +22,7 @@ void Task_Reset()
 //For creating a new task dynamically when the kernel is already running
 PID Kernel_Create_Task()
 {
-	#define req_func_pointer	(voidfuncptr)Current_Process->request_args[0]
+	#define req_func_pointer	(taskfuncptr)Current_Process->request_args[0]
 	#define req_priority		Current_Process->request_args[1]
 	#define req_taskarg			Current_Process->request_args[2]
 	
@@ -33,7 +33,7 @@ PID Kernel_Create_Task()
 	#undef req_taskarg
 }
 
-PID Kernel_Create_Task_Direct(voidfuncptr f, PRIORITY py, int arg)
+PID Kernel_Create_Task_Direct(taskfuncptr f, PRIORITY py, int arg)
 {
 	int x;
 	unsigned char *sp;
