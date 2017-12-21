@@ -86,7 +86,7 @@ static void applyNewPriorityToWaitQueue(PID_Queue *q, PRIORITY pri)
 /*							MUTEX Operations		                    */
 /************************************************************************/
 
-void Kernel_Create_Mutex(void)
+MUTEX Kernel_Create_Mutex(void)
 {
 	int i;
 	
@@ -96,14 +96,17 @@ void Kernel_Create_Mutex(void)
 		#ifdef DEBUG
 		printf("Kernel_Create_Mutex: Failed to create Mutex. The system is at its max mutex threshold.\n");
 		#endif
+		
 		err = MAX_MUTEX_ERR;
-		return;
+		if(KernelActive)
+			Current_Process->request_ret = 0;
+		return 0;
 	}
 	
 	//Find an uninitialized Mutex slot
 	for(i=0; i<MAXMUTEX; i++)
-		if(Mutex[i].id == 0) break;
-	
+		if(Mutex[i].id == 0) 
+			break;
 	
 	Mutex[i].id = ++Last_MutexID;
 	Mutex[i].owner = 0;		
@@ -115,7 +118,11 @@ void Kernel_Create_Mutex(void)
 	#ifdef DEBUG
 	printf("Kernel_Create_Mutex: Created Mutex %d!\n", Last_MutexID);
 	#endif
-
+	
+	err = NO_ERR;
+	if(KernelActive)
+		Current_Process->request_ret = Mutex[i].id;
+	return Mutex[i].id;
 }
 
 

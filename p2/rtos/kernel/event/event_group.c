@@ -38,6 +38,13 @@ unsigned int Kernel_Create_Event_Group(void)
 	//Make sure we're not exceeding the max
 	if(Event_Group_Count >= MAXEVENTGROUP)
 	{
+		#ifdef DEBUG
+		printf("Task_Create: Failed to create task. The system is at its process threshold.\n");
+		#endif
+		
+		err = MAX_EVENTG_ERR;
+		if(KernelActive)
+			Current_Process->request_ret = 0;
 		return 0;
 	}
 	
@@ -50,7 +57,10 @@ unsigned int Kernel_Create_Event_Group(void)
 	Event_Group[i].id = ++Last_Event_Group_ID;
 	Event_Group[i].events = 0;
 	
-	return Last_Event_Group_ID;
+	err = NO_ERR;
+	if(KernelActive)
+		Current_Process->request_ret = Event_Group[i].id;
+	return Event_Group[i].id;
 }
 
 
@@ -69,6 +79,7 @@ void Kernel_Event_Group_Set_Bits()
 	if(eg == NULL)
 	{
 		printf("Event_Group_Set_Bits: Event group %d was not found!\n", req_event_id);
+		err = EVENTG_NOT_FOUND_ERR;
 		return;
 	}
 	
@@ -128,6 +139,7 @@ void Kernel_Event_Group_Clear_Bits()
 	if(eg == NULL)
 	{
 		printf("Event_Group_Set_Bits: Event group %d was not found!\n", req_event_id);
+		err = EVENTG_NOT_FOUND_ERR;
 		return;
 	}
 	
@@ -181,9 +193,11 @@ unsigned int Kernel_Event_Group_Get_Bits()
 	if(eg == NULL)
 	{
 		printf("Event_Group_Set_Bits: Event group %d was not found!\n", req_event_id);
+		err = EVENTG_NOT_FOUND_ERR;
 		return 0;
 	}
 	
+	Current_Process->request_ret = eg->events;
 	return eg->events;
 	
 	#undef req_event_id

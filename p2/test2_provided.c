@@ -189,9 +189,9 @@ void sem_task1()		//consumer
 {
 	while(1)
 	{
-		printf("GETTING 1...\n");
+		printf("GETTING 2...\n");
 		Semaphore_Get(s1, 2);
-		printf("GOT 1\n");
+		printf("GOT 2\n");
 		Task_Sleep(100);
 	}
 }
@@ -464,7 +464,7 @@ void test8()
 
 void a_main()
 {
-	int test_set = 8;				//Which set of tests to run?
+	int test_set = 3;				//Which set of tests to run?
 
 	OS_Init();
 	

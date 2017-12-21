@@ -43,16 +43,19 @@ PID Kernel_Create_Task_Direct(taskfuncptr f, PRIORITY py, int arg)
 	if (Task_Count == MAXTHREAD)
 	{
 		#ifdef DEBUG
-		printf("Task_Create: Failed to create task. The system is at its process threshold.\n");
+		printf("Event_Group_Init: Failed to create event group. There are no free slots remaining\n");
 		#endif
 		
 		err = MAX_PROCESS_ERR;
+		if(KernelActive)
+			Current_Process->request_ret = 0;
 		return 0;
 	}
 
 	//Find a dead or empty PD slot to allocate our new task
 	for (x = 0; x < MAXTHREAD; x++)
-		if(Process[x].state == DEAD) break;
+		if(Process[x].state == DEAD) 
+			break;
 	
 	++Task_Count;
 	p = &(Process[x]);
@@ -77,10 +80,10 @@ PID Kernel_Create_Task_Direct(taskfuncptr f, PRIORITY py, int arg)
 	p->starvation_ticks = 0;
 	#endif
 	
-	//No errors occured
 	err = NO_ERR;
-	return Task_Count;
-	
+	if(KernelActive)
+		Current_Process->request_ret = p->pid;
+	return p->pid;
 }
 
 /*TODO: Check for mutex ownership. If PID owns any mutex, ignore this request*/

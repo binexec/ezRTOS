@@ -31,21 +31,8 @@ void Kernel_Start();
 int findPIDByFuncPtr(taskfuncptr f);
 void print_processes();
 
-
 /*Hardware Related*/
 void Kernel_Tick_ISR();
-
-
-
-
-/*Kernel variables accessible by the OS*/
-extern volatile PD* Current_Process;
-extern volatile unsigned char *KernelSp;
-extern volatile unsigned char *CurrentSp;
-extern volatile unsigned int KernelActive;
-extern volatile ERROR_CODE err;
-extern volatile unsigned int Last_PID;
-
 
 
 

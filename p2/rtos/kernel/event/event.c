@@ -70,7 +70,7 @@ int getEventCount(EVENT e)
 /*                  EVENT RELATED KERNEL FUNCTIONS                      */
 /************************************************************************/
 
-void Kernel_Create_Event(void)
+EVENT Kernel_Create_Event(void)
 {
 	int i;
 	
@@ -80,24 +80,32 @@ void Kernel_Create_Event(void)
 		#ifdef DEBUG
 		printf("Event_Init: Failed to create Event. The system is at its max event threshold.\n");
 		#endif
+		
 		err = MAX_EVENT_ERR;
-		return;
+		if(KernelActive)
+			Current_Process->request_ret = 0;
+		return 0;
 	}
 	
 	//Find an uninitialized Event slot
 	for(i=0; i<MAXEVENT; i++)
-	if(Event[i].id == 0) break;
+		if(Event[i].id == 0) 
+			break;
 	
 	//Assign a new unique ID to the event. Note that the smallest valid Event ID is 1.
 	Event[i].id = ++Last_EventID;
 	Event[i].owner = 0;
 	++Event_Count;
-	err = NO_ERR;
+	
 	
 	#ifdef DEBUG
 	printf("Event_Init: Created Event %d!\n", Last_EventID);
 	#endif
 	
+	err = NO_ERR;
+	if(KernelActive)	
+		Current_Process->request_ret = Event[i].id;
+	return Event[i].id;
 }
 
 void Kernel_Wait_Event(void)

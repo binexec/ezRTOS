@@ -19,7 +19,7 @@ extern volatile unsigned int Last_EventID;
 
 
 void Event_Reset();
-void Kernel_Create_Event(void);
+EVENT Kernel_Create_Event(void);
 void Kernel_Wait_Event(void);
 void Kernel_Signal_Event(void);
 EVENT_TYPE* findEventByEventID(EVENT e);

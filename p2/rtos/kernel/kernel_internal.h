@@ -31,7 +31,9 @@
 	  MAX_MUTEX_ERR,
 	  MUTEX_NOT_FOUND_ERR,
 	  MAX_SEMAPHORE_ERR,
-	  SEMAPHORE_NOT_FOUND_ERR
+	  SEMAPHORE_NOT_FOUND_ERR,
+	  MAX_EVENTG_ERR,
+	  EVENTG_NOT_FOUND_ERR
   } ERROR_CODE;
 
   /*Definitions for all possible states a process can be in*/
@@ -106,9 +108,11 @@
 
 
 /*Kernel variables accessible by other kernel modules*/
-//extern volatile PD Process[MAXTHREAD];			//Contains the process descriptor for all tasks, regardless of their current state.
-extern volatile PD* Current_Process;				//Process descriptor for the last running process before entering the kernel
-extern volatile ERROR_CODE err;						//Error code for the previous kernel operation (if any)
+extern volatile PD* Current_Process;
+extern volatile unsigned int KernelActive;
+extern volatile ERROR_CODE err;
+extern volatile unsigned int Last_PID;
+
 
 /*Shared functions*/
 PD* findProcessByPID(int pid);

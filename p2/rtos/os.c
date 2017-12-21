@@ -38,6 +38,8 @@ int main()
 /* OS call to create a new task */
 PID Task_Create(taskfuncptr f, PRIORITY py, int arg)
 {
+   PID retval;
+   
    //Run the task creation through kernel if it's running already
    if (KernelActive) 
    {
@@ -47,19 +49,22 @@ PID Task_Create(taskfuncptr f, PRIORITY py, int arg)
 	 Current_Process->request_args[2] = arg;
 	 Current_Process->request = CREATE_T;
      Enter_Kernel();									//Interrupts are automatically reenabled once the kernel is exited
+	 
+	 //Retrieve the return value once the kernel exits
+	 retval = Current_Process->request_ret;
    } 
    else 
-	   Kernel_Create_Task_Direct(f,py,arg);				//If kernel hasn't started yet, manually create the task
+	  retval = Kernel_Create_Task_Direct(f,py,arg);				//If kernel hasn't started yet, manually create the task
    
    //Return zero as PID if the task creation process gave errors. Note that the smallest valid PID is 1
    if (err == MAX_PROCESS_ERR)
 		return 0;
    
    #ifdef DEBUG
-	printf("Created PID: %d\n", Last_PID);
+	printf("Created PID: %d\n", retval);
    #endif
    
-   return Last_PID;
+   return retval;
 }
 
 /* The calling task terminates itself. */
@@ -142,19 +147,21 @@ void Task_Sleep(TICK t)
 /*						Events related API			                    */
 /************************************************************************/
 
-
 /*Initialize an event object*/
 EVENT Event_Init(void)
 {
+	EVENT retval;
+	
 	if(KernelActive)
 	{
 		Disable_Interrupt();
 		Current_Process->request = CREATE_E;
 		Enter_Kernel();
+		
+		retval = Current_Process->request_ret;
 	}
 	else
-		Kernel_Create_Event();	//Call the kernel function directly if kernel has not started yet.
-	
+		retval = Kernel_Create_Event();		//Call the kernel function directly if kernel has not started yet.	
 	
 	//Return zero as Event ID if the event creation process gave errors. Note that the smallest valid event ID is 1
 	if (err == MAX_EVENT_ERR)
@@ -164,7 +171,7 @@ EVENT Event_Init(void)
 	printf("Created Event: %d\n", Last_EventID);
 	#endif
 	
-	return Last_EventID;
+	return retval;
 }
 
 void Event_Wait(EVENT e)
@@ -202,17 +209,19 @@ void Event_Signal(EVENT e)
 
 MUTEX Mutex_Init(void)
 {
+	MUTEX retval;
 	
 	if(KernelActive)
 	{
 		Disable_Interrupt();
 		Current_Process->request = CREATE_M;
 		Enter_Kernel();
+		
+		retval = Current_Process->request_ret;
 	}
 	else
-		Kernel_Create_Mutex();	//Call the kernel function directly if OS hasn't start yet
-	
-	
+		retval = Kernel_Create_Mutex();	//Call the kernel function directly if OS hasn't start yet
+		
 	//Return zero as Mutex ID if the mutex creation process gave errors. Note that the smallest valid mutex ID is 1
 	if (err == MAX_MUTEX_ERR)
 	return 0;
@@ -221,12 +230,11 @@ MUTEX Mutex_Init(void)
 	printf("Created Mutex: %d\n", Last_MutexID);
 	#endif
 	
-	return Last_MutexID;
+	return retval;
 }
 
 void Mutex_Lock(MUTEX m)
 {
-	
 	if(!KernelActive){
 		err = KERNEL_INACTIVE_ERR;
 		return;
@@ -257,6 +265,8 @@ void Mutex_Unlock(MUTEX m)
 
 SEMAPHORE Semaphore_Init(int initial_count, unsigned int is_binary)
 {
+	SEMAPHORE retval;
+	
 	if(KernelActive)
 	{
 		Disable_Interrupt();
@@ -264,9 +274,11 @@ SEMAPHORE Semaphore_Init(int initial_count, unsigned int is_binary)
 		Current_Process->request_args[0] = initial_count;
 		Current_Process->request_args[1] = is_binary;
 		Enter_Kernel();
+		
+		retval = Current_Process->request_ret;
 	}
 	else
-		Kernel_Create_Semaphore_Direct(initial_count, is_binary);		//Call the kernel function directly if OS hasn't start yet
+		retval = Kernel_Create_Semaphore_Direct(initial_count, is_binary);		//Call the kernel function directly if OS hasn't start yet
 		
 	//Return the created semaphore's ID, or 0 if failed
 	if(err != NO_ERR)
@@ -276,9 +288,7 @@ SEMAPHORE Semaphore_Init(int initial_count, unsigned int is_binary)
 	printf("Created Semaphore: %d\n", Last_SemaphoreID);
 	#endif
 	
-	return Last_SemaphoreID;
-	
-	
+	return retval;
 }
 
 void Semaphore_Give(SEMAPHORE s, unsigned int amount)
@@ -293,7 +303,6 @@ void Semaphore_Give(SEMAPHORE s, unsigned int amount)
 	Current_Process->request_args[0] = s;
 	Current_Process->request_args[1] = amount;
 	Enter_Kernel();
-	
 }
 
 void Semaphore_Get(SEMAPHORE s, unsigned int amount)
@@ -317,14 +326,18 @@ void Semaphore_Get(SEMAPHORE s, unsigned int amount)
 
 EVENT_GROUP Event_Group_Init()
 {
+	EVENT_GROUP retval;
+	
 	if(KernelActive)
 	{
 		Disable_Interrupt();
 		Current_Process->request = CREATE_EG;
 		Enter_Kernel();
+		
+		retval = Current_Process->request_ret;
 	}
 	else
-	Kernel_Create_Event_Group();	//Call the kernel function directly if kernel has not started yet.
+		retval = Kernel_Create_Event_Group();	//Call the kernel function directly if kernel has not started yet.
 	
 	
 	//Return zero as Event ID if the event creation process gave errors. Note that the smallest valid event ID is 1
@@ -335,7 +348,7 @@ EVENT_GROUP Event_Group_Init()
 	printf("Created Event Group: %d\n", Last_Event_Group_ID);
 	#endif
 	
-	return Last_Event_Group_ID;
+	return retval;
 }
 
 void Event_Group_Set_Bits(EVENT_GROUP e, unsigned int bits_to_set)

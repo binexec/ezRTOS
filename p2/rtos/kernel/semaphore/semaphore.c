@@ -58,7 +58,10 @@ SEMAPHORE Kernel_Create_Semaphore_Direct(int initial_count, unsigned int is_bina
 		#ifdef DEBUG
 		printf("Kernel_Create_Semaphore: Failed to create Semaphore. The system is at its max semaphore threshold.\n");
 		#endif
+		
 		err = MAX_SEMAPHORE_ERR;
+		if(KernelActive)
+			Current_Process->request_ret = 0;
 		return 0;
 	}
 	
@@ -66,7 +69,7 @@ SEMAPHORE Kernel_Create_Semaphore_Direct(int initial_count, unsigned int is_bina
 	for(i=0; i<MAXSEMAPHORE; i++)
 	{
 		if (Semaphore[i].id == 0)
-		break;
+			break;
 	}
 	
 	//Creating a binary semaphore
@@ -74,9 +77,9 @@ SEMAPHORE Kernel_Create_Semaphore_Direct(int initial_count, unsigned int is_bina
 	{
 		//Make sure initial_count is either a 1 or 0 for a binary semaphore
 		if(initial_count >= 1)
-		Semaphore[i].count = 1;
+			Semaphore[i].count = 1;
 		else
-		Semaphore[i].count = 0;
+			Semaphore[i].count = 0;
 		
 		Semaphore[i].is_binary = 1;
 	}
@@ -91,6 +94,9 @@ SEMAPHORE Kernel_Create_Semaphore_Direct(int initial_count, unsigned int is_bina
 	Semaphore[i].wait_queue = new_queue();
 	++Semaphore_Count;
 	
+	err = NO_ERR;
+	if(KernelActive)
+		Current_Process->request_ret = Semaphore[i].id;
 	return Semaphore[i].id;
 }
 

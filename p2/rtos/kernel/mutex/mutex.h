@@ -24,7 +24,7 @@ extern volatile unsigned int Last_MutexID;
 
 /*Accessible by OS*/
 MUTEX_TYPE* findMutexByMutexID(MUTEX m);
-void Kernel_Create_Mutex(void);
+MUTEX Kernel_Create_Mutex(void);
 
 /*Accessible within kernel only*/
 void Mutex_Reset(void);

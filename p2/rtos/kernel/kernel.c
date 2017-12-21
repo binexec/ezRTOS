@@ -148,11 +148,10 @@ static void Kernel_Tick_Handler()
 		
 		//Wake up the task once its timer has expired
 		Process[i].request_timeout = 0;
-			
 		if(Process[i].state == SLEEPING)		//Wake up sleeping tasks
 			Process[i].state = READY;
 				
-		else if(Process[i].state == SUSPENDED && Process[i].last_state == SLEEPING)		//Wake up SUSPENDED sleeping tasks
+		else if(Process[i].state == SUSPENDED && Process[i].last_state == SLEEPING)		//Wake up SUSPENDED sleeping tasks (should we do this for other suspended states too?)
 			Process[i].last_state = READY;
 			
 		else	//Wake up any other tasks timing out from its request, and set its return value to 0 indicate a failure.
