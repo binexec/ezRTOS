@@ -157,7 +157,6 @@ void Kernel_Lock_Mutex(void)
 	}
 		
 	//If I'm not the owner (mutex already locked): Add the current process to the wait queue
-	Current_Process->state = WAIT_MUTEX;
 	enqueue(&m->wait_queue, Current_Process->pid);
 	enqueue(&m->orig_priority, Current_Process->pri);
 	
@@ -169,6 +168,9 @@ void Kernel_Lock_Mutex(void)
 	else if(Current_Process->pri < m->highest_priority)
 		m->highest_priority = Current_Process->pri;	
 	
+	//Put myself to the wait state
+	Current_Process->state = WAIT_MUTEX;
+	Kernel_Request_Cswitch = 1;
 }
 
 
@@ -197,8 +199,7 @@ static void Kernel_Lock_Mutex_From_Queue(MUTEX_TYPE *m)
 	
 	//Tell the kernel to switch to another task if there are others waiting on this mutex
 	Current_Process->state = READY;
-	Current_Process->request = YIELD;
-	
+	Kernel_Request_Cswitch = 1;
 }
 
 

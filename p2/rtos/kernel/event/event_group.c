@@ -84,8 +84,11 @@ void Kernel_Event_Group_Set_Bits()
 	}
 	
 	eg->events |= req_bits_to_set;
-	
-	/*Wake up any tasks waiting for this event group*/
+
+	/* Wake up any process that's currently waiting for this event group if:
+			-some of its events are ready, and it doesn't require to wait for all to be ready 
+			-OR all of its events being waited on are ready 
+	*/
 	
 	#define ps_eventgroup_id	Process[i].request_args[0]
 	#define ps_bits_waiting		Process[i].request_args[1]
@@ -93,31 +96,12 @@ void Kernel_Event_Group_Set_Bits()
 	
 	for(i=0; i<MAXTHREAD; i++)
 	{
-		//Find all tasks currently waiting for this event group
 		if(Process[i].state == WAIT_EVENTG && ps_eventgroup_id == eg->id)						
 		{
 			current_events = ps_bits_waiting & eg->events;
 			
-			/* Wake the process up if:
-			*	-some of its events are ready, and it doesn't require to wait for all to be ready 
-			*	-OR all of its events being waited on are ready */
-
-			/*if((current_events > 0 && !ps_wait_all_bits) || (current_events == ps_bits_waiting))
-				Process[i].state = READY;*/
-			
-			if(current_events > 0 && ps_wait_all_bits == 0)
-			{
-				//printf("Set_Bits: SOME events are ready for task %d!\n", Process[i].pid);
+			if((current_events > 0 && !ps_wait_all_bits) || (current_events == ps_bits_waiting))
 				Process[i].state = READY;
-				continue;
-			}
-				
-			if(current_events == ps_bits_waiting)
-			{
-				//printf("Set_Bits: ALL events are ready for task %d!\n", Process[i].pid);
-				Process[i].state = READY;
-			}
-			
 		}
 	}
 	
@@ -177,6 +161,7 @@ void Kernel_Event_Group_Wait_Bits()
 	
 	//If the event bits are not yet ready, put the process in WAIT_EVENTG state
 	Current_Process->state = WAIT_EVENTG;
+	Kernel_Request_Cswitch = 1;
 	
 	#undef req_event_id
 	#undef req_bits_to_wait

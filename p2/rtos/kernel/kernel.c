@@ -25,6 +25,8 @@ volatile unsigned char *CurrentSp;				//Pointer to the stack location of the cur
 volatile unsigned int KernelActive;				//Indicates if kernel has been initialzied by OS_Start().
 volatile ERROR_CODE err;						//Error code for the previous kernel operation (if any)
 
+volatile unsigned int Kernel_Request_Cswitch;			
+
 
 extern volatile PD Process[MAXTHREAD];
 
@@ -65,11 +67,7 @@ void print_processes()
 	printf("\n");
 }
 
-/************************************************************************/
-/*				   		       OS HELPERS                               */
-/************************************************************************/
-
-/*Returns the PID associated with a function's memory address*/
+/*Returns the PID associated with a function's memory address. Used by the OS*/
 int findPIDByFuncPtr(taskfuncptr f)
 {
 	int i;
@@ -84,8 +82,10 @@ int findPIDByFuncPtr(taskfuncptr f)
 	return -1;
 }
 
+
+
 /************************************************************************/
-/*                  HANDLING SLEEP TICKS								 */
+/*                  KERNEL TIMER TICK HANDLERS							*/
 /************************************************************************/
 
 static void Kernel_Dispatch_Next_Task();
@@ -164,6 +164,7 @@ static void Kernel_Tick_Handler()
 }
 
 
+
 /************************************************************************/
 /*                     KERNEL SCHEDULING FUNCTIONS                      */
 /************************************************************************/
@@ -192,6 +193,7 @@ static int Kernel_Select_Next_Task()
 			}
 			
 			//If a READY task is found to be starving, select it immediately regardless of its priority
+			//TODO: Find the task that has been starved the most, rather than the first?
 			#ifdef PREVENT_STARVATION
 			else if(Process[j].starvation_ticks >= STARVATION_MAX)
 			{
@@ -277,6 +279,20 @@ static void Kernel_Dispatch_Next_Task()
 
 
 
+/************************************************************************/
+/*						KERNEL REQUEST HANDLER                          */
+/************************************************************************/
+
+
+//What happens when an invalid request was made?
+static void Kernel_Invalid_Request()
+{
+	#ifdef DEBUG
+	printf("***INVALID KERNEL REQUEST!***\n");
+	#endif
+	
+	err = INVALID_KERNET_REQUEST_ERR;
+}
 
 
 /**
@@ -287,6 +303,7 @@ static void Kernel_Dispatch_Next_Task()
   *
   * This is the main loop of our kernel, called by OS_Start().
   */
+
 static void Kernel_Handle_Request() 
 {
 	Kernel_Dispatch_Next_Task();	//Select an initial task to run
@@ -315,15 +332,15 @@ static void Kernel_Handle_Request()
 		//Check if any timer ticks came in
 		Kernel_Tick_Handler();
 
+		//Because each branch only calls a function, this switch statement should hopefully be converted to a jump table by the compiler
 		switch(Current_Process->request)
 		{
 			case CREATE_T:
-			Kernel_Create_Task();	//Dispatch after?
+			Kernel_Create_Task();
 			break;
 			
 			case TERMINATE:
 			Kernel_Terminate_Task();
-			Kernel_Dispatch_Next_Task();					//Dispatch is only needed if the syscall requires running a different task  after it's done
 			break;
 		   
 			case SUSPEND:
@@ -335,8 +352,7 @@ static void Kernel_Handle_Request()
 			break;
 			
 			case SLEEP:
-			Kernel_Sleep_Task();
-			Kernel_Dispatch_Next_Task();					
+			Kernel_Sleep_Task();					
 			break;
 			
 			case CREATE_E:
@@ -345,13 +361,10 @@ static void Kernel_Handle_Request()
 			
 			case WAIT_E:
 			Kernel_Wait_Event();	
-			if(Current_Process->state != RUNNING) 
-				Kernel_Dispatch_Next_Task();	//Don't dispatch to a different task if the event is already signaled
 			break;
 			
 			case SIGNAL_E:
 			Kernel_Signal_Event();
-			Kernel_Dispatch_Next_Task();
 			break;
 			
 			case CREATE_M:
@@ -360,14 +373,10 @@ static void Kernel_Handle_Request()
 			
 			case LOCK_M:
 			Kernel_Lock_Mutex();
-			if(Current_Process->state != RUNNING)
-				Kernel_Dispatch_Next_Task();		//Task is now waiting for mutex lock
 			break;
 			
 			case UNLOCK_M:
 			Kernel_Unlock_Mutex();
-			if(Current_Process->request == YIELD)		//There are others waiting on the same mutex as well
-					Kernel_Dispatch_Next_Task();
 			break;
 			
 			case CREATE_SEM:
@@ -380,8 +389,6 @@ static void Kernel_Handle_Request()
 			
 			case GET_SEM:
 			Kernel_Semaphore_Get();
-			if(Current_Process->state != RUNNING) 
-				Kernel_Dispatch_Next_Task();		//Switch task if the process is now waiting for the semaphore
 			break;
 			
 			case CREATE_EG:
@@ -398,35 +405,34 @@ static void Kernel_Handle_Request()
 			
 			case WAIT_EG:
 			Kernel_Event_Group_Wait_Bits();
-			if(Current_Process->state != RUNNING)
-				Kernel_Dispatch_Next_Task();
 			break;
 			
 			case GET_EG_BITS:
-			Current_Process->request_ret = Kernel_Event_Group_Get_Bits();
+			Kernel_Event_Group_Get_Bits();
 			break;
 		   
-		   
-		   
 			case YIELD:
-			case NONE:					// NONE could be caused by a timer interrupt
-			//Current_Process->state = READY;
+			case NONE:							// NONE could be caused by a timer interrupt
 			Kernel_Dispatch_Next_Task();
 			break;
        
-			//Invalid request code, just ignore
-			default:
-				err = INVALID_KERNET_REQUEST_ERR;
-				printf("***INVALID KERNEL REQUEST!***\n");
+			default:							//Invalid request code, just ignore
+			Kernel_Invalid_Request();
 			break;
        }
 	   
+		//Switch to a new task if the completed kernel request requires it
+		if(Kernel_Request_Cswitch)
+		{
+			Kernel_Dispatch_Next_Task();
+			Kernel_Request_Cswitch = 0;
+		}
     } 
 }
 
 	
 /************************************************************************/
-/* KERNEL BOOT                                                          */
+/*							KERNEL BOOT									*/
 /************************************************************************/
 
 /*This function initializes the RTOS and must be called before any othersystem calls.*/
@@ -435,7 +441,7 @@ void Kernel_Reset()
 	KernelActive = 0;
 	Tick_Count = 0;
 	Last_Dispatched = 0;
-	Last_PID = 0;
+	Kernel_Request_Cswitch = 0;
 	
 	#ifdef PREEMPTIVE_CSWITCH
 	Preemptive_Cswitch_Allowed = 1;

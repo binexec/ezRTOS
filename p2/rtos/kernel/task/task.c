@@ -9,6 +9,7 @@ volatile unsigned int Last_PID;					//Last (also highest) PID value created so f
 void Task_Reset()
 {
 	Task_Count = 0;
+	Last_PID = 0;
 
 	//Clear and initialize the memory used for tasks
 	memset(Process, 0, MAXTHREAD*sizeof(PD));
@@ -174,10 +175,12 @@ void Kernel_Sleep_Task(void)
 {
 	//Sleep ticks is already set by the OS call
 	Current_Process->state = SLEEPING;
+	Kernel_Request_Cswitch = 1;
 }
 
 void Kernel_Terminate_Task(void)
 {
 	Current_Process->state = DEAD;			//Mark the task as DEAD so its resources will be recycled later when new tasks are created
 	--Task_Count;
+	Kernel_Request_Cswitch = 1;
 }

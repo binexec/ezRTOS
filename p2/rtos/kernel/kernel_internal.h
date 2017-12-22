@@ -110,8 +110,8 @@
 /*Kernel variables accessible by other kernel modules*/
 extern volatile PD* Current_Process;
 extern volatile unsigned int KernelActive;
+extern volatile unsigned int Kernel_Request_Cswitch;	
 extern volatile ERROR_CODE err;
-extern volatile unsigned int Last_PID;
 
 
 /*Shared functions*/

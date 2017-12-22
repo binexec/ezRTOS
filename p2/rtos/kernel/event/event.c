@@ -19,7 +19,6 @@ void Event_Reset()
 	for (x = 0; x < MAXEVENT; x++) {
 		Event[x].id = 0;
 	}
-	
 }
 
 
@@ -143,9 +142,9 @@ void Kernel_Wait_Event(void)
 	//Set the owner of the requested event to the current task and put it into the WAIT EVENT state
 	e->owner = Current_Process->pid;
 	Current_Process->state = WAIT_EVENT;
+	Kernel_Request_Cswitch = 1;
+	
 	err = NO_ERR;
-	
-	
 }
 
 void Kernel_Signal_Event(void)
@@ -165,7 +164,7 @@ void Kernel_Signal_Event(void)
 	if(MAX_EVENT_SIG_MISS == 0 || e->count < MAX_EVENT_SIG_MISS)
 	e->count++;
 	
-	//If the event is unowned, return
+	//If the event is unowned, no need to wake anyone up
 	if(e->owner == 0)
 	{
 		#ifdef DEBUG
@@ -175,26 +174,21 @@ void Kernel_Signal_Event(void)
 		return;
 	}
 	
-	//Fetch the owner's PD and ensure it's still valid
+	//Wake up the owner of the event by setting its state to READY if it's active. The event is "consumed"
 	e_owner = findProcessByPID(e->owner);
-	if(e_owner == NULL)
+	if(e_owner->state != WAIT_EVENT)
 	{
 		#ifdef DEBUG
-		printf("Kernel_Signal_Event: Event owner's PID not found in global process list!\n");
+		printf("Kernel_Signal_Event: Event owner is not in WAIT_EVENT state!\n");
 		#endif
-		err = PID_NOT_FOUND_ERR;
 		return;
 	}
 	
-	//Wake up the owner of the event by setting its state to READY if it's active. The event is "consumed"
-	if(e_owner->state == WAIT_EVENT)
-	{
-		e->owner = 0;
-		e->count = 0;
-		e->id = 0;
-		--Event_Count;
-		e_owner->state = READY;
-	}
+	e->owner = 0;
+	e->count = 0;
+	e->id = 0;
+	--Event_Count;
 	
-	
+	e_owner->state = READY;
+	Kernel_Request_Cswitch = 1;
 }

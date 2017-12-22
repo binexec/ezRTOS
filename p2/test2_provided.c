@@ -89,40 +89,36 @@ void test0()
 
 void event_wait_test()
 {
-
 	//Test normal signaling
 	e1 = Event_Init();
-	printf("Waiting for event %d...\n", e1);
+	printf("Waiting for event e1...\n");
 	Event_Wait(e1);
-	printf("Signal for event %d received! Total events: %d\n\n\n", e1, getEventCount(e1));
+	printf("Signal for event e1 received!\n");
+	
 	e1 = Event_Init();
 	Task_Sleep(100);
-	//Task_Yield();
 	
 	//Test pre signaling
-	printf("Waiting for event %d...\n", e1);
+	printf("Waiting for event e1...\n");
 	Event_Wait(e1);
-	printf("Signal for event %d received! Total events: %d\n", e1, getEventCount(e1));
+	printf("Signal for event e1 received!\n");
 	Task_Yield();
 }
 
 void event_signal_test()
 {
-	printf("Signalling event %d...\n", e1);
+	printf("Signaling event e1...\n");
 	Event_Signal(e1);
-	printf("SIGNALED!\n");
 	Task_Yield();
 	
-	printf("Signalling event %d...\n", e1);
+	printf("Signaling event e1 twice...\n");
 	Event_Signal(e1);
 	Event_Signal(e1);
-	printf("SIGNALED!\n");
 	Task_Yield();
 }
 
 void test1()
 {
-	//These tasks tests events
 	Task_Create(event_wait_test, 4, 0);
 	Task_Create(event_signal_test, 5, 0);
 }
@@ -415,7 +411,7 @@ void egt2()
 {
 	printf("T2 waiting for event 3, 6...\n");
 	Event_Group_Wait_Bits(eg1, (1<<3) | (1<<6), 1, 0);
-	printf("T2 got bit 3 and 6!\n");
+	printf("T2 got bit 3 AND 6!\n");
 	
 	//Task_Terminate();
 	
@@ -464,7 +460,7 @@ void test8()
 
 void a_main()
 {
-	int test_set = 3;				//Which set of tests to run?
+	int test_set = 8;				//Which set of tests to run?
 
 	OS_Init();
 	

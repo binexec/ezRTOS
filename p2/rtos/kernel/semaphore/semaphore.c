@@ -122,35 +122,27 @@ void Kernel_Semaphore_Get()
 		err = SEMAPHORE_NOT_FOUND_ERR;
 		return;
 	}
-	
 	sem = &Semaphore[idx];
 	
 	//If it's a binary semaphore, do not allow more than 1 counts to be taken
 	if(sem->is_binary)
 	{
 		if(req_amount > 1)
-		{
 			req_amount = 1;
-			Current_Process->request_args[1] = 1;
-		}
-		else if (req_amount > 0)
-			
-		{
+						
+		else if(req_amount < 0)	
 			req_amount = 0;
-			Current_Process->request_args[1] = 0;
-		}
 	}	
-	
+
+	//Are there enough counts in the semaphore to handle this request? 
 	has_enough = sem->count - req_amount;
 	
-	//Are there enough counts in the semaphore to handle this request?
-	if(has_enough < 0)				//Putting "sem->count - amount" directly into the if statement doesn't work for some reason
+	//If not, add the process to the semaphore's waiting queue, and put the task into the WAIT_SEMAPHORE state
+	if(has_enough < 0)
 	{
-		//Add this process to the semaphore's wait queue
 		enqueue(&sem->wait_queue, Current_Process->pid);
-		
-		//Tell the process to wait
 		Current_Process->state = WAIT_SEMAPHORE;
+		Kernel_Request_Cswitch = 1;
 		return;
 	}
 	
@@ -163,13 +155,12 @@ void Kernel_Semaphore_Get()
 static inline void Kernel_Semaphore_Get_From_Queue(SEMAPHORE_TYPE *sem, unsigned int amount)
 {
 	PD *head = findProcessByPID(queue_peek(&sem->wait_queue));	
-
+	
 	#define head_req_amount		head->request_args[1]
 	
 	//See if the semaphore has enough counts to fulfill the amount wanted by the head(s) of the wait queue
 	while(sem->count - head_req_amount >= 0)
 	{
-		
 		if(head->state != WAIT_SEMAPHORE)
 		{
 			#ifdef DEBUG
