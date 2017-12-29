@@ -16,9 +16,11 @@ rtos\kernel\hardware\uart\uart.c
 
 rtos\kernel\kernel.c
 
+rtos\kernel\mailbox\mailbox.c
+
 rtos\kernel\mutex\mutex.c
 
-rtos\kernel\others\pid_queue.c
+rtos\kernel\others\Queue.c
 
 rtos\kernel\semaphore\semaphore.c
 

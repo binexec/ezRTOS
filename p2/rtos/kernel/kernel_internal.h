@@ -10,8 +10,13 @@
 #include <stdint.h>
 #include <stdio.h>
 
+
 #define MAX_KERNEL_ARGS		5
 
+
+/************************************************************************/
+/*					KERNEL DATA TYPE DECLARATIONS                       */
+/************************************************************************/
   
  /*Definitions for potential errors the RTOS may come across*/
   typedef enum 
@@ -79,6 +84,7 @@
    } KERNEL_REQUEST;
 
 
+
    /*Process descriptor for a task*/
    typedef struct ProcessDescriptor
    {
@@ -107,14 +113,23 @@
    } PD;
 
 
-/*Kernel variables accessible by other kernel modules*/
+
+/************************************************************************/
+/*					SHARED KERNEL VARIABLES                             */
+/************************************************************************/
+
+//These kernel variables are accessible by other kernel modules and the OS internally
 extern volatile PD* Current_Process;
 extern volatile unsigned int KernelActive;
 extern volatile unsigned int Kernel_Request_Cswitch;	
 extern volatile ERROR_CODE err;
 
 
-/*Shared functions*/
+
+/************************************************************************/
+/*					SHARED KERNEL FUNCTIONS                             */
+/************************************************************************/
+
 PD* findProcessByPID(int pid);
 
 

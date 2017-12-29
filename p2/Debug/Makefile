@@ -39,6 +39,7 @@ SUBDIRS :=  \
 ../rtos/kernel/hardware/uart/ \
 ../rtos/kernel/mutex/ \
 ../rtos/kernel \
+../rtos/kernel/mailbox \
 ../rtos/kernel/task \
 ../rtos/kernel/others \
 ../rtos/kernel/semaphore
@@ -52,8 +53,9 @@ C_SRCS +=  \
 ../rtos/kernel/hardware/hw.c \
 ../rtos/kernel/hardware/uart/uart.c \
 ../rtos/kernel/kernel.c \
+../rtos/kernel/mailbox/mailbox.c \
 ../rtos/kernel/mutex/mutex.c \
-../rtos/kernel/others/pid_queue.c \
+../rtos/kernel/others/Queue.c \
 ../rtos/kernel/semaphore/semaphore.c \
 ../rtos/kernel/task/task.c \
 ../rtos/os.c \
@@ -75,8 +77,9 @@ rtos/kernel/hardware/cswitch.o \
 rtos/kernel/hardware/hw.o \
 rtos/kernel/hardware/uart/uart.o \
 rtos/kernel/kernel.o \
+rtos/kernel/mailbox/mailbox.o \
 rtos/kernel/mutex/mutex.o \
-rtos/kernel/others/pid_queue.o \
+rtos/kernel/others/Queue.o \
 rtos/kernel/semaphore/semaphore.o \
 rtos/kernel/task/task.o \
 rtos/os.o \
@@ -90,8 +93,9 @@ rtos/kernel/hardware/cswitch.o \
 rtos/kernel/hardware/hw.o \
 rtos/kernel/hardware/uart/uart.o \
 rtos/kernel/kernel.o \
+rtos/kernel/mailbox/mailbox.o \
 rtos/kernel/mutex/mutex.o \
-rtos/kernel/others/pid_queue.o \
+rtos/kernel/others/Queue.o \
 rtos/kernel/semaphore/semaphore.o \
 rtos/kernel/task/task.o \
 rtos/os.o \
@@ -105,8 +109,9 @@ rtos/kernel/hardware/cswitch.d \
 rtos/kernel/hardware/hw.d \
 rtos/kernel/hardware/uart/uart.d \
 rtos/kernel/kernel.d \
+rtos/kernel/mailbox/mailbox.d \
 rtos/kernel/mutex/mutex.d \
-rtos/kernel/others/pid_queue.d \
+rtos/kernel/others/Queue.d \
 rtos/kernel/semaphore/semaphore.d \
 rtos/kernel/task/task.d \
 rtos/os.d \
@@ -120,8 +125,9 @@ rtos/kernel/hardware/cswitch.d \
 rtos/kernel/hardware/hw.d \
 rtos/kernel/hardware/uart/uart.d \
 rtos/kernel/kernel.d \
+rtos/kernel/mailbox/mailbox.d \
 rtos/kernel/mutex/mutex.d \
-rtos/kernel/others/pid_queue.d \
+rtos/kernel/others/Queue.d \
 rtos/kernel/semaphore/semaphore.d \
 rtos/kernel/task/task.d \
 rtos/os.d \
@@ -141,6 +147,8 @@ LINKER_SCRIPT_DEP+=
 
 
 # AVR32/GNU C Compiler
+
+
 
 
 
@@ -188,6 +196,13 @@ rtos/kernel/hardware/uart/%.o: ../rtos/kernel/hardware/uart/%.c
 	
 
 rtos/kernel/%.o: ../rtos/kernel/%.c
+	@echo Building file: $<
+	@echo Invoking: AVR/GNU C Compiler : 5.4.0
+	$(QUOTE)C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr8\avr8-gnu-toolchain\bin\avr-gcc.exe$(QUOTE)  -x c -funsigned-char -funsigned-bitfields -DF_CPU=16000000 -DBAUD=9600  -I"C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.0.90\include"  -O1 -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -mrelax -g2 -Wall -mmcu=atmega2560 -B "C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.0.90\gcc\dev\atmega2560" -c -std=gnu99 -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 
+	@echo Finished building: $<
+	
+
+rtos/kernel/mailbox/%.o: ../rtos/kernel/mailbox/%.c
 	@echo Building file: $<
 	@echo Invoking: AVR/GNU C Compiler : 5.4.0
 	$(QUOTE)C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr8\avr8-gnu-toolchain\bin\avr-gcc.exe$(QUOTE)  -x c -funsigned-char -funsigned-bitfields -DF_CPU=16000000 -DBAUD=9600  -I"C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.0.90\include"  -O1 -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -mrelax -g2 -Wall -mmcu=atmega2560 -B "C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.0.90\gcc\dev\atmega2560" -c -std=gnu99 -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 

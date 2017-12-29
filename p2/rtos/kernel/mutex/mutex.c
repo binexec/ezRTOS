@@ -54,15 +54,15 @@ MUTEX_TYPE* findMutexByMutexID(MUTEX m)
 
 
 
-static PRIORITY findHighestFromQueue(PID_Queue *q)
+static PRIORITY findHighestFromQueue(Queue *q)
 {
 	int i;
 	PRIORITY current;
-	PRIORITY highest = iterate_queue(q);
+	PRIORITY highest = iterate_pid_queue(q);
 	
 	for(i=0; i < q->count-2; i++)
 	{
-		current = iterate_queue(NULL);
+		current = iterate_pid_queue(NULL);
 		if(highest < current)
 			highest = current;
 	}
@@ -70,17 +70,6 @@ static PRIORITY findHighestFromQueue(PID_Queue *q)
 	return highest;
 }
 
-static void applyNewPriorityToWaitQueue(PID_Queue *q, PRIORITY pri)
-{
-	int i;
-	PD *p = findProcessByPID(iterate_queue(q));
-	
-	for(i=0; i < q->count-1; i++)
-	{
-		p->pri = pri;
-		p = findProcessByPID(iterate_queue(NULL));
-	}
-}
 
 /************************************************************************/
 /*							MUTEX Operations		                    */
@@ -112,8 +101,8 @@ MUTEX Kernel_Create_Mutex(void)
 	Mutex[i].owner = 0;		
 	Mutex[i].lock_count = 0;
 	Mutex[i].highest_priority = LOWEST_PRIORITY;
-	Mutex[i].wait_queue = new_queue();
-	Mutex[i].orig_priority = new_queue();
+	Mutex[i].wait_queue = new_pid_queue();
+	Mutex[i].orig_priority = new_pid_queue();
 	
 	#ifdef DEBUG
 	printf("Kernel_Create_Mutex: Created Mutex %d!\n", Last_MutexID);
@@ -157,8 +146,8 @@ void Kernel_Lock_Mutex(void)
 	}
 		
 	//If I'm not the owner (mutex already locked): Add the current process to the wait queue
-	enqueue(&m->wait_queue, Current_Process->pid);
-	enqueue(&m->orig_priority, Current_Process->pri);
+	enqueue_pid(&m->wait_queue, Current_Process->pid);
+	enqueue_pid(&m->orig_priority, Current_Process->pri);
 	
 	//Inherit the highest priority if mine's not the highest
 	if(m->highest_priority < Current_Process->pri)
@@ -181,8 +170,8 @@ static void Kernel_Lock_Mutex_From_Queue(MUTEX_TYPE *m)
 	PD *p;
 	
 	//Pass the mutex to the head of the wait queue and lock it
-	m->owner = dequeue(&m->wait_queue);
-	m->owner_orig_priority = dequeue(&m->orig_priority);
+	m->owner = dequeue_pid(&m->wait_queue);
+	m->owner_orig_priority = dequeue_pid(&m->orig_priority);
 	m->lock_count++;
 
 	//Wake up the new mutex owner from its waiting state	

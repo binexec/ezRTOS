@@ -18,14 +18,13 @@ volatile static unsigned int Ticks_Since_Last_Cswitch;
 #endif
 
 
-/*Variables accessible by OS*/
-volatile PD* Current_Process;					//Process descriptor for the last running process before entering the kernel
-volatile unsigned char *KernelSp;				//Pointer to the Kernel's own stack location.
-volatile unsigned char *CurrentSp;				//Pointer to the stack location of the current running task. Used for saving into PD during ctxswitch.						//The process descriptor of the currently RUNNING task. CP is used to pass information from OS calls to the kernel telling it what to do.
-volatile unsigned int KernelActive;				//Indicates if kernel has been initialzied by OS_Start().
-volatile ERROR_CODE err;						//Error code for the previous kernel operation (if any)
-
-volatile unsigned int Kernel_Request_Cswitch;			
+/*Variables accessible by OS and other kernel modules*/
+volatile PD* Current_Process;						//Process descriptor for the last running process before entering the kernel
+volatile unsigned char *KernelSp;					//Pointer to the Kernel's own stack location.
+volatile unsigned char *CurrentSp;					//Pointer to the stack location of the current running task. Used for saving into PD during ctxswitch.						//The process descriptor of the currently RUNNING task. CP is used to pass information from OS calls to the kernel telling it what to do.
+volatile unsigned int KernelActive;					//Indicates if kernel has been initialzied by OS_Start().
+volatile unsigned int Kernel_Request_Cswitch;		//If a kernel request set this variable to 1, the kernel will switch to a different task after the request completes
+volatile ERROR_CODE err;							//Error code for the previous kernel operation (if any)		
 
 
 extern volatile PD Process[MAXTHREAD];
@@ -314,7 +313,6 @@ static void Kernel_Handle_Request()
 	{
 		//Clears the process' request fields
 		Current_Process->request = NONE;
-		//Cp->request_arg is not reset, because task_sleep uses it to keep track of remaining ticks
 
 		//Load the current task's stack pointer and switch to its context
 		CurrentSp = Current_Process->sp;

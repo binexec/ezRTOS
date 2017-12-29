@@ -2,7 +2,7 @@
 #define MUTEX_H_
 
 #include "../kernel_internal.h"
-#include "../others/pid_queue.h"
+#include "../others/Queue.h"
 
 //For the ease of manageability, we're making a new mutex data type. The old MUTEX type defined in OS.h will simply serve as an identifier.
 typedef struct {
@@ -12,8 +12,8 @@ typedef struct {
 	unsigned int lock_count;				//mutex can be recursively locked
 	unsigned int highest_priority;
 	PRIORITY owner_orig_priority;
-	PID_Queue wait_queue;
-	PID_Queue orig_priority;
+	Queue wait_queue;
+	Queue orig_priority;
 	
 	
 } MUTEX_TYPE;

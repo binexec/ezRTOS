@@ -153,16 +153,22 @@
     <Compile Include="rtos\kernel\kernel_internal.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="rtos\kernel\mailbox\mailbox.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="rtos\kernel\mailbox\mailbox.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="rtos\kernel\mutex\mutex.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="rtos\kernel\mutex\mutex.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="rtos\kernel\others\pid_queue.c">
+    <Compile Include="rtos\kernel\others\Queue.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="rtos\kernel\others\pid_queue.h">
+    <Compile Include="rtos\kernel\others\Queue.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="rtos\kernel\semaphore\semaphore.c">
@@ -194,6 +200,7 @@
     <Folder Include="rtos\kernel\hardware\uart\" />
     <Folder Include="rtos\kernel\mutex\" />
     <Folder Include="rtos\kernel" />
+    <Folder Include="rtos\kernel\mailbox" />
     <Folder Include="rtos\kernel\task" />
     <Folder Include="rtos\kernel\others" />
     <Folder Include="rtos\kernel\semaphore" />

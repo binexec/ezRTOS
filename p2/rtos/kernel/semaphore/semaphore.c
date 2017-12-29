@@ -91,7 +91,7 @@ SEMAPHORE Kernel_Create_Semaphore_Direct(int initial_count, unsigned int is_bina
 	}
 	
 	Semaphore[i].id = ++Last_SemaphoreID;
-	Semaphore[i].wait_queue = new_queue();
+	Semaphore[i].wait_queue = new_pid_queue();
 	++Semaphore_Count;
 	
 	err = NO_ERR;
@@ -140,7 +140,7 @@ void Kernel_Semaphore_Get()
 	//If not, add the process to the semaphore's waiting queue, and put the task into the WAIT_SEMAPHORE state
 	if(has_enough < 0)
 	{
-		enqueue(&sem->wait_queue, Current_Process->pid);
+		enqueue_pid(&sem->wait_queue, Current_Process->pid);
 		Current_Process->state = WAIT_SEMAPHORE;
 		Kernel_Request_Cswitch = 1;
 		return;
@@ -154,7 +154,7 @@ void Kernel_Semaphore_Get()
 
 static inline void Kernel_Semaphore_Get_From_Queue(SEMAPHORE_TYPE *sem, unsigned int amount)
 {
-	PD *head = findProcessByPID(queue_peek(&sem->wait_queue));	
+	PD *head = findProcessByPID(queue_peek_pid(&sem->wait_queue));	
 	
 	#define head_req_amount		head->request_args[1]
 	
@@ -173,8 +173,8 @@ static inline void Kernel_Semaphore_Get_From_Queue(SEMAPHORE_TYPE *sem, unsigned
 		sem->count -= head_req_amount;
 		head->state = READY;
 		
-		dequeue(&sem->wait_queue);
-		head = findProcessByPID(queue_peek(&sem->wait_queue));
+		dequeue_pid(&sem->wait_queue);
+		head = findProcessByPID(queue_peek_pid(&sem->wait_queue));
 	}
 	
 	#undef head_req_amount
