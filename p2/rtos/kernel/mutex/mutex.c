@@ -53,24 +53,6 @@ MUTEX_TYPE* findMutexByMutexID(MUTEX m)
 }
 
 
-
-static PRIORITY findHighestFromQueue(Queue *q)
-{
-	int i;
-	PRIORITY current;
-	PRIORITY highest = iterate_pid_queue(q);
-	
-	for(i=0; i < q->count-2; i++)
-	{
-		current = iterate_pid_queue(NULL);
-		if(highest < current)
-			highest = current;
-	}
-	
-	return highest;
-}
-
-
 /************************************************************************/
 /*							MUTEX Operations		                    */
 /************************************************************************/
@@ -166,7 +148,6 @@ void Kernel_Lock_Mutex(void)
 
 static void Kernel_Lock_Mutex_From_Queue(MUTEX_TYPE *m)
 {
-	PRIORITY new_highest = findHighestFromQueue(&m->orig_priority);
 	PD *p;
 	
 	//Pass the mutex to the head of the wait queue and lock it

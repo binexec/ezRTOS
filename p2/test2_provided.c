@@ -7,11 +7,11 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
+
 #define LED_PIN_MASK 0x80			//Pin 13 = PB7
-EVENT e1;
-MUTEX m1;
-EVENT evt;
-MUTEX mut;
+
+#define TEST_SET_8
+
 
 void Idle()
 {
@@ -21,6 +21,7 @@ void Idle()
 /************************************************************************/
 /*				Test 0: Task Suspension, Resume, Sleep, Yield		    */
 /************************************************************************/
+#ifdef TEST_SET_0
 
 void Ping()
 {
@@ -72,7 +73,7 @@ void suspend_pong()
 	
 }
 
-void test0()
+void test()
 {
 	DDRB = LED_PIN_MASK;			//Set pin 13 as output
 	Task_Create(Ping, 6, 210);
@@ -81,11 +82,16 @@ void test0()
 	Task_Create(Peng, 6, 205);
 }
 
+#endif
+
 
 /************************************************************************/
 /*							Test 1: Events			                    */
 /************************************************************************/
 
+#ifdef TEST_SET_1
+
+EVENT e1;
 
 void event_wait_test()
 {
@@ -117,17 +123,19 @@ void event_signal_test()
 	Task_Yield();
 }
 
-void test1()
+void test()
 {
 	Task_Create(event_wait_test, 4, 0);
 	Task_Create(event_signal_test, 5, 0);
 }
 
+#endif
 
 /************************************************************************/
 /*						Test 2: Priority			                    */
 /************************************************************************/
 
+#ifdef TEST_SET_2
 
 void priority1()
 {
@@ -156,7 +164,7 @@ void priority3()
 	}
 }
 
-void test2()
+void test()
 {
 	//These tasks tests priority scheduling
 	Task_Create(priority1, 1, 0);
@@ -164,10 +172,13 @@ void test2()
 	Task_Create(priority3, 3, 0);
 }
 
+#endif
 
 /************************************************************************/
 /*								Test 3			                        */
 /************************************************************************/
+
+#ifdef TEST_SET_3
 
 SEMAPHORE s1;
 
@@ -192,7 +203,7 @@ void sem_task1()		//consumer
 	}
 }
 
-void test3()
+void test()
 {
 	s1 = Semaphore_Init(0, 0);
 	Task_Create(sem_task0, 4, 0);
@@ -205,11 +216,14 @@ void test3()
 	Task_Create(sem_task1, 5, 0);
 }
 
+#endif
+
 
 /************************************************************************/
 /*								Test 4			                        */
 /************************************************************************/
 
+#ifdef TEST_SET_4
 
 MUTEX m1;
 
@@ -241,7 +255,7 @@ void mut_t2()
 }
 
 
-void test4()
+void test()
 {
     m1 = Mutex_Init();
 
@@ -252,11 +266,14 @@ void test4()
 	//for(;;);
 }
 
+#endif
+
 
 /************************************************************************/
 /*					Test 5: Preemptive Schedulling		                */
 /************************************************************************/
 
+#ifdef TEST_SET_5
 
 void ps1()
 {
@@ -295,7 +312,7 @@ void ps4()
 	}
 }
 
-void test5()
+void test()
 {
 	//These tasks tests priority scheduling
 	Task_Create(ps1, 1, 0);
@@ -304,6 +321,7 @@ void test5()
 	Task_Create(ps4, 1, 0);
 }
 
+#endif
 
 /************************************************************************/
 /*				Test 6: Mutex with Priority Inheritance	                */
@@ -318,6 +336,8 @@ void test5()
  * r																						  runs  terminate
  * p  lock creates(q)                         (gain priority)unlock                                           terminate
  */
+
+#ifdef TEST_SET_6
 
 MUTEX mut;
 
@@ -353,18 +373,58 @@ void task_p()
 	Task_Terminate();
 }
 
-void test6()
+void test()
 {
 	mut = Mutex_Init();
 	Task_Create(task_p, 3, 0);
 }
 
+#endif
 
 /************************************************************************/
 /*					Test 7: Starvation Prevention		                */
 /************************************************************************/
 
-void test7()
+#ifdef TEST_SET_7
+
+void ps1()
+{
+	for(;;)
+	{
+		puts("A");
+		//Task_Yield();
+	}
+
+}
+
+void ps2()
+{
+	for(;;)
+	{
+		puts("B");
+		//Task_Yield();
+	}
+}
+
+void ps3()
+{
+	for(;;)
+	{
+		puts("C");
+		//Task_Yield();
+	}
+}
+
+void ps4()
+{
+	for(;;)
+	{
+		puts("D");
+		//Task_Yield();
+	}
+}
+
+void test()
 {
 	//These tasks tests priority scheduling
 	Task_Create(ps1, 1, 0);
@@ -373,11 +433,15 @@ void test7()
 	Task_Create(ps4, 4, 0);
 }
 
+#endif
+
 
 
 /************************************************************************/
 /*						Test 8: Event Groups				            */
 /************************************************************************/
+
+#ifdef TEST_SET_8
 
 EVENT_GROUP eg1;
 
@@ -442,7 +506,7 @@ void egt4()
 
 }
 
-void test8()
+void test()
 {
 	eg1 = Event_Group_Init();
 	
@@ -454,6 +518,8 @@ void test8()
 	//Task_Terminate();
 }
 
+#endif
+
 
 /************************************************************************/
 /*						Entry point for application		                */
@@ -461,36 +527,9 @@ void test8()
 
 void a_main()
 {
-	int test_set = 3;				//Which set of tests to run?
-
 	OS_Init();
-	
-	//These tasks tests ctxswitching, suspension, resume, and sleep
-	if(test_set == 0)
-	test0();
-	else if(test_set == 1)
-	test1();
-	else if(test_set == 2)
-	test2();
-	else if(test_set == 3)
-	test3();
-	else if(test_set == 4)
-	test4();
-	else if(test_set == 5)
-	test5();
-	else if(test_set == 6)
-	test6();
-	else if(test_set == 7)
-	test7();
-	else if(test_set == 8)
-	test8();
+		
+	test();
 
-	else
-	{
-		printf("Invalid testing set specified...\n");
-		while(1);
-	}
-	
-	
 	OS_Start();
 }

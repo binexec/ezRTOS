@@ -27,14 +27,13 @@ typedef struct {
 	
 	//If queue of pointer is used
 	unsigned int is_ptr_queue :1;
-	unsigned int data_size;
 		
 } Queue;
 
 
 
 Queue new_pid_queue(void);
-Queue new_ptr_queue(unsigned int data_size);
+Queue new_ptr_queue(void);
 int get_queue_type(Queue *q);
 
 int enqueue_pid(Queue *q, PID p);

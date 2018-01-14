@@ -18,16 +18,14 @@ Queue new_pid_queue(void)
 {
 	Queue q = new_queue();	
 	q.is_ptr_queue = 0;
-	q.data_size = 0;
 	
 	return q;
 }
 
-Queue new_ptr_queue(unsigned int data_size)
+Queue new_ptr_queue(void)
 {
 	Queue q = new_queue();	
 	q.is_ptr_queue = 1;
-	q.data_size = data_size;
 
 	return q;
 }
@@ -61,7 +59,6 @@ static int enqueue(Queue *q, QElement val)
 		q->tail = 0;
 	else
 		q->tail++;
-	
 	
 	q->queue[q->tail] = val;
 	q->count++;

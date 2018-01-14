@@ -44,7 +44,7 @@ PID Task_Create(taskfuncptr f, PRIORITY py, int arg)
    if (KernelActive) 
    {
      Disable_Interrupt();
-	 Current_Process->request_args[0] = f;				//Will throw warning about converting from pointer to int; just ignore it
+	 Current_Process->request_args[0] = f;				//Will throw warning about converting from pointer to int; just ignore it. Ensure pointers are 32-bits or less for target arch 
 	 Current_Process->request_args[1] = py;
 	 Current_Process->request_args[2] = arg;
 	 Current_Process->request = CREATE_T;

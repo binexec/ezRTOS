@@ -18,6 +18,7 @@
 #define MAXSEMAPHORE				8
 #define MAXEVENT					8
 #define MAXEVENTGROUP				8
+#define MAXMAILBOX					8
 
 /*Timer*/
 #define MSECPERTICK					10		// resolution of a system tick in milliseconds
@@ -37,6 +38,7 @@ typedef unsigned int MUTEX;
 typedef unsigned char PRIORITY;
 typedef unsigned int EVENT;
 typedef unsigned int EVENT_GROUP;
+typedef unsigned int MAILBOX;
 typedef unsigned int TICK;
 
 typedef void (*taskfuncptr) (void);      /* pointer to void f(void), used to represent the main function for a RTOS task */
