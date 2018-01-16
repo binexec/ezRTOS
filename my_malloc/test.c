@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-typedef int ptr_t;
+typedef void ptr_t;
 
 int main()
 {
@@ -9,5 +9,5 @@ int main()
 	
 	ptr_t* c = a-b;
 	
-	printf("%p\n", a-100);
+	printf("%p\n", c);
 }

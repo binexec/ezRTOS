@@ -1,6 +1,15 @@
 #include "my_malloc.h"
 
-int main()
+void test_stack()
+{
+	int i;
+	int arrtest[3] = {1, 2, 3};
+	
+	for(i=0; i<3; i++)
+		printf("arrtest[%d] = %p\n", i, &arrtest[i]);
+}
+
+void test_malloc()
 {
 	char memory[4096];
 	char *str[10];
@@ -10,7 +19,6 @@ int main()
 	sprintf(&memory[15], "111222333");
 	printf("%s\n", &memory[0]);
 	printf("%s\n", &memory[15]);
-	printf("\n***\n");
 	
 	init_malloc(&memory[4096], &memory[1024]);
 	
@@ -58,14 +66,60 @@ int main()
 	printf("%s\n", str[3]);
 	printf("%s\n", str[4]);
 	//printf("%s\n", str[5]);
+}
+
+
+void test_free()
+{
+	char memory[4096];
+	char *str[10];
+	
+	
+	sprintf(&memory[0], "aaabbbcccdddeee");
+	sprintf(&memory[15], "111222333");
+	printf("%s\n", &memory[0]);
+	printf("%s\n", &memory[15]);
+	
+	init_malloc(&memory[4096], &memory[1024]);
+	
+	str[0] = my_malloc(17);
+	sprintf(str[0], "1234567890abcdef");
+	printf("%s\n", str[0]);
+	printf("\n***\n");
+	
+	//str[1] = my_malloc(9);
+	str[1] = my_malloc(10);
+	sprintf(str[1], "qwertyui");
+	printf("%s\n", str[1]);
+	
+	str[2] = my_malloc(13);
+	sprintf(str[2], "hello world!");
+	printf("%s\n", str[2]);
+	printf("\n***\n");
+	
+	printf("\n***\n");
+	my_free(str[1]);
+	printf("\n***\n");
+	
+	str[1] = my_malloc(9);
+	sprintf(str[1], "iuytrewq");
+	printf("%s\n", str[1]);
+	
+	printf("\n***Testing originals***\n");
+	printf("%s\n", &memory[0]);
+	printf("%s\n", &memory[15]);
+	printf("%s\n", str[0]);
+	printf("%s\n", str[2]);
+	printf("%s\n", str[1]);
+	
 	
 }
 
-void test_stack()
+
+int main()
 {
-	int i;
-	int arrtest[3] = {1, 2, 3};
 	
-	for(i=0; i<3; i++)
-		printf("arrtest[%d] = %p\n", i, &arrtest[i]);
+	test_malloc();
+	//test_free();
+	
 }
