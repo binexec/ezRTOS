@@ -39,22 +39,29 @@ void test_malloc()
 	printf("\n***\n");
 	
 	//str[3] = my_malloc(44);
-	str[3] = my_malloc(250);
+	str[3] = my_malloc(256);
 	sprintf(str[3], "The quick brown fox jumps over the lazy dog");
 	printf("%s\n", str[3]);
 	printf("\n***\n");
 	
-	str[4] = my_malloc(128);
+	//allocating right to the break
+	str[4] = my_malloc(137);
 	sprintf(str[4], "Sometimes I dream about Cheese");
 	printf("%s\n", str[4]);
 	printf("\n***\n");
 	
-	/*
-	str[5] = my_malloc(128);
+	
+	str[5] = my_malloc(32);
 	sprintf(str[5], "GET OFF MY PLANE\n");
 	printf("%s\n", str[5]);
 	printf("\n***\n");
-	*/
+	
+	
+	str[6] = my_malloc(13);
+	sprintf(str[5], "i wish p=np\n");
+	printf("%s\n", str[6]);
+	printf("\n***\n");
+	
 	
 
 	printf("\n***Testing originals***\n");
@@ -65,7 +72,8 @@ void test_malloc()
 	printf("%s\n", str[2]);
 	printf("%s\n", str[3]);
 	printf("%s\n", str[4]);
-	//printf("%s\n", str[5]);
+	printf("%s\n", str[5]);
+	printf("%s\n", str[6]);
 }
 
 
