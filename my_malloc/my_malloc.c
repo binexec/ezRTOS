@@ -2,22 +2,17 @@
 
 typedef unsigned char uchar;
 
-uchar* malloc_heap_start;		//Start of the dynamic memory heap
-uchar* malloc_heap_end;			//Absolute end of the memory segment for the heap; cannot allocate further than this
+uchar* malloc_heap_start;						//Start of the dynamic memory heap
+uchar* malloc_heap_end;							//Absolute end of the memory segment for the heap; cannot allocate further than this
 
 //Note: malloc_heap_start > malloc_heap_end, since heap grows upwards
 
-uchar* malloc_break;			//Also referred as "brk", the current end for the allocated heap	
-size_t malloc_margin_size = 512;		//How many bytes to extend the heap at a time
-Heap_FreeList *fl_head;					//Head of the first heap free list entry
+uchar* malloc_break;							//Also referred as "brk", the current end for the allocated heap	
+size_t malloc_margin_size = 512;				//How many bytes to extend the heap at a time
+Heap_FreeList *freelist_head;					//Head of the first heap free list entry
 
 
 #define MAX_HEAP_SIZE	(size_t)(malloc_heap_start - malloc_heap_end)
-
-
-/************************************************************************/
-/*								MALLOC		  							*/
-/************************************************************************/
 
 
 int init_malloc(uchar* start, uchar* end)
@@ -31,141 +26,149 @@ int init_malloc(uchar* start, uchar* end)
 	malloc_heap_start = start;
 	malloc_heap_end = end;
 	malloc_break = malloc_heap_start;	
-	fl_head = NULL;
+	freelist_head = NULL;
 	
 	printf("******Heap Start: %p, Heap End: %p\n\n", malloc_heap_start, malloc_heap_end);
+	//printf("sizeof(Heap_FreeList): %zu\n", sizeof(Heap_FreeList));
 	
 	return 1;
 }
 
 
+/************************************************************************/
+/*								MALLOC		  							*/
+/************************************************************************/
+
 void* my_malloc(size_t len)
 {
-	Heap_FreeList *current_fl = NULL, *previous_fl = NULL;
-	Heap_FreeList *exact_fl = NULL, *exact_fl_prev = NULL;
-	Heap_FreeList *next_smallest_fl = NULL, *next_smallest_fl_prev = NULL;
-	Heap_FreeList *tail_fl = NULL, *tail_fl_prev = NULL;
-	uchar* retaddr = NULL;
 	
+	Heap_FreeList *current_piece = NULL, *previous_piece = NULL;
+	Heap_FreeList *exact_piece = NULL, *exact_piece_prev = NULL;
+	Heap_FreeList *next_smallest_piece = NULL, *next_smallest_piece_prev = NULL;
+	Heap_FreeList *freelist_tail = NULL, *freelist_tail_prev = NULL;
+	
+	Heap_FreeList* new_entry;
 	int margin_blocks_needed;
-	Heap_FreeList* newfl;
 	size_t orig_piece_size;
 	Heap_FreeList* orig_piece_next;
 	
-	uchar* new_break;
+	uchar* retaddr = NULL;
+	uchar* new_break = NULL;
 	
 	
 	/*If stack has not yet been initialized, skip to step 3*/
 	
 
 	/************************************************/
-	/*			Step 1: Find an exact piece		    */
+	/*		Attempt 1: Find an exact piece		    */
 	/************************************************/
 	
 	
 	/*Find the first Freelist large enough to fit the length requested*/
-	for(current_fl = fl_head; current_fl; current_fl = current_fl->next, previous_fl = current_fl)
+	for(current_piece = freelist_head; current_piece; current_piece = current_piece->next, previous_piece = current_piece)
 	{
 		//Found an exact piece
-		if(current_fl->size == len)
+		if(current_piece->size == len)
 		{
-			exact_fl = current_fl;
-			exact_fl_prev = previous_fl;
+			exact_piece = current_piece;
+			exact_piece_prev = previous_piece;
 			break;
 		}
 		
-		//Record the smallest piece of memory available (of at least length len), if exact piece is not yet found available
-		if(current_fl->size > len + sizeof(Heap_FreeList) && 
-			(!next_smallest_fl || current_fl->size < next_smallest_fl->size))
+		//Record the smallest piece of memory available (of at least length "len"), if exact piece is not yet found
+		if(current_piece->size > len + sizeof(Heap_FreeList) && 
+			(!next_smallest_piece || current_piece->size < next_smallest_piece->size))
 		{
-			next_smallest_fl = current_fl;
-			next_smallest_fl_prev = previous_fl;
+			next_smallest_piece = current_piece;
+			next_smallest_piece_prev = previous_piece;
 		}
 		
 		//Record the tail of the fl chain for step 3
-		if(!current_fl->next)
+		if(!current_piece->next)
 		{
-			tail_fl = current_fl;
-			tail_fl_prev = previous_fl;
+			freelist_tail = current_piece;
+			freelist_tail_prev = previous_piece;
 		}
 	}
 
 	
 	//Grant the exact piece if available
-	if(exact_fl)
+	if(exact_piece)
 	{
-		retaddr = (uchar*)exact_fl + sizeof(Heap_FreeList) - len;
+		retaddr = (uchar*)exact_piece + sizeof(Heap_FreeList) - len;
 		
-		//Write a "used" allocation entry after the allocated memory
-		newfl = (Heap_FreeList*)(retaddr - sizeof(Heap_FreeList));
-		newfl->size = len;			
-		newfl->next = NULL;
+		//Write a "used" allocation entry (just another name for fl) after the allocated memory. This is needed for free() later
+		new_entry = (Heap_FreeList*)(retaddr - sizeof(Heap_FreeList));
+		new_entry->size = len;			
+		new_entry->next = NULL;
 			
 		//Disconnect the current piece from the fl chain
-		//If the piece used have no previous free piece, that means this is also fl_head
-		if(exact_fl_prev)
-			exact_fl_prev->next = exact_fl->next;
+		//If the piece used have no previous free piece, that means this is also freelist_head
+		if(exact_piece_prev)
+			exact_piece_prev->next = exact_piece->next;
 		else
-			fl_head = exact_fl->next;	
+			freelist_head = exact_piece->next;	
 
 		printf("Found exact piece of size %zu at %p\n", len, retaddr);
-		printf("Allocated %zu bytes. Start: %p\n", newfl->size, retaddr);
+		printf("Allocated %zu bytes. Start: %p\n", new_entry->size, retaddr);
 		return retaddr;
 	}
 	
 	
-	
 	/************************************************/
-	/*			Step 2: Split an larger piece	   	*/
+	/*		Attempt 2: Split an larger piece	   	*/
 	/************************************************/
-	
-	if(next_smallest_fl)
+
+	if(next_smallest_piece)
 	{
-		printf("Using a piece of size %zu at %p\n", next_smallest_fl->size, next_smallest_fl);
+		printf("Using a piece of size %zu at %p\n", next_smallest_piece->size, next_smallest_piece);
 		
 		//Grant memory. Note the original fl entry at the beginning is now consumed as part of the granted memory
-		retaddr = (uchar*)next_smallest_fl + sizeof(Heap_FreeList) - len;
-		orig_piece_size = next_smallest_fl->size;
-		orig_piece_next = next_smallest_fl->next;	
+		retaddr = (uchar*)next_smallest_piece + sizeof(Heap_FreeList) - len;
+		orig_piece_size = next_smallest_piece->size;
+		orig_piece_next = next_smallest_piece->next;	
 		
-		//Write an allocation entry (just another name for fl) at the end of the chunk to be granted
-		newfl = (Heap_FreeList*) (retaddr - sizeof(Heap_FreeList));
-		newfl->size = len;
-		newfl->next = NULL;
-		printf("Allocated %zu bytes. Start: %p\n", newfl->size, retaddr);
+		//Write an "used" allocation entry at the end of the chunk to be granted
+		new_entry = (Heap_FreeList*) (retaddr - sizeof(Heap_FreeList));
+		new_entry->size = len;
+		new_entry->next = NULL;
+		printf("Allocated %zu bytes. Start: %p\n", new_entry->size, retaddr);
 		
-		//Split a new fl for the excess free part of the selected piece. As usual, the fl is placed at the start of the free piece
-		newfl = (Heap_FreeList*) ((uchar*)newfl - sizeof(Heap_FreeList));
-		newfl->size = orig_piece_size - len - sizeof(Heap_FreeList);
-		newfl->next = orig_piece_next;
-		printf("Splitted into a new free piece of size %zu at %p\n", newfl->size, newfl);
+		//Split a new fl entry for the excess free part of the selected piece. As usual, the fl is placed at the start of the free piece
+		new_entry = (Heap_FreeList*) ((uchar*)new_entry - sizeof(Heap_FreeList));
+		new_entry->size = orig_piece_size - len - sizeof(Heap_FreeList);
+		new_entry->next = orig_piece_next;
+		printf("Splitted into a new free piece of size %zu at %p\n", new_entry->size, new_entry);
 
-		
 		//Disconnect the old piece from the fl chain, and update fl for the original piece
-		if(next_smallest_fl_prev)
-			next_smallest_fl_prev->next = newfl;
+		if(next_smallest_piece_prev)
+			next_smallest_piece_prev->next = new_entry;
 		else
-			fl_head = newfl;
+			freelist_head = new_entry;
 		
 		//Because the old fl in the beginning will now be part of the granted memory, it's better to wipe it
-		next_smallest_fl->size = 0;
-		next_smallest_fl->next = NULL;
+		next_smallest_piece->size = 0;
+		next_smallest_piece->next = NULL;
 		
 		return retaddr;
 	}
 	
 	
 	/************************************************/
-	/*	Step 3: Allocate more heap space by adjusting brk	   	*/
+	/*		Attempt 3: Allocate more heap space 	*/
 	/************************************************/
 	
 	
 	/*If heap is uninitialized or the allocated heap is full*/
-	if(!fl_head)
+	if(!freelist_head)
 	{	
-		//Calculate new break location
+		//Calculate how many new blocks is needed
 		margin_blocks_needed = (2*sizeof(Heap_FreeList) + len)/malloc_margin_size + 1;
-		new_break = malloc_break - margin_blocks_needed * malloc_margin_size;		
+		/*margin_blocks_needed = sizeof(Heap_FreeList) + len;
+		if(margin_blocks_needed == malloc_margin_size)
+			malloc_margin_size = 1;
+		else
+			margin_blocks_needed = margin_blocks_needed/malloc_margin_size + 1;*/
 		
 		//Calculate the return address for the request. Is heap uninitialized?
 		if(malloc_break == malloc_heap_start)
@@ -182,27 +185,32 @@ void* my_malloc(size_t len)
 	
 	
 	/*The tailing piece of the allocated piece is not large enough*/
-	if(tail_fl)
+	if(freelist_tail)
 	{
-		//Calculate new break location
-		margin_blocks_needed = (sizeof(Heap_FreeList) + len - tail_fl->size)/malloc_margin_size + 1;
-		new_break = malloc_break - margin_blocks_needed * malloc_margin_size;
+		//Calculate how many new blocks is needed
+		margin_blocks_needed = (sizeof(Heap_FreeList) + len - freelist_tail->size)/malloc_margin_size + 1;
+		/*margin_blocks_needed = sizeof(Heap_FreeList) + len - freelist_tail->size;
+		if(margin_blocks_needed == malloc_margin_size)
+			malloc_margin_size = 1;
+		else
+			margin_blocks_needed = margin_blocks_needed/malloc_margin_size + 1;*/
 			
 		//Calculate the return address for the request
-		retaddr = (uchar *)tail_fl + sizeof(Heap_FreeList) - len;
+		retaddr = (uchar *)freelist_tail + sizeof(Heap_FreeList) - len;
 		
 		//Because the old fl in the beginning will now be part of the granted memory, it's better to wipe it
-		tail_fl->size = 0;
-		tail_fl->next = NULL;
+		freelist_tail->size = 0;
+		freelist_tail->next = NULL;
 		
-		printf("Tail_FL address: %p\n", tail_fl);
-		printf("Remaining allocated free heap: %zu\n", tail_fl->size);
+		printf("Tail_FL address: %p\n", freelist_tail);
+		printf("Remaining allocated free heap: %zu\n", freelist_tail->size);
 	}
 	
-
+	
+	//Allocate additional heap space by pushing the break back
+	new_break = malloc_break - margin_blocks_needed * malloc_margin_size;	
 	printf("Margin blocks needed: %d, size: %zu\n", margin_blocks_needed, margin_blocks_needed * malloc_margin_size);
 	
-	//Push the break back
 	if(new_break < malloc_heap_end)
 	{
 		printf("Cannot continue. Allocation will exceed heap.\n");
@@ -211,26 +219,25 @@ void* my_malloc(size_t len)
 	malloc_break = new_break;
 		
 	//Write a "used" allocation entry after the allocated memory
-	newfl = (Heap_FreeList*)(retaddr - sizeof(Heap_FreeList));
-	newfl->size = len;			
-	newfl->next = NULL;
+	new_entry = (Heap_FreeList*)(retaddr - sizeof(Heap_FreeList));
+	new_entry->size = len;			
+	new_entry->next = NULL;
 		
 	//Write a new freelist entry after the allocated memory
-	newfl = (Heap_FreeList*)((uchar*)newfl - sizeof(Heap_FreeList));
-	newfl->size = (uchar*)newfl - malloc_break;			
-	newfl->next = NULL;
+	new_entry = (Heap_FreeList*)((uchar*)new_entry - sizeof(Heap_FreeList));
+	new_entry->size = (uchar*)new_entry - malloc_break;			
+	new_entry->next = NULL;
 	
-	//Update freelist
-	if(tail_fl && tail_fl_prev)
-		tail_fl_prev->next = newfl;
+	//Update freelist chain
+	if(freelist_tail_prev)
+		freelist_tail_prev->next = new_entry;
 	else
-		fl_head = newfl;
+		freelist_head = new_entry;
 	
-	printf("Allocated %zu bytes at %p, Brkval: %p\n", newfl->size, retaddr, malloc_break);
-	printf("New FL address: %p\n", newfl);
-	printf("New FL Size: %zu\n", newfl->size);
+	printf("Allocated %zu bytes at %p, Brkval: %p\n", new_entry->size, retaddr, malloc_break);
+	printf("New FL address: %p\n", new_entry);
+	printf("New FL Size: %zu\n", new_entry->size);
 	return retaddr;
-
 }
 
 
@@ -241,12 +248,18 @@ void* my_malloc(size_t len)
 
 void my_free(void *p)
 {
-	Heap_FreeList *p_fl = p - sizeof(Heap_FreeList);
-	Heap_FreeList *p_newfl;
+	Heap_FreeList *p_entry = p - sizeof(Heap_FreeList);
+	Heap_FreeList *new_entry, *new_entry_prev = NULL;
 	
-	Heap_FreeList *current_fl = NULL;
-	Heap_FreeList *closet_fl = NULL;
-
+	Heap_FreeList *current_piece = NULL;
+	Heap_FreeList *closest_left = NULL, *closest_left_prev = NULL;
+	Heap_FreeList *closest_right = NULL;
+	
+	size_t break_reduced;
+	
+	/************************************************/
+	/*				Step 0: Sanity Check			*/
+	/************************************************/
 	
 	if(p == NULL)
 		return;
@@ -254,57 +267,133 @@ void my_free(void *p)
 	if((uchar*)p < malloc_break || (uchar*)p < malloc_heap_end || (uchar*)p > malloc_heap_start)
 		return;
 	
-	if(p_fl->size > MAX_HEAP_SIZE || p_fl->next != NULL)
+	if(p_entry->size > MAX_HEAP_SIZE || p_entry->next != NULL)
 	{
-		printf("p does not seem to be a valid, allocated freelist!\n");
+		printf("p does not seem to have a valid allocation entry!\n");
 		return;
 	}
 	
-	printf("(FREEING %p) P_size: %zu, P_next: %p\n", p, p_fl->size, p_fl->next);
+	printf("(FREEING %p) P_size: %zu, P_next: %p\n", p, p_entry->size, p_entry->next);
 	
-	/*If there is no other freelist entries*/
-	if(!fl_head)
+	
+	/************************************************/
+	/*		Step 1: Freeing the requested piece 	*/
+	/************************************************/
+	
+	//Iterate through the current freelist and locate the closest free blocks to p
+	new_entry = p + p_entry->size - sizeof(Heap_FreeList);
+	for(current_piece = freelist_head; current_piece; current_piece = current_piece->next)
 	{
-		//If this piece was allocated to the break, lower the break
-		if(p + p_fl->size == malloc_break)
-			malloc_break = p + sizeof(Heap_FreeList);
-		
-		//If this piece is somewhere in the middle, then just set it as the fl head
-		else
-			fl_head = p_fl;	
-	}
-	
-	
-	/*Iterate through the current freelist and locate the closest free block to p*/
-	
-	p_newfl = p + p_fl->size - sizeof(Heap_FreeList);
-	
-	for(current_fl = fl_head; current_fl; current_fl = current_fl->next)
-	{
-		if(current_fl > p_newfl)
-			closet_fl = current_fl;
-		else
+		if(current_piece > new_entry)
+		{
+			closest_left_prev = closest_left;
+			closest_left = current_piece;
+		}
+		else if(current_piece < new_entry)
+		{
+			closest_right = current_piece;
 			break;
+		}
+		
+		//There should never be an occurance where current_piece == new_entry. If it does happen, we'll just ignore it
 	}
 	
-	//Write a new fl entry at the beginning of the freed block
-	if(closet_fl == NULL)
+	//Write a new freelist entry at the beginning of the freed block, and destroy the old "used" allocation entry at the end of the piece
+	
+	if(!closest_left)
 	{
-		p_newfl->next = NULL;
-		fl_head = p_newfl;
-		printf("No predecessors\n");
+		new_entry->next = freelist_head;
+		freelist_head = new_entry;
+		new_entry_prev = NULL;
 	}
 	else
 	{
-		p_newfl->next = closet_fl->next;
-		closet_fl->next = p_newfl;
+		new_entry->next = closest_left->next;
+		closest_left->next = new_entry;
+		new_entry_prev = closest_left;
 	}
-	p_newfl->size = p_fl->size;
+	
+	new_entry->size = p_entry->size;
+	p_entry->size = 0;
+	
+	printf("New FL at %p, size: %zu, next: %p\n", (uchar*)new_entry, new_entry->size, new_entry->next);
 	
 	
-	p_fl->size = 0;
+	/************************************************/
+	/*	Step 2: Merge with adjacent left piece	 	*/
+	/************************************************/
 	
-	printf("New FL at %p, size: %zu, next: %p\n", (uchar*)p_newfl, p_newfl->size, p_newfl->next);
+	if(	closest_left && 
+		(uchar*)closest_left - closest_left->size - sizeof(Heap_FreeList) == (uchar*)new_entry)
+	{
+		printf("Found left adjacent piece at %p. Size: %zu, Next: %p\n", (uchar*)closest_left, closest_left->size, closest_left->next);
+		
+		closest_left->size +=  new_entry->size + sizeof(Heap_FreeList);
+		closest_left->next = new_entry->next;	
+		new_entry->size = 0;
+		new_entry->next = 0;
+		new_entry = closest_left;				//in case if a right adjacent piece exists too
+		new_entry_prev = closest_left_prev;
+		
+		printf("Merged! New Size: %zu, Next: %p\n", new_entry->size, new_entry->next);
+	}
+	
+	/*Lower break if the new piece is at the very end*/
+	
+	
+	/************************************************/
+	/*	Step 3: Merge with adjacent right piece	 	*/
+	/************************************************/
+	
+	//recall p_entry is the old address of the "used" allocation entry, which is now the end of the new free piece new_entry
+	
+	if(	closest_right && 
+		(uchar*)closest_right + sizeof(Heap_FreeList) == (uchar*)p_entry)
+	{
+		printf("Found right adjacent piece at %p. Size: %zu, Next: %p\n", (uchar*)closest_right, closest_right->size, closest_right->next);
+		
+		new_entry->size += closest_right->size + sizeof(Heap_FreeList);
+		new_entry->next = closest_right->next;	
+		closest_right->size = 0;
+		closest_right->next = 0;
+		
+		printf("Merged! New Size: %zu, Next: %p\n", new_entry->size, new_entry->next);
+	}
+	
+	
+	/************************************************/
+	/*			Step 4: Reduce Malloc Break		 	*/
+	/************************************************/
+	
+	//Only reduce the break if the last free piece is greater than one margin
+	//Heap will only reduce/increase by exact margin sizes
+	
+	if(	(uchar*)new_entry - new_entry->size == malloc_break &&
+		!new_entry->next)
+	{
+		//If the last free piece exceeds one margin
+		if(new_entry->size > malloc_margin_size)
+		{
+			break_reduced = new_entry->size / malloc_margin_size;
+			break_reduced *= malloc_margin_size;
+			
+			//Reduce the break, thus reducing the allocated heap
+			new_entry->size -= break_reduced;
+			malloc_break += break_reduced;
+			printf("Reduced break by %zu bytes! New Size: %zu, Next: %p\n", break_reduced, new_entry->size, new_entry->next);
+		}
+		
+		//If the last free piece has the exact size as one margin
+		else if(new_entry->size + sizeof(Heap_FreeList) == malloc_margin_size)
+		{
+			new_entry->size = 0;
+			new_entry_prev->next = NULL;
+			
+			malloc_break += malloc_margin_size;
+			printf("Reduced break by exactly 1 margin! New Tail at %p, Size: %zu, Next: %p\n", new_entry_prev, new_entry_prev->size, new_entry->next);
+		}
+	}
+	
 	
 }
 

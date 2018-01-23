@@ -14,9 +14,6 @@ typedef struct heap_freelist{
 }Heap_FreeList;
 
 
-typedef Heap_FreeList Allocation_Entry;
-
-
 int init_malloc(unsigned char* start, unsigned char* end);
 
 void* my_malloc(size_t len);
