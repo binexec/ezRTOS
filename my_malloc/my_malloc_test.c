@@ -38,6 +38,7 @@ void test_malloc()
 	printf("%s\n", str[2]);
 	printf("\n***\n");
 	
+	
 	//str[3] = my_malloc(44);
 	str[3] = my_malloc(256);
 	sprintf(str[3], "The quick brown fox jumps over the lazy dog");
@@ -52,15 +53,16 @@ void test_malloc()
 	
 	
 	str[5] = my_malloc(32);
-	sprintf(str[5], "GET OFF MY PLANE\n");
+	sprintf(str[5], "GET OFF MY PLANE");
 	printf("%s\n", str[5]);
 	printf("\n***\n");
 	
 	
-	str[6] = my_malloc(13);
-	sprintf(str[5], "i wish p=np\n");
+	str[6] = my_malloc(12);
+	sprintf(str[6], "i wish p=np");
 	printf("%s\n", str[6]);
 	printf("\n***\n");
+	
 	
 	
 
@@ -104,56 +106,68 @@ void test_free()
 	printf("%s\n", str[2]);
 	printf("\n***\n");
 	
-	str[3] = my_malloc(256);
+	str[3] = my_malloc(64);
 	sprintf(str[3], "The quick brown fox jumps over the lazy dog");
 	printf("%s\n", str[3]);
 	printf("\n***\n");
 	
-	str[4] = my_malloc(137);
+	str[4] = my_malloc(65);
 	sprintf(str[4], "Sometimes I dream about Cheese");
 	printf("%s\n", str[4]);
 	printf("\n***\n");
 	
-	str[5] = my_malloc(32);
-	sprintf(str[5], "GET OFF MY PLANE\n");
+	str[5] = my_malloc(66);
+	sprintf(str[5], "GET OFF MY PLANE");
 	printf("%s\n", str[5]);
 	printf("\n***\n");
 	
 	str[6] = my_malloc(13);
-	sprintf(str[6], "i wish p=np\n");
+	sprintf(str[6], "i wish p=np");
 	printf("%s\n", str[6]);
 	printf("\n***\n");
 	
 	str[7] = my_malloc(403);
-	//str[7] = my_malloc(419);
-	sprintf(str[7], "THIS IS A REALLY BIG PIECE AT THE END\n");
+	sprintf(str[7], "THIS IS A REALLY BIG PIECE AT THE END");
 	printf("%s\n", str[7]);
 	printf("\n***\n");
 	
-	printf("\n***\n");
-	my_free(str[5]);
-	printf("\n***\n");
+	printf("\n**************FREEING******************\n");
 	
 	printf("\n***\n");
 	my_free(str[3]);
 	printf("\n***\n");
 	
 	printf("\n***\n");
+	my_free(str[5]);
+	printf("\n***\n");
+	
+	//testing merge
+	printf("\n***\n");
 	my_free(str[4]);
 	printf("\n***\n");
 	
+	//testing break reduction
 	printf("\n***\n");
 	my_free(str[7]);
+	printf("\n***\n");
+	
+	//testing exact piece
+	printf("\n***\n");
+	my_free(str[1]);
+	printf("\n***\n");
+	
+	str[1] = my_malloc(9);
+	sprintf(str[1], "iuytrewq");
+	printf("%s\n", str[1]);
 	printf("\n***\n");
 	
 	printf("\n***Testing originals***\n");
 	printf("%s\n", &memory[0]);
 	printf("%s\n", &memory[15]);
 	printf("%s\n", str[0]);
-	printf("%s\n", str[1]);
 	printf("%s\n", str[2]);
 	printf("%s\n", str[6]);
-	//printf("%s\n", str[7]);
+	printf("%s\n", str[1]);
 	
 	
 }
