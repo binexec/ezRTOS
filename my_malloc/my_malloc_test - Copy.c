@@ -116,7 +116,8 @@ void test_free()
 	printf("%s\n", str[4]);
 	printf("\n***\n");
 	
-	str[5] = my_malloc(66);
+	//exact
+	str[5] = my_malloc(248);
 	sprintf(str[5], "GET OFF MY PLANE");
 	printf("%s\n", str[5]);
 	printf("\n***\n");
@@ -126,14 +127,9 @@ void test_free()
 	printf("%s\n", str[6]);
 	printf("\n***\n");
 	
-	str[7] = my_malloc(403);
+	str[7] = my_malloc(1000);
 	sprintf(str[7], "THIS IS A REALLY BIG PIECE AT THE END");
 	printf("%s\n", str[7]);
-	printf("\n***\n");
-	
-	str[8] = my_malloc(13);
-	sprintf(str[8], "i wish p=np");
-	printf("%s\n", str[8]);
 	printf("\n***\n");
 	
 	printf("\n**************FREEING******************\n");
@@ -150,7 +146,6 @@ void test_free()
 	printf("\n***\n");
 	my_free(str[4]);
 	printf("\n***\n");
-	
 	
 	//testing break reduction
 	printf("\n***\n");
@@ -174,7 +169,6 @@ void test_free()
 	printf("%s\n", str[2]);
 	printf("%s\n", str[6]);
 	printf("%s\n", str[1]);
-	
 	
 	
 }
