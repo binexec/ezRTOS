@@ -21,6 +21,23 @@ Heap_Seg *freelist_head;						//Head of the first heap free list entry
 
 
 /************************************************************************/
+/*								HELPERS			 						*/
+/************************************************************************/
+
+/*Implement this function properly to retrieve the current process' stack pointer, if you want to prevent the heap from smashing into the stack*/
+void* get_current_sp()
+{
+	return malloc_heap_end;
+}
+
+void check_alignment()
+{
+	size_t align_diff = (malloc_heap_start - malloc_break) % malloc_margin_size;
+	printf("The break is currently %s. %zu\n", (align_diff == 0)? "aligned":"NOT aligned", align_diff);
+}
+
+
+/************************************************************************/
 /*							INITIALIZATION		 						*/
 /************************************************************************/
 
@@ -37,8 +54,9 @@ int init_malloc(uchar* start, uchar* end)
 	malloc_break 		= malloc_heap_start;	
 	freelist_head 		= NULL;
 	
+	//Is it necessary for our platform to have some canaries at the end of the heap? If so, add the initialization here
+	
 	printf("******Heap Start: %p, Heap End: %p\n\n", malloc_heap_start, malloc_heap_end);
-	//printf("sizeof(Heap_Seg): %zu\n", sizeof(Heap_Seg));
 	
 	return 1;
 }
@@ -68,11 +86,6 @@ void load_malloc_param(Malloc_Param p)
 }
 
 
-void check_alignment()
-{
-	size_t align_diff = (malloc_heap_start - malloc_break) % malloc_margin_size;
-	printf("The break is currently %s. %zu\n", (align_diff == 0)? "aligned":"NOT aligned", align_diff);
-}
 
 
 /************************************************************************/
@@ -241,9 +254,9 @@ void* my_malloc(size_t len)
 	
 	//Allocate additional heap space by pushing the break back
 	new_break = malloc_break - bytes_needed;	
-	if(new_break < malloc_heap_end)
+	if(new_break < malloc_heap_end || new_break < (uchar*)get_current_sp())
 	{
-		printf("Cannot continue. Allocation will exceed heap.\n");
+		printf("Cannot continue. Allocation will exceed heap or smash into stack.\n");
 		return NULL;
 	}	
 	malloc_break = new_break;
@@ -441,12 +454,7 @@ void my_free(void *p)
 		//If the tail piece and its header is an exact multiple of the margin size
 		align_diff = (p_entry->size + sizeof(Heap_Seg)) % malloc_margin_size;
 		if(!align_diff)
-		{
-			//Erase the free seg entry at the current malloc break
-			p_entry = (Heap_Seg*)malloc_break;
-			p_entry->size = 0;
-			p_entry->next = NULL;
-			
+		{			
 			//Reduce the break right to the end, and no need to create a new free piece
 			malloc_break = tail_end;
 			
@@ -457,29 +465,30 @@ void my_free(void *p)
 
 			printf("Break Reduction will eliminate the tail piece!\n");
 			printf("New Break at %p\n. Reduced by %zu bytes\n", malloc_break, malloc_break - old_break);
-			return;
 		}
-		
-		//Reduce the break while maintaining alignment
-		reduce_amount = (p_entry->size + sizeof(Heap_Seg)) - align_diff; 
-		malloc_break += reduce_amount;		
-		printf("Break to be reduced by %zu bytes\n", reduce_amount);
+		else
+		{
+			//Reduce the break while maintaining alignment
+			reduce_amount = (p_entry->size + sizeof(Heap_Seg)) - align_diff; 
+			malloc_break += reduce_amount;		
+			printf("Break to be reduced by %zu bytes\n", reduce_amount);
+
+			//Write a new free entry at malloc break
+			p_entry = (Heap_Seg*)malloc_break;
+			p_entry->size = tail_end - (malloc_break + sizeof(Heap_Seg));
+			p_entry->next = NULL;
+			
+			//Update freelist
+			if(p_entry_prev)
+				p_entry_prev->next = p_entry;
+			else
+				freelist_head = p_entry;
+		}
 		
 		//Erase the free seg entry at the old malloc break
 		p_entry = (Heap_Seg*)old_break;
 		p_entry->size = 0;
 		p_entry->next = NULL;
-
-		//Write a new free entry at malloc break
-		p_entry = (Heap_Seg*)malloc_break;
-		p_entry->size = tail_end - (malloc_break + sizeof(Heap_Seg));
-		p_entry->next = NULL;
-		
-		//Update freelist
-		if(p_entry_prev)
-			p_entry_prev->next = p_entry;
-		else
-			freelist_head = p_entry;
 		
 		printf("New Break at %p, Size: %zu, Next: %p\n", malloc_break, p_entry->size, p_entry->next);
 	}
