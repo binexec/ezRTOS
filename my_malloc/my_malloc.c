@@ -37,6 +37,31 @@ void check_alignment()
 }
 
 
+/*Used by free() and realloc(), makes sure p is a valid pointer on the heap first*/
+int pointer_is_valid(void* p)
+{
+	Heap_Seg *p_entry = p - sizeof(Heap_Seg);
+	
+	if(p == NULL)
+		return 0;
+	
+	if((uchar*)p < malloc_break || (uchar*)p < malloc_heap_end || (uchar*)p > malloc_heap_start)
+	{
+		printf("p is not within the current heap range!\n");
+		return 0;
+	}
+	
+	if(p_entry->size >= MAX_HEAP_SIZE || p_entry->next != NULL)
+	{
+		printf("p does not seem to be a valid allocation entry!\n");
+		printf("P: %p, Size: %zu, Next: %p\n", p, p_entry->size, p_entry->next);
+		return 0;
+	}
+	
+	return 1;
+}
+
+
 /************************************************************************/
 /*							INITIALIZATION		 						*/
 /************************************************************************/
@@ -84,6 +109,13 @@ void load_malloc_param(Malloc_Param p)
 	malloc_margin_size 	= p.malloc_margin_size;
 	freelist_head 		= p.freelist_head;
 }
+
+
+
+
+
+
+
 
 
 
@@ -298,6 +330,13 @@ void* my_malloc(size_t len)
 
 
 
+
+
+
+
+
+
+
 /************************************************************************/
 /*								FREE		  							*/
 /************************************************************************/
@@ -316,29 +355,11 @@ void my_free(void *p)
 	uchar *tail_end;
 	uchar *old_break;
 	
-	/************************************************/
-	/*				Step 0: Sanity Check			*/
-	/************************************************/
 	
-	
-	if(p == NULL)
+	if(!pointer_is_valid(p))
 		return;
-	
-	if((uchar*)p < malloc_break || (uchar*)p < malloc_heap_end || (uchar*)p > malloc_heap_start)
-	{
-		printf("p is not within the current heap range!\n");
-		return;
-	}
-	
-	if(p_entry->size >= MAX_HEAP_SIZE || p_entry->next != NULL)
-	{
-		printf("p does not seem to be a valid allocation entry!\n");
-		printf("P: %p, Size: %zu, Next: %p\n", p, p_entry->size, p_entry->next);
-		return;
-	}
 	
 	printf("(FREEING %p) P_size: %zu, P_next: %p\n", p, p_entry->size, p_entry->next);
-	
 	
 	/************************************************/
 	/*		Step 1: Freeing the requested piece 	*/
@@ -495,6 +516,14 @@ void my_free(void *p)
 }
 
 
+
+
+
+
+
+
+
+
 /************************************************************************/
 /*								REALLOC		  							*/
 /************************************************************************/
@@ -503,11 +532,89 @@ void* my_realloc(void *p, size_t len)
 {
 	Heap_Seg *p_entry = p - sizeof(Heap_Seg);
 	Heap_Seg *p_entry_prev = NULL;
+	Heap_Seg *old_entry = p_entry;
 	
-	/*Step 1: Are we growing or shrinking?*/
+	int size_diff;
+	uchar* retaddr;
+	
+	
+	if(!pointer_is_valid(p))
+		return NULL;
+	
+	printf("(REALLOC %p) P_size: %zu, P_next: %p\n", p, p_entry->size, p_entry->next);
+	
+	
+	/************************************************/
+	/*			Step 1a: If we're shrinking		 	*/
+	/************************************************/
+	
+	size_diff = len - p_entry->size;
+	
+	printf("Size difference: %d\n", size_diff);
+	
+	if(size_diff == 0)
+		return p;
+	
+	else if(size_diff < 0)
+	{
+		//Make size_diff positive
+		size_diff = p_entry->size - len;
+		
+		//Don't shrink if the size difference isn't big enough to insert a new segment header
+		if(size_diff <= sizeof(Heap_Seg))
+		{
+			printf("Size difference is too insignificant, skip shrinking...\n");
+			return p;
+		}
+		
+		retaddr = (uchar*)p + size_diff;
+		
+		//Write a new segment entry above the requested length
+		p_entry = (Heap_Seg*)(retaddr - sizeof(Heap_Seg));
+		p_entry->size = len;
+		p_entry->next = NULL;
+		
+		//Rewrite the old segment header and mark it as free
+		old_entry->size = size_diff - sizeof(Heap_Seg);
+		my_free(p);	
+		
+		return retaddr;
+	}
+	
+	
+	/************************************************/
+	/*			Step 1b: If we're growing		 	*/
+	/************************************************/
+	
 	
 	
 	return NULL;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
