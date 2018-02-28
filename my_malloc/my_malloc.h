@@ -39,3 +39,5 @@ void load_malloc_param(Malloc_Param p);
 void* my_malloc(size_t len);
 void my_free(void *p);
 void* my_realloc(void *ptr, size_t len);
+
+void check_alignment();
