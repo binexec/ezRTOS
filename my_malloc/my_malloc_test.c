@@ -227,31 +227,35 @@ void test_realloc()
 	
 	init_malloc(&memory[4096], &memory[1024]);
 	
+	
 	//Testing shrink
+	printf("\n******\n");
 	str[0] = malloc_dbg(48);
 	sprintf(str[0], "1234567890abcdef1234567890abcdef");
 	printf("%s\n", str[0]);
-	printf("\n\n");
 	
-	printf("\n***\n");
-	str[0] = realloc_dbg(str[0], 17);
+	printf("\n**\n");
+	str[0] = realloc_dbg(str[0], 20);
 	sprintf(str[0], "fedcba0987654321");
 	printf("%s\n", str[0]);
-	printf("\n***\n");
+	printf("\n******\n");
 	
-	//Testing growth, when large amount of free space is right above the current piece
 	
-	str[1] = malloc_dbg(9);
-	sprintf(str[1], "qwertyui");
+	//Testing growth at malloc break
+	printf("\n******\n");
+	str[1] = malloc_dbg(25);
+	sprintf(str[1], "qwertyuiqwertyuiqwertyui");
 	printf("%s\n", str[1]);
-	printf("\n\n");
-	printf("\n***\n");
-	str[1] = realloc_dbg(str[1], 20);
-	sprintf(str[1], "qwertyuiopasdfghjkl");
+	
+	printf("\n**\n");
+	str[1] = realloc_dbg(str[1], 40);
+	sprintf(str[1], "qwertyuiopasdfghjklqwertyuiopasdfghjkl");
 	printf("%s\n", str[1]);
-	printf("\n***\n");
+	printf("\n******\n");
+	
 	
 	//Testing growth, when exact amount of free space is right above the current piece
+	printf("\n******\n");
 	str[2] = malloc_dbg(13);
 	sprintf(str[2], "hello world!");
 	printf("%s\n", str[2]);
@@ -260,7 +264,6 @@ void test_realloc()
 	str[3] = malloc_dbg(14);
 	sprintf(str[3], "HELLO WORLD!");
 	printf("%s\n", str[3]);
-	printf("\n\n");
 	
 	str[4] = malloc_dbg(15);
 	sprintf(str[4], "hElLo WoRlD!");
@@ -268,21 +271,44 @@ void test_realloc()
 	printf("\n\n");
 	
 	free_dbg(str[3]);
-	printf("\n\n");
+	printf("\n");
 	
-	printf("\n***\n");
+	printf("\n**\n");
 	str[2] = realloc_dbg(str[2], 43); 	//13 + 14 + sizeof(Heap_seg)
 	sprintf(str[2], "helloworld~HELLOWORLD~hElLo");
 	printf("%s\n", str[2]);
+	printf("\n******\n");
+	
+	//Expanding the piece at malloc break
+	/*str[5] = malloc_dbg(48);
+	sprintf(str[5], "The quick brown fox jumps over the lazy dog");
+	printf("%s\n", str[5]);
+	printf("\n\n");
+	
 	printf("\n***\n");
+	str[5] = realloc_dbg(str[5], 64);
+	sprintf(str[5], "~!~!~!~!The quick brown fox jumps over the lazy dog~!~!~!~!");
+	printf("%s\n", str[5]);
+	printf("\n***\n");*/
+	
+	//Testing case 3
+	printf("\n******\n");
+	printf("\n**\n");
+	str[0] = realloc_dbg(str[0], 48);
+	sprintf(str[0], "The quick brown fox jumps over the lazy dog");
+	printf("%s\n", str[0]);
+	printf("\n******\n");
 	
 	
 	
 	printf("\n***Testing originals***\n");
 	printf("%s\n", &memory[0]);
 	printf("%s\n", &memory[15]);
+	//printf("%s\n", str[0]);
 	printf("%s\n", str[0]);
 	printf("%s\n", str[1]);
+	printf("%s\n", str[2]);
+	printf("%s\n", str[4]);
 
 }
 
@@ -291,7 +317,7 @@ int main()
 {
 	
 	//test_malloc();
-	test_free();
-	//test_realloc();
+	//test_free();
+	test_realloc();
 	
 }
