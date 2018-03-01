@@ -164,7 +164,7 @@ void test_free()
 	
 	printf("\n**************FREEING******************\n");
 	
-	/*printf("\n***\n");
+	printf("\n***\n");
 	free_dbg(str[3]);
 	printf("\n***\n");
 	
@@ -175,7 +175,7 @@ void test_free()
 	//testing merge
 	printf("\n***\n");
 	free_dbg(str[4]);
-	printf("\n***\n");*/
+	printf("\n***\n");
 	
 	
 	//testing break reduction
@@ -187,10 +187,10 @@ void test_free()
 	free_dbg(str[7]);
 	printf("\n***\n");
 	
-	/*//testing exact piece
+	//testing exact piece
 	printf("\n***\n");
 	free_dbg(str[1]);
-	printf("\n***\n");*/
+	printf("\n***\n");
 	
 	str[1] = malloc_dbg(9);
 	sprintf(str[1], "iuytrewq");
@@ -291,7 +291,7 @@ int main()
 {
 	
 	//test_malloc();
-	//test_free();
-	test_realloc();
+	test_free();
+	//test_realloc();
 	
 }

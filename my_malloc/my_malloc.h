@@ -25,7 +25,7 @@ typedef struct {
 	unsigned char* malloc_heap_start;
 	unsigned char* malloc_heap_end;
 	unsigned char* malloc_break;
-	size_t malloc_margin_size;
+	size_t malloc_align_size;
 	Heap_Seg *freelist_head;
 	
 }Malloc_Param;
