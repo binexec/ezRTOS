@@ -17,12 +17,15 @@ size_t malloc_margin_size = 512;				//How many bytes to extend the heap at a tim
 Heap_Seg *freelist_head;						//Head of the first heap free list entry
 
 
-#define MAX_HEAP_SIZE	(size_t)(malloc_heap_start - malloc_heap_end)
-
 
 /************************************************************************/
 /*								HELPERS			 						*/
 /************************************************************************/
+
+#define MAX_HEAP_SIZE	(size_t)(malloc_heap_start - malloc_heap_end)
+
+#define segment_end(p)	((uchar*)p + sizeof(Heap_Seg) + p->size)
+
 
 /*Implement this function properly to retrieve the current process' stack pointer, if you want to prevent the heap from smashing into the stack*/
 void* get_current_sp()
@@ -537,6 +540,9 @@ void* my_realloc(void *p, size_t len)
 	int size_diff;
 	uchar* retaddr;
 	
+	Heap_Seg *current_piece = NULL;
+	Heap_Seg *closest_right = NULL;
+	
 	
 	if(!pointer_is_valid(p))
 		return NULL;
@@ -550,8 +556,6 @@ void* my_realloc(void *p, size_t len)
 	
 	size_diff = len - p_entry->size;
 	
-	printf("Size difference: %d\n", size_diff);
-	
 	if(size_diff == 0)
 		return p;
 	
@@ -563,7 +567,7 @@ void* my_realloc(void *p, size_t len)
 		//Don't shrink if the size difference isn't big enough to insert a new segment header
 		if(size_diff <= sizeof(Heap_Seg))
 		{
-			printf("Size difference is too insignificant, skip shrinking...\n");
+			printf("Size difference %d is too insignificant, skip shrinking...\n", size_diff);
 			return p;
 		}
 		
@@ -576,8 +580,10 @@ void* my_realloc(void *p, size_t len)
 		
 		//Rewrite the old segment header and mark it as free
 		old_entry->size = size_diff - sizeof(Heap_Seg);
+		printf("Creating a free entry at %p, size: %zu, next: %p\n", old_entry, old_entry->size, old_entry->next);
 		my_free(p);	
 		
+		printf("Shrunk segment at %p, size: %zu, size_diff: %d\n", retaddr, p_entry->size, size_diff);
 		return retaddr;
 	}
 	
@@ -586,8 +592,64 @@ void* my_realloc(void *p, size_t len)
 	/*			Step 1b: If we're growing		 	*/
 	/************************************************/
 	
+
+	//Iterate the freelist and find the cloest free piece to p
+	for(current_piece = freelist_head; current_piece; current_piece = current_piece->next)
+	{
+		if(current_piece < p_entry)
+		{
+			closest_right = current_piece;
+			break;
+		}
+	}
 	
+	//If the closest right piece is sitting right above p and is large enough, we'll merge with it to form a bigger piece
+	if(closest_right && segment_end(closest_right) == (uchar*)p_entry)
+	{	
+		//Merging with top piece fits exactly
+		if(closest_right->size + sizeof(Heap_Seg) == size_diff)
+		{
+			retaddr = (uchar*)closest_right + sizeof(Heap_Seg);
+			printf("Exact Merge!\n");
+		}
+		
+		//Merging with top piece yields excess free spaces
+		else if(closest_right->size >= size_diff)
+		{
+			retaddr = (uchar*)p - size_diff;
+			
+			//Also update the free piece's original entry, if it has more free space still
+			if(closest_right->size > size_diff)
+				closest_right->size -= size_diff;
+			printf("Updated free entry at %p, size: %zu, next: %p\n", closest_right-sizeof(Heap_Seg), closest_right->size, closest_right->next);
+		}
+		else
+			goto my_realloc_no_closest_right;		//temporary hackjob for now
+		
+		
+		//Write a new segment entry above the requested length
+		p_entry = (Heap_Seg*)(retaddr - sizeof(Heap_Seg));
+		p_entry->size = len;
+		p_entry->next = NULL;
+		
+		//Wipe the old seg entry, as it's now part of the allocated memory
+		old_entry->size = 0;
+		old_entry->next = NULL;
+		
+		printf("Expanded segment at %p, size: %zu, size_diff: %d\n", retaddr, p_entry->size, size_diff);		
+		return retaddr;	
+	}
+
+my_realloc_no_closest_right:
 	
+	if (!closest_right)
+	{
+		printf("Did not find closest right :(\n");
+	}
+	
+	printf("????\n");
+	
+
 	return NULL;
 }
 
