@@ -7,6 +7,13 @@ void* malloc_dbg(size_t len)
 	return retval;
 }
 
+void* calloc_dbg(size_t nitems, size_t size)
+{
+	void *retval = my_calloc(nitems, size);
+	//check_alignment();
+	return retval;
+}
+
 void free_dbg(void *p)
 {
 	my_free(p);
@@ -34,6 +41,8 @@ void test_stack()
 	for(i=0; i<3; i++)
 		printf("arrtest[%d] = %p\n", i, &arrtest[i]);
 }
+
+
 
 void test_malloc()
 {
@@ -103,6 +112,77 @@ void test_malloc()
 	printf("%s\n", str[5]);
 	printf("%s\n", str[6]);
 }
+
+
+
+void test_calloc()
+{
+	char memory[4096];
+	char *str[10];
+	
+	
+	sprintf(&memory[0], "aaabbbcccdddeee");
+	sprintf(&memory[15], "111222333");
+	printf("%s\n", &memory[0]);
+	printf("%s\n", &memory[15]);
+	
+	init_malloc(&memory[4096], &memory[1024]);
+	
+	str[0] = calloc_dbg(17, sizeof(char));
+	sprintf(str[0], "1234567890abcdef");
+	printf("%s\n", str[0]);
+	printf("\n***\n");
+	
+	str[1] = calloc_dbg(9, sizeof(char));
+	sprintf(str[1], "qwertyui");
+	printf("%s\n", str[1]);
+	printf("\n***\n");
+	
+	
+	str[2] = calloc_dbg(13, sizeof(char));
+	sprintf(str[2], "hello world!");
+	printf("%s\n", str[2]);
+	printf("\n***\n");
+	
+	
+	str[3] = calloc_dbg(256, sizeof(char));
+	sprintf(str[3], "The quick brown fox jumps over the lazy dog");
+	printf("%s\n", str[3]);
+	printf("\n***\n");
+	
+	//allocating right to the break
+	str[4] = calloc_dbg(137, sizeof(char));
+	sprintf(str[4], "Sometimes I dream about Cheese");
+	printf("%s\n", str[4]);
+	printf("\n***\n");
+	
+	
+	str[5] = calloc_dbg(32, sizeof(char));
+	sprintf(str[5], "GET OFF MY PLANE");
+	printf("%s\n", str[5]);
+	printf("\n***\n");
+	
+	
+	str[6] = calloc_dbg(12, sizeof(char));
+	sprintf(str[6], "i wish p=np");
+	printf("%s\n", str[6]);
+	printf("\n***\n");
+	
+	
+	
+
+	printf("\n***Testing originals***\n");
+	printf("%s\n", &memory[0]);
+	printf("%s\n", &memory[15]);
+	printf("%s\n", str[0]);
+	printf("%s\n", str[1]);
+	printf("%s\n", str[2]);
+	printf("%s\n", str[3]);
+	printf("%s\n", str[4]);
+	printf("%s\n", str[5]);
+	printf("%s\n", str[6]);
+}
+
 
 
 void test_free()
@@ -215,6 +295,8 @@ void test_free()
 	
 }
 
+
+
 void test_realloc()
 {
 	char memory[4096];
@@ -317,6 +399,7 @@ int main()
 {
 	
 	//test_malloc();
+	//test_calloc();
 	//test_free();
 	test_realloc();
 	
