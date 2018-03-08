@@ -2,16 +2,14 @@
 #include "rtos/kernel/kernel.h"
 #include <stdio.h>
 
-#include "rtos/kernel/others/Queue.h"
-
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
 
+#define TEST_SET_1
+
+
 #define LED_PIN_MASK 0x80			//Pin 13 = PB7
-
-#define TEST_SET_8
-
 
 void Idle()
 {
@@ -19,9 +17,9 @@ void Idle()
 };
 
 /************************************************************************/
-/*				Test 0: Task Suspension, Resume, Sleep, Yield		    */
+/*				Test 1: Task Suspension, Resume, Sleep, Yield		    */
 /************************************************************************/
-#ifdef TEST_SET_0
+#ifdef TEST_SET_1
 
 void Ping()
 {
@@ -85,51 +83,7 @@ void test()
 #endif
 
 
-/************************************************************************/
-/*							Test 1: Events			                    */
-/************************************************************************/
 
-#ifdef TEST_SET_1
-
-EVENT e1;
-
-void event_wait_test()
-{
-	//Test normal signaling
-	e1 = Event_Init();
-	printf("Waiting for event e1...\n");
-	Event_Wait(e1);
-	printf("Signal for event e1 received!\n");
-	
-	e1 = Event_Init();
-	Task_Sleep(100);
-	
-	//Test pre signaling
-	printf("Waiting for event e1...\n");
-	Event_Wait(e1);
-	printf("Signal for event e1 received!\n");
-	Task_Yield();
-}
-
-void event_signal_test()
-{
-	printf("Signaling event e1...\n");
-	Event_Signal(e1);
-	Task_Yield();
-	
-	printf("Signaling event e1 twice...\n");
-	Event_Signal(e1);
-	Event_Signal(e1);
-	Task_Yield();
-}
-
-void test()
-{
-	Task_Create(event_wait_test, 4, 0);
-	Task_Create(event_signal_test, 5, 0);
-}
-
-#endif
 
 /************************************************************************/
 /*						Test 2: Priority			                    */
@@ -174,218 +128,14 @@ void test()
 
 #endif
 
+
+
+
 /************************************************************************/
-/*								Test 3			                        */
+/*					Test 3: Starvation Prevention		                */
 /************************************************************************/
 
 #ifdef TEST_SET_3
-
-SEMAPHORE s1;
-
-void sem_task0()		//producer
-{
-	while(1)
-	{
-		Semaphore_Give(s1, 5);
-		printf("***GAVE 5\n");
-		Task_Sleep(1000);
-	}
-}
-
-void sem_task1()		//consumer
-{
-	while(1)
-	{
-		printf("GETTING 2...\n");
-		Semaphore_Get(s1, 2);
-		printf("GOT 2\n");
-		Task_Sleep(100);
-	}
-}
-
-void test()
-{
-	s1 = Semaphore_Init(0, 0);
-	Task_Create(sem_task0, 4, 0);
-	Task_Create(sem_task1, 5, 0);
-	
-	Task_Create(sem_task1, 5, 0);
-	Task_Create(sem_task1, 5, 0);
-	Task_Create(sem_task1, 5, 0);
-	Task_Create(sem_task1, 5, 0);
-	Task_Create(sem_task1, 5, 0);
-}
-
-#endif
-
-
-/************************************************************************/
-/*								Test 4			                        */
-/************************************************************************/
-
-#ifdef TEST_SET_4
-
-MUTEX m1;
-
-void mut_t1()
-{
-	printf("T1 locking m1...\n");
-	Mutex_Lock(m1);
-	printf("T1 locked m1!\n");
-	Task_Sleep(250);
-	printf("T1 unlocking m1...\n");
-	Mutex_Unlock(m1);
-	printf("T1 unlocked m1!\n");
-	//Task_Yield();
-    for(;;);
-}
-
-void mut_t2()
-{
-	Task_Sleep(50);
-	printf("T2 locking m1...\n");
-	Mutex_Lock(m1);
-	printf("T2 locked m1!\n");
-	Task_Sleep(250);
-	printf("T2 unlocking m1...\n");
-	Mutex_Unlock(m1);
-	printf("T2 unlocked m1!\n");
-	
-    for(;;);
-}
-
-
-void test()
-{
-    m1 = Mutex_Init();
-
-    Task_Create(mut_t1, 1, 0);
-    Task_Create(mut_t2, 2, 0);
-
-    //Task_Terminate();
-	//for(;;);
-}
-
-#endif
-
-
-/************************************************************************/
-/*					Test 5: Preemptive Schedulling		                */
-/************************************************************************/
-
-#ifdef TEST_SET_5
-
-void ps1()
-{
-	for(;;)
-	{
-		puts("A");
-		//Task_Yield();
-	}
-
-}
-
-void ps2()
-{
-	for(;;)
-	{
-		puts("B");
-		//Task_Yield();
-	}
-}
-
-void ps3()
-{
-	for(;;)
-	{
-		puts("C");
-		//Task_Yield();
-	}
-}
-
-void ps4()
-{
-	for(;;)
-	{
-		puts("D");
-		//Task_Yield();
-	}
-}
-
-void test()
-{
-	//These tasks tests priority scheduling
-	Task_Create(ps1, 1, 0);
-	Task_Create(ps2, 1, 0);
-	Task_Create(ps3, 1, 0);
-	Task_Create(ps4, 1, 0);
-}
-
-#endif
-
-/************************************************************************/
-/*				Test 6: Mutex with Priority Inheritance	                */
-/************************************************************************/
-/*
- * priority q > r > p
- * 
- * expected order
- * p q p q r p
- *
- * q                 create(r)  lock(attempt)					   lock(switch in)   terminate   
- * r																						  runs  terminate
- * p  lock creates(q)                         (gain priority)unlock                                           terminate
- */
-
-#ifdef TEST_SET_6
-
-MUTEX mut;
-
-void task_r()
-{
-	printf("r: terminating\n");
-	Task_Terminate();
-}
-
-void task_q()
-{
-	printf("q: hello, gonna create R\n");
-
-	Task_Create(task_r, 2, 0);
-	printf("q: gonna try to lock mut\n");
-	Mutex_Lock(mut);
-	printf("q: I got into the mutex yeah! But I will let it go\n");
-	Mutex_Lock(mut);
-	printf("q: I am gonna die, good bye world\n");
-	Task_Terminate();
-}
-
-void task_p()
-{
-	printf("p:hello, gonna lock mut\n");
-	Mutex_Lock(mut);
-	printf("p: gonna create q\n");
-	Task_Create(task_q, 1, 0);
-	Task_Yield();
-	printf("p: gonna unlock mut\n");
-	Mutex_Unlock(mut);
-	Task_Yield();
-	Task_Terminate();
-}
-
-void test()
-{
-	mut = Mutex_Init();
-	Task_Create(task_p, 3, 0);
-}
-
-#endif
-
-/************************************************************************/
-/*					Test 7: Starvation Prevention		                */
-/************************************************************************/
-
-#ifdef TEST_SET_7
 
 void ps1()
 {
@@ -438,10 +188,158 @@ void test()
 
 
 /************************************************************************/
-/*						Test 8: Event Groups				            */
+/*					Test 4: Preemptive Scheduling		                */
 /************************************************************************/
 
-#ifdef TEST_SET_8
+#ifdef TEST_SET_4
+
+void ps1()
+{
+	for(;;)
+	{
+		puts("A");
+		//Task_Yield();
+	}
+
+}
+
+void ps2()
+{
+	for(;;)
+	{
+		puts("B");
+		//Task_Yield();
+	}
+}
+
+void ps3()
+{
+	for(;;)
+	{
+		puts("C");
+		//Task_Yield();
+	}
+}
+
+void ps4()
+{
+	for(;;)
+	{
+		puts("D");
+		//Task_Yield();
+	}
+}
+
+void test()
+{
+	//These tasks tests priority scheduling
+	Task_Create(ps1, 1, 0);
+	Task_Create(ps2, 1, 0);
+	Task_Create(ps3, 1, 0);
+	Task_Create(ps4, 1, 0);
+}
+
+#endif
+
+
+
+
+/************************************************************************/
+/*							Test 5: Semaphores	                        */
+/************************************************************************/
+
+#ifdef TEST_SET_5
+
+SEMAPHORE s1;
+
+void sem_task0()		//producer
+{
+	while(1)
+	{
+		Semaphore_Give(s1, 5);
+		printf("***GAVE 5\n");
+		Task_Sleep(1000);
+	}
+}
+
+void sem_task1()		//consumer
+{
+	while(1)
+	{
+		printf("GETTING 2...\n");
+		Semaphore_Get(s1, 2);
+		printf("GOT 2\n");
+		Task_Sleep(100);
+	}
+}
+
+void test()
+{
+	s1 = Semaphore_Init(0, 0);
+	Task_Create(sem_task0, 4, 0);
+	Task_Create(sem_task1, 5, 0);
+	
+	Task_Create(sem_task1, 5, 0);
+	Task_Create(sem_task1, 5, 0);
+	Task_Create(sem_task1, 5, 0);
+	Task_Create(sem_task1, 5, 0);
+	Task_Create(sem_task1, 5, 0);
+}
+
+#endif
+
+
+/************************************************************************/
+/*							Test 6: Events			                    */
+/************************************************************************/
+
+#ifdef TEST_SET_6
+
+EVENT e1;
+
+void event_wait_test()
+{
+	//Test normal signaling
+	e1 = Event_Init();
+	printf("Waiting for event e1...\n");
+	Event_Wait(e1);
+	printf("Signal for event e1 received!\n");
+	
+	e1 = Event_Init();
+	Task_Sleep(100);
+	
+	//Test pre signaling
+	printf("Waiting for event e1...\n");
+	Event_Wait(e1);
+	printf("Signal for event e1 received!\n");
+	Task_Yield();
+}
+
+void event_signal_test()
+{
+	printf("Signaling event e1...\n");
+	Event_Signal(e1);
+	Task_Yield();
+	
+	printf("Signaling event e1 twice...\n");
+	Event_Signal(e1);
+	Event_Signal(e1);
+	Task_Yield();
+}
+
+void test()
+{
+	Task_Create(event_wait_test, 4, 0);
+	Task_Create(event_signal_test, 5, 0);
+}
+
+#endif
+
+/************************************************************************/
+/*						Test 7: Event Groups				            */
+/************************************************************************/
+
+#ifdef TEST_SET_7
 
 EVENT_GROUP eg1;
 
@@ -519,6 +417,125 @@ void test()
 }
 
 #endif
+
+
+/************************************************************************/
+/*						Test 8: Basic Mutex			                    */
+/************************************************************************/
+
+//Note: This test requires preemptive scheduling to be enabled
+
+#ifdef TEST_SET_8
+
+MUTEX m1;
+
+void mut_t1()
+{
+	printf("T1 locking m1...\n");
+	Mutex_Lock(m1);
+	printf("T1 locked m1!\n");
+	Task_Sleep(250);
+	printf("T1 unlocking m1...\n");
+	Mutex_Unlock(m1);
+	printf("T1 unlocked m1!\n");
+	//Task_Yield();
+    for(;;);
+}
+
+void mut_t2()
+{
+	Task_Sleep(50);
+	printf("T2 locking m1...\n");
+	Mutex_Lock(m1);
+	printf("T2 locked m1!\n");
+	Task_Sleep(250);
+	printf("T2 unlocking m1...\n");
+	Mutex_Unlock(m1);
+	printf("T2 unlocked m1!\n");
+	
+    for(;;);
+}
+
+
+void test()
+{
+    m1 = Mutex_Init();
+
+    Task_Create(mut_t1, 1, 0);
+    Task_Create(mut_t2, 2, 0);
+
+    //Task_Terminate();
+	//for(;;);
+}
+
+#endif
+
+
+
+
+/************************************************************************/
+/*				Test 9: Mutex with Priority Inheritance	                */
+/************************************************************************/
+/*
+ * priority q > r > p
+ * 
+ * expected order
+ * p q p q r p
+ *
+ * q                 create(r)  lock(attempt)					   lock(switch in)   terminate   
+ * r																						  runs  terminate
+ * p  lock creates(q)                         (gain priority)unlock                                           terminate
+ */
+
+#ifdef TEST_SET_9
+
+MUTEX mut;
+
+void task_r()
+{
+	printf("r: terminating\n");
+	Task_Terminate();
+}
+
+void task_q()
+{
+	printf("q: hello, gonna create R\n");
+
+	Task_Create(task_r, 2, 0);
+	printf("q: gonna try to lock mut\n");
+	Mutex_Lock(mut);
+	printf("q: I got into the mutex yeah! But I will let it go\n");
+	Mutex_Lock(mut);
+	printf("q: I am gonna die, good bye world\n");
+	Task_Terminate();
+}
+
+void task_p()
+{
+	printf("p:hello, gonna lock mut\n");
+	Mutex_Lock(mut);
+	printf("p: gonna create q\n");
+	Task_Create(task_q, 1, 0);
+	Task_Yield();
+	printf("p: gonna unlock mut\n");
+	Mutex_Unlock(mut);
+	Task_Yield();
+	Task_Terminate();
+}
+
+void test()
+{
+	mut = Mutex_Init();
+	Task_Create(task_p, 3, 0);
+}
+
+#endif
+
+
+
+
+
+
 
 
 /************************************************************************/

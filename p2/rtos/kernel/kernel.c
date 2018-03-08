@@ -93,13 +93,8 @@ static void Kernel_Tick_Handler();
 //This function is called ONLY by the timer ISR. Therefore, it will not enter the kernel through regular modes
 void Kernel_Tick_ISR()
 {
-	//Automatically invoke the tick handler if it hasn't been serviced in a long time
-	if(++Tick_Count >=  MAX_TICK_MISSED)
-	{
-		Disable_Interrupt();
-		Kernel_Tick_Handler();
-		Enable_Interrupt();
-	}
+	//Increment the system-wide missed tick count
+	++Tick_Count;
 	
 	#ifdef PREEMPTIVE_CSWITCH	
 	if(!Preemptive_Cswitch_Allowed)
@@ -218,8 +213,13 @@ static void Kernel_Dispatch_Next_Task()
 	Preemptive_Cswitch_Allowed = 0;
 	#endif
 	
+	//Mark the current task from RUNNING to READY, so it can be considered by the scheduler again
 	if(Current_Process->state == RUNNING)
-		Current_Process->state = READY;			//Mark the current task from RUNNING to READY, so it can be considered by the scheduler again
+		Current_Process->state = READY;			
+	
+	//Check if any timer ticks came in
+	Kernel_Tick_Handler();
+	
 	next_dispatch = Kernel_Select_Next_Task();
 
 	//When none of the tasks in the process list is ready
@@ -326,9 +326,6 @@ static void Kernel_Handle_Request()
 		
 		//Save the current task's stack pointer and proceed to handle its request
 		Current_Process->sp = CurrentSp;
-		
-		//Check if any timer ticks came in
-		Kernel_Tick_Handler();
 
 		//Because each branch only calls a function, this switch statement should hopefully be converted to a jump table by the compiler
 		switch(Current_Process->request)

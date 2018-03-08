@@ -26,10 +26,13 @@ Heap_Seg *freelist_head;						//Head of the first heap free list entry
 
 #define segment_end(p)	((uchar*)p + sizeof(Heap_Seg) + p->size)
 
-/*Implement this function properly to retrieve the current process' stack pointer, if you want to prevent the heap from smashing into the stack*/
-static void* get_current_sp()
+/*Implement this function properly if you want to prevent the heap from smashing into the stack.
+This function is called by grow_malloc_break(), and it passes a new malloc break location (end of heap) for testing.
+If this new break location would smash into the stack (or violates it in any ways), return 0. 
+Return 1 if no issues will arise*/
+static int check_stack_integrity(void* new_break)
 {
-	return malloc_heap_end;
+	return 1;
 }
 
 
@@ -65,6 +68,26 @@ static inline void write_seg_header(void* seg_header, size_t len, Heap_Seg* next
 	Heap_Seg* new_entry =  (Heap_Seg*)seg_header;
 	new_entry->size = len;
 	new_entry->next = next;
+}
+
+
+static void* grow_malloc_break(size_t amount)			//Similar to sbrk() in unix
+{
+	uchar* new_break = malloc_break - amount;
+	
+	if(new_break < malloc_heap_end || new_break > malloc_heap_start || !check_stack_integrity(new_break))
+	{
+		printf("Cannot continue. Allocation will exceed heap or smash into stack.\n");
+		return NULL;
+	}	
+	malloc_break = new_break;
+	
+	return malloc_break;
+}
+
+void* get_malloc_break()			//Similar to brk() in unix
+{
+	return malloc_break;
 }
 
 
@@ -222,13 +245,7 @@ void* my_malloc(size_t len)
 
 	
 	//Allocate additional heap space needed for the requested length and a new header
-	new_break = malloc_break - (len + sizeof(Heap_Seg));	
-	if(new_break < malloc_heap_end || new_break < (uchar*)get_current_sp())
-	{
-		printf("Cannot continue. Allocation will exceed heap or smash into stack.\n");
-		return NULL;
-	}	
-	malloc_break = new_break;
+	grow_malloc_break(len + sizeof(Heap_Seg));
 	printf("Malloc Break increased by: %zu bytes. New break at %p\n", len + sizeof(Heap_Seg), malloc_break);
 	
 	//Write an allocation entry for the segment to be returned
@@ -508,8 +525,7 @@ void* my_realloc(void *p, size_t len)
 	{
 		//If the requested is at the malloc break, simply expand it to fulfil the requested length
 		retaddr = (uchar*)p - size_diff;
-		
-		malloc_break -= size_diff;		
+		grow_malloc_break(size_diff);	
 		p_entry = (Heap_Seg*)malloc_break;
 		printf("New break at %p\n", malloc_break);
 	}

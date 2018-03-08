@@ -25,9 +25,9 @@
 
 /*Scheduler configuration*/
 #define MAX_TICK_MISSED				10
-//#define PREEMPTIVE_CSWITCH							//Enable preemptive multi-tasking
+#define PREEMPTIVE_CSWITCH							//Enable preemptive multi-tasking
 #define PREEMPTIVE_CSWITCH_FREQ		25				//How frequently (in ticks) does preemptive scheduling kick in?
-//#define PREVENT_STARVATION							//Enable starvation prevention in the scheduler
+#define PREVENT_STARVATION							//Enable starvation prevention in the scheduler
 #define STARVATION_MAX				MAXTHREAD*10	//Maximum amount of ticks missed before a task is considered starving
 
 
