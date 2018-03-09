@@ -113,15 +113,15 @@
     </ToolchainSettings>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="rtos\kernel\event\event.c">
+    <None Include="rtos\kernel\event\event.c">
       <SubType>compile</SubType>
-    </Compile>
+    </None>
     <Compile Include="rtos\kernel\event\event.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="rtos\kernel\event\event_group.c">
+    <None Include="rtos\kernel\event\event_group.c">
       <SubType>compile</SubType>
-    </Compile>
+    </None>
     <Compile Include="rtos\kernel\event\event_group.h">
       <SubType>compile</SubType>
     </Compile>
@@ -155,16 +155,28 @@
     <Compile Include="rtos\kernel\kernel_internal.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="rtos\kernel\mailbox\mailbox.c">
+    <None Include="rtos\kernel\mailbox\mailbox.c">
       <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="rtos\kernel\mailbox\mailbox.h">
+    </None>
+    <None Include="rtos\kernel\mailbox\mailbox.h">
       <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="rtos\kernel\mutex\mutex.c">
+    </None>
+    <None Include="rtos\kernel\mutex\mutex.c">
       <SubType>compile</SubType>
-    </Compile>
+    </None>
     <Compile Include="rtos\kernel\mutex\mutex.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="rtos\kernel\others\kmalloc.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="rtos\kernel\others\kmalloc.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="rtos\kernel\others\PtrList.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="rtos\kernel\others\PtrList.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="rtos\kernel\others\Queue.c">
@@ -173,9 +185,9 @@
     <Compile Include="rtos\kernel\others\Queue.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="rtos\kernel\semaphore\semaphore.c">
+    <None Include="rtos\kernel\semaphore\semaphore.c">
       <SubType>compile</SubType>
-    </Compile>
+    </None>
     <Compile Include="rtos\kernel\semaphore\semaphore.h">
       <SubType>compile</SubType>
     </Compile>

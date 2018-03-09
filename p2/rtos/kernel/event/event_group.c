@@ -64,7 +64,6 @@ unsigned int Kernel_Create_Event_Group(void)
 }
 
 
-extern volatile PD Process[MAXTHREAD];
 
 void Kernel_Event_Group_Set_Bits()
 {

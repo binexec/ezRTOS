@@ -5,7 +5,8 @@
 #ifndef KERNEL_INTERNAL_H_
 #define KERNEL_INTERNAL_H_
 
-#include "../os.h"
+#include "../os.h"			//will also include kernel.h
+#include "others/PtrList.h"
 #include <string.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -119,7 +120,8 @@
 /************************************************************************/
 
 //These kernel variables are accessible by other kernel modules and the OS internally
-extern volatile PD* Current_Process;
+extern volatile PD Process[MAXTHREAD];
+extern volatile PD* Current_Process;	
 extern volatile unsigned int KernelActive;
 extern volatile unsigned int Kernel_Request_Cswitch;	
 extern volatile ERROR_CODE err;

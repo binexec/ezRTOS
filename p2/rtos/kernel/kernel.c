@@ -27,7 +27,7 @@ volatile unsigned int Kernel_Request_Cswitch;		//If a kernel request set this va
 volatile ERROR_CODE err;							//Error code for the previous kernel operation (if any)		
 
 
-extern volatile PD Process[MAXTHREAD];
+//uchar Kernel_Heap[KERNEL_HEAP_SIZE];				//Heap for kerel object allocation, used by kmalloc
 
 
 /************************************************************************/
@@ -37,16 +37,19 @@ extern volatile PD Process[MAXTHREAD];
 /*Returns the pointer of a process descriptor in the global process list, by searching for its PID*/
 PD* findProcessByPID(int pid)
 {
-	int i;
+	PtrList *i;
+	PD *pd_i;
 	
 	//Valid PIDs must be greater than 0.
-	if(pid <=0)
-	return NULL;
+	if(pid <= 0)
+		return NULL;
 	
-	for(i=0; i<MAXTHREAD; i++)
+	for(i = &Process; i; i = i->next)
 	{
-		if (Process[i].pid == pid)
-		return &(Process[i]);
+		pd_i = (PD*)i->ptr;
+			
+		if (pd_i->pid == pid)
+			return pd_i;
 	}
 	
 	//No process with such PID
@@ -54,7 +57,7 @@ PD* findProcessByPID(int pid)
 }
 
 
-void print_processes()
+/*void print_processes()
 {
 	int i;
 	
@@ -64,7 +67,7 @@ void print_processes()
 			printf("\tPID: %d\t State: %d\t Priority: %d\n", Process[i].pid, Process[i].state, Process[i].pri);
 	}
 	printf("\n");
-}
+}*/
 
 /*Returns the PID associated with a function's memory address. Used by the OS*/
 int findPIDByFuncPtr(taskfuncptr f)
@@ -350,6 +353,8 @@ static void Kernel_Handle_Request()
 			Kernel_Sleep_Task();					
 			break;
 			
+			
+			#ifdef EVENT_ENABLED
 			case CREATE_E:
 			Kernel_Create_Event();
 			break;
@@ -361,7 +366,10 @@ static void Kernel_Handle_Request()
 			case SIGNAL_E:
 			Kernel_Signal_Event();
 			break;
+			#endif
 			
+			
+			#ifdef MUTEX_ENABLED
 			case CREATE_M:
 			Kernel_Create_Mutex();
 			break;
@@ -373,7 +381,10 @@ static void Kernel_Handle_Request()
 			case UNLOCK_M:
 			Kernel_Unlock_Mutex();
 			break;
+			#endif
 			
+			
+			#ifdef SEMAPHORE_ENABLED
 			case CREATE_SEM:
 			Kernel_Create_Semaphore();
 			break;
@@ -385,7 +396,9 @@ static void Kernel_Handle_Request()
 			case GET_SEM:
 			Kernel_Semaphore_Get();
 			break;
+			#endif
 			
+			#ifdef EVENT_GROUP_ENABLED
 			case CREATE_EG:
 			Kernel_Create_Event_Group();
 			break;
@@ -405,6 +418,8 @@ static void Kernel_Handle_Request()
 			case GET_EG_BITS:
 			Kernel_Event_Group_Get_Bits();
 			break;
+			#endif
+			
 		   
 			case YIELD:
 			case NONE:							// NONE could be caused by a timer interrupt
@@ -446,10 +461,22 @@ void Kernel_Reset()
 	err = NO_ERR;
 	
 	Task_Reset();
+	
+	#ifdef EVENT_ENABLED
 	Event_Reset();
+	#endif
+	
+	#ifdef EVENT_GROUP_ENABLED
 	Event_Group_Reset();
+	#endif
+	
+	#ifdef MUTEX_ENABLED
 	Mutex_Reset();
+	#endif
+	
+	#ifdef SEMAPHORE_ENABLED
 	Semaphore_Reset();
+	#endif
 	
 	#ifdef DEBUG
 	printf("OS initialized!\n");

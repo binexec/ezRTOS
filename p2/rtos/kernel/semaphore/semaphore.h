@@ -1,6 +1,8 @@
 #ifndef SEMAPHORE_H_
 #define SEMAPHORE_H_
 
+#define SEMAPHORE_ENABLED
+
 #include "../kernel_internal.h"
 #include "../others/Queue.h"
 

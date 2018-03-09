@@ -1,6 +1,8 @@
 #ifndef MUTEX_H_
 #define MUTEX_H_
 
+#define MUTEX_ENABLED
+
 #include "../kernel_internal.h"
 #include "../others/Queue.h"
 

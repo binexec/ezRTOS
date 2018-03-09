@@ -146,8 +146,8 @@ void Task_Sleep(TICK t)
 /************************************************************************/
 /*						Events related API			                    */
 /************************************************************************/
+#ifdef EVENT_ENABLED
 
-/*Initialize an event object*/
 EVENT Event_Init(void)
 {
 	EVENT retval;
@@ -201,11 +201,13 @@ void Event_Signal(EVENT e)
 	Enter_Kernel();	
 }
 
+#endif
 
 /************************************************************************/
 /*						Mutex related API			                    */
 /************************************************************************/
 
+#ifdef MUTEX_ENABLED
 
 MUTEX Mutex_Init(void)
 {
@@ -258,10 +260,12 @@ void Mutex_Unlock(MUTEX m)
 	Current_Process->request_args[0] = m;
 	Enter_Kernel();
 }
+#endif
 
 /************************************************************************/
 /*						Semaphore related API			                */
 /************************************************************************/
+#ifdef SEMAPHORE_ENABLED
 
 SEMAPHORE Semaphore_Init(int initial_count, unsigned int is_binary)
 {
@@ -319,10 +323,12 @@ void Semaphore_Get(SEMAPHORE s, unsigned int amount)
 	Enter_Kernel();
 }
 
+#endif
 
 /************************************************************************/
 /*						Event Group related API			                */
 /************************************************************************/
+#ifdef EVENT_GROUP_ENABLED
 
 EVENT_GROUP Event_Group_Init()
 {
@@ -409,3 +415,5 @@ unsigned int Event_Group_Get_Bits(EVENT_GROUP e)
 	
 	return Current_Process->request_ret;
 }
+
+#endif

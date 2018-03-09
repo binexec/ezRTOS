@@ -10,8 +10,9 @@
 	  
 /*Task*/
 #define MAXTHREAD					16
-#define WORKSPACE					256		// in bytes, per THREAD
 #define LOWEST_PRIORITY				10		// 0 is the highest priority, 10 the lowest
+#define WORKSPACE					256		// in bytes, per THREAD
+#define KERNEL_HEAP_SIZE			1024
 
 /*Optional Kernel Modules*/
 #define MAXMUTEX					8
@@ -25,10 +26,10 @@
 
 /*Scheduler configuration*/
 #define MAX_TICK_MISSED				10
-#define PREEMPTIVE_CSWITCH							//Enable preemptive multi-tasking
-#define PREEMPTIVE_CSWITCH_FREQ		25				//How frequently (in ticks) does preemptive scheduling kick in?
-#define PREVENT_STARVATION							//Enable starvation prevention in the scheduler
-#define STARVATION_MAX				MAXTHREAD*10	//Maximum amount of ticks missed before a task is considered starving
+//#define PREEMPTIVE_CSWITCH							//Enable preemptive multi-tasking
+//#define PREEMPTIVE_CSWITCH_FREQ		25				//How frequently (in ticks) does preemptive scheduling kick in?
+//#define PREVENT_STARVATION							//Enable starvation prevention in the scheduler
+//#define STARVATION_MAX				MAXTHREAD*10	//Maximum amount of ticks missed before a task is considered starving
 
 
 //Identifiers for various RTOS objects. The values are always non-zero if it is valid

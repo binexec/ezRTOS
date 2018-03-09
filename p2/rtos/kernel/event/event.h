@@ -1,6 +1,8 @@
 #ifndef EVENT_H_
 #define EVENT_H_
 
+#define EVENT_ENABLED
+
 #include "../kernel_internal.h"
 
 #define MAX_EVENT_SIG_MISS 1	//The maximum number of missed signals to record for an event. 0 = unlimited
