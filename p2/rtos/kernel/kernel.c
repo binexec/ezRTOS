@@ -6,10 +6,9 @@
 #define LED_PIN_MASK 0x80			//Pin 13 = PB7
 
 
-/*System variables used by the kernel only*/
-volatile static unsigned int Last_Dispatched;			//Which task in the process queue was last dispatched.
+/*System variables used by the kernel only*/		
 volatile static unsigned int Tick_Count;				//Number of timer ticks missed
-
+volatile static PtrList* Last_Dispatched;				//Pointer to the global process queue of the task that was running previously
 
 //For Preemptive Cswitch
 #ifdef PREEMPTIVE_CSWITCH_FREQ
@@ -38,7 +37,7 @@ volatile ERROR_CODE err;							//Error code for the previous kernel operation (i
 PD* findProcessByPID(int pid)
 {
 	PtrList *i;
-	PD *pd_i;
+	PD *process_i;
 	
 	//Valid PIDs must be greater than 0.
 	if(pid <= 0)
@@ -46,10 +45,9 @@ PD* findProcessByPID(int pid)
 	
 	for(i = &Process; i; i = i->next)
 	{
-		pd_i = (PD*)i->ptr;
-			
-		if (pd_i->pid == pid)
-			return pd_i;
+		process_i = (PD*)i->ptr;
+		if (process_i->pid == pid)
+			return process_i;
 	}
 	
 	//No process with such PID
@@ -57,27 +55,31 @@ PD* findProcessByPID(int pid)
 }
 
 
-/*void print_processes()
+void print_processes()
 {
-	int i;
+	PtrList *i;
+	PD *process_i;
 	
-	for(i=0; i<MAXTHREAD; i++)
+	for(i = &Process; i; i = i->next)
 	{
-		if(Process[i].state != DEAD)
-			printf("\tPID: %d\t State: %d\t Priority: %d\n", Process[i].pid, Process[i].state, Process[i].pri);
+		process_i = (PD*)i->ptr;
+		if(process_i->state != DEAD)
+			printf("\tPID: %d\t State: %d\t Priority: %d\n", process_i->pid, process_i->state, process_i->pri);
 	}
 	printf("\n");
-}*/
+}
 
 /*Returns the PID associated with a function's memory address. Used by the OS*/
 int findPIDByFuncPtr(taskfuncptr f)
 {
-	int i;
+	PtrList *i;
+	PD *process_i;
 	
-	for(i=0; i<MAXTHREAD; i++)
+	for(i = &Process; i; i = i->next)
 	{
-		if (Process[i].code == f)
-			return Process[i].pid;
+		process_i = (PD*)i->ptr;
+		if (process_i->code == f)
+			return process_i->pid;
 	}
 	
 	//No process with such PID
@@ -117,46 +119,50 @@ void Kernel_Tick_ISR()
 //Processes all tasks that are currently sleeping and decrement their sleep ticks when called. Expired sleep tasks are placed back into their old state
 static void Kernel_Tick_Handler()
 {
-	int i;
+	PtrList *i;
+	PD *process_i;
 	int remaining_ticks;
 	
 	//No new ticks has been issued yet, skipping...
 	if(Tick_Count == 0)
 		return;
 	
-	for(i=0; i<MAXTHREAD; i++)
+	for(i = &Process; i; i = i->next)
 	{
+		process_i = (PD*)i->ptr;
+		
 		//Increment tick count for starvation prevention
 		#ifdef PREVENT_STARVATION
-		if(Process[i].state == READY)
-			Process[i].starvation_ticks += Tick_Count;
+		if(process_i->state == READY)
+			process_i->starvation_ticks += Tick_Count;
 		#endif
 		
 		//Skip tasks that do not have any outstanding ticks remaining (or at all in the first place)
-		if(Process[i].request_timeout == 0)
+		if(process_i->request_timeout == 0)
 			continue;
 		
-		remaining_ticks = Process[i].request_timeout - Tick_Count;
+		remaining_ticks = process_i->request_timeout - Tick_Count;
 		if(remaining_ticks > 0)
 		{
-			Process[i].request_timeout = remaining_ticks;
+			process_i->request_timeout = remaining_ticks;
 			continue;
 		}
 		
 		//Wake up the task once its timer has expired
-		Process[i].request_timeout = 0;
-		if(Process[i].state == SLEEPING)		//Wake up sleeping tasks
-			Process[i].state = READY;
-				
-		else if(Process[i].state == SUSPENDED && Process[i].last_state == SLEEPING)		//Wake up SUSPENDED sleeping tasks (should we do this for other suspended states too?)
-			Process[i].last_state = READY;
-			
+		process_i->request_timeout = 0;
+		if(process_i->state == SLEEPING)
+			process_i->state = READY;
+		
+		else if(process_i->state == SUSPENDED && process_i->last_state == SLEEPING)		//Wake up SUSPENDED sleeping tasks (should we do this for other suspended states too?)
+			process_i->last_state = READY;
+		
 		else	//Wake up any other tasks timing out from its request, and set its return value to 0 indicate a failure.
 		{
-			Process[i].state = READY;
-			Process[i].request_ret = 0;
+			process_i->state = READY;
+			process_i->request_ret = 0;
 		}
 	}
+	
 	Tick_Count = 0;
 }
 
@@ -167,40 +173,50 @@ static void Kernel_Tick_Handler()
 /************************************************************************/
 
 //Look through all ready tasks and select the next task for dispatching
-static int Kernel_Select_Next_Task()
+static PtrList* Kernel_Select_Next_Task()
 {
-	unsigned int i = 0, j = Last_Dispatched;
-	int highest_priority = LOWEST_PRIORITY + 1;
-	int next_dispatch = -1;
+	PtrList *i;
+	PD *process_i;
+	int j;
 	
-	//Find the next READY task with the highest priority by iterating through the process list ONCE.
-	//If all READY tasks have the same priority, the next task of the same priority is dispatched (round robin)
-	for(i=0; i<MAXTHREAD; i++)
+	PtrList *next_dispatch = NULL;
+	int highest_priority = LOWEST_PRIORITY + 1;		
+	
+	//Iterate through every task in the process list, starting from the task AFTER the one that was previously dispatched
+	
+	for(j=0, i = ptrlist_cnext(&Process,Last_Dispatched); j<Task_Count; j++, i = ptrlist_cnext(&Process,i))
 	{
-		//Increment process index
-		j = (j+1) % MAXTHREAD;
+		process_i = (PD*)i->ptr;
 		
-		//Select the READY process with the highest priority
-		if(Process[j].state == READY)
+		//printf("Task %d\n", process_i->pid);
+		
+		if(process_i->state != READY)
+			continue;
+		
+		//Select the next READY task with the highest priority. If all READY tasks have the same priority, the next task of the same priority is dispatched (round robin)
+		if(process_i->pri < highest_priority)
 		{
-			if(Process[j].pri < highest_priority)
-			{
-				next_dispatch = j;
-				highest_priority = Process[next_dispatch].pri;
-			}
-			
-			//If a READY task is found to be starving, select it immediately regardless of its priority
-			//TODO: Find the task that has been starved the most, rather than the first?
-			#ifdef PREVENT_STARVATION
-			else if(Process[j].starvation_ticks >= STARVATION_MAX)
-			{
-				printf("Found Starving task %d, tick count %d!\n", Process[j].pid, Process[j].starvation_ticks);
-				next_dispatch = j;
-				break;
-			}
-			#endif
+			next_dispatch = i;
+			highest_priority = process_i->pri;
 		}
+			
+		//If a READY task is found to be starving, select it immediately regardless of its priority
+		//TODO: Find the task that has been starved the most, rather than the first seen?
+		#ifdef PREVENT_STARVATION
+		else if(process_i->starvation_ticks >= STARVATION_MAX)
+		{
+			printf("Found Starving task %d, tick count %d!\n", process_i->pid, process_i->starvation_ticks);
+			next_dispatch = i;
+			break;
+		}
+		#endif
+		
+		//Stop iterating once the task that was previously dispatched has been seen and considered
+		//if(i == Last_Dispatched)	break;	
 	}
+	
+	//process_i = (PD*)next_dispatch->ptr;
+	//printf("Selected Task %d\n", process_i->pid);
 	
 	return next_dispatch;
 }
@@ -208,8 +224,10 @@ static int Kernel_Select_Next_Task()
 /* Dispatches a new task */
 static void Kernel_Dispatch_Next_Task()
 {
-	unsigned int i, j;
-	int next_dispatch;
+	PtrList* next_dispatch;
+	PtrList* i;
+	PD *process_i;
+	unsigned int j;
 	
 	//Don't allow preemptive cswitch to kick in again while we're waiting for a task to be ready
 	#ifdef PREEMPTIVE_CSWITCH
@@ -220,26 +238,24 @@ static void Kernel_Dispatch_Next_Task()
 	if(Current_Process->state == RUNNING)
 		Current_Process->state = READY;			
 	
-	//Check if any timer ticks came in
+	//Check if any timer ticks came in, so more tasks can be ready for dispatching
 	Kernel_Tick_Handler();
 	
 	next_dispatch = Kernel_Select_Next_Task();
 
 	//When none of the tasks in the process list is ready
-	if(next_dispatch < 0)
+	if(!next_dispatch)
 	{
 		i = Last_Dispatched;
 		j = 0;
+		process_i = (PD*)i->ptr;
 
 		//We'll temporarily re-enable interrupt in case if one or more task is waiting on events/interrupts or sleeping
 		Enable_Interrupt();
 		
 		//Looping through the process list until any process becomes ready
-		while(Process[i].state != READY)
+		while(process_i->state != READY)
 		{			
-			//Increment process index
-			i = (i+1) % MAXTHREAD;
-			
 			//Check if any timer ticks came in periodically
 			if(j++ >= MAXTHREAD*10)
 			{
@@ -248,20 +264,18 @@ static void Kernel_Dispatch_Next_Task()
 				j = 0;
 				Enable_Interrupt();
 			}
+
+			i = ptrlist_cnext(&Process, i);
 		}
 		
 		//Now that we have some ready tasks, interrupts must be disabled for the kernel to function properly again.
 		Disable_Interrupt();
 		next_dispatch = Kernel_Select_Next_Task();		
 	}
-	
-	//Stash away the current running task into the ready queue
-	/*if(Current_Process->state == RUNNING)
-		Current_Process->state = READY;*/
 
 	//Load the next selected task's process descriptor into Cp
 	Last_Dispatched = next_dispatch;
-	Current_Process = &(Process[Last_Dispatched]);
+	Current_Process = (PD*)next_dispatch->ptr;
 	CurrentSp = Current_Process->sp;
 	Current_Process->state = RUNNING;
 	
@@ -398,6 +412,7 @@ static void Kernel_Handle_Request()
 			break;
 			#endif
 			
+			
 			#ifdef EVENT_GROUP_ENABLED
 			case CREATE_EG:
 			Kernel_Create_Event_Group();
@@ -450,7 +465,7 @@ void Kernel_Reset()
 {
 	KernelActive = 0;
 	Tick_Count = 0;
-	Last_Dispatched = 0;
+	Last_Dispatched = &Process;	
 	Kernel_Request_Cswitch = 0;
 	
 	#ifdef PREEMPTIVE_CSWITCH

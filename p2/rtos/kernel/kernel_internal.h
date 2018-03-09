@@ -120,7 +120,7 @@
 /************************************************************************/
 
 //These kernel variables are accessible by other kernel modules and the OS internally
-extern volatile PD Process[MAXTHREAD];
+extern volatile PtrList Process;
 extern volatile PD* Current_Process;	
 extern volatile unsigned int KernelActive;
 extern volatile unsigned int Kernel_Request_Cswitch;	

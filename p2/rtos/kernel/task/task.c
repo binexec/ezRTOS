@@ -1,7 +1,8 @@
 #include "task.h"
+#include <stdlib.h>		//Remove once kmalloc is used
 
 
-volatile PD Process[MAXTHREAD];			//Contains the process descriptor for all tasks, regardless of their current state.
+volatile PtrList Process;						//Contains the process descriptor for all tasks, regardless of their current state.
 volatile unsigned int Task_Count;				//Number of tasks created so far.
 volatile unsigned int Last_PID;					//Last (also highest) PID value created so far.
 
@@ -12,7 +13,9 @@ void Task_Reset()
 	Last_PID = 0;
 
 	//Clear and initialize the memory used for tasks
-	memset(Process, 0, MAXTHREAD*sizeof(PD));
+	Process.ptr = NULL;
+	Process.next = NULL;
+	//ptrlist_reset(&Process);
 }
 
 
@@ -36,7 +39,6 @@ PID Kernel_Create_Task()
 
 PID Kernel_Create_Task_Direct(taskfuncptr f, PRIORITY py, int arg)
 {
-	int x;
 	unsigned char *sp;
 	PD *p;
 	
@@ -44,7 +46,7 @@ PID Kernel_Create_Task_Direct(taskfuncptr f, PRIORITY py, int arg)
 	if (Task_Count == MAXTHREAD)
 	{
 		#ifdef DEBUG
-		printf("Event_Group_Init: Failed to create event group. There are no free slots remaining\n");
+		printf("Kernel_Create_Task: Failed to create task. There are no free slots remaining\n");
 		#endif
 		
 		err = MAX_PROCESS_ERR;
@@ -52,16 +54,12 @@ PID Kernel_Create_Task_Direct(taskfuncptr f, PRIORITY py, int arg)
 			Current_Process->request_ret = 0;
 		return 0;
 	}
-
-	//Find a dead or empty PD slot to allocate our new task
-	for (x = 0; x < MAXTHREAD; x++)
-		if(Process[x].state == DEAD) 
-			break;
 	
 	++Task_Count;
-	p = &(Process[x]);
+	p = malloc(sizeof(PD));
+	ptrlist_addtail(&Process, p);
 	
-	/*The code below was agglomerated from Kernel_Create_Task_At;*/\
+	/*The code below was agglomerated from Kernel_Create_Task_At;*/
 	
 	//Initializing the workspace memory for the new task
 	sp = (unsigned char *) &(p->workSpace[WORKSPACE-1]);
@@ -112,17 +110,6 @@ void Kernel_Suspend_Task()
 		err = SUSPEND_NONRUNNING_TASK_ERR;
 		return;
 	}
-	
-	//Ensure the task is not currently owning a mutex
-	/*for(int i=0; i<MAXMUTEX; i++) {
-		if (Mutex[i].owner == p->pid) {
-			#ifdef DEBUG
-			printf("Kernel_Suspend_Task: Trying to suspend a task that currently owns a mutex\n");
-			#endif
-			err = SUSPEND_NONRUNNING_TASK_ERR;
-			return;
-		}
-	}*/
 	
 	//Save the process state, and set its current state to SUSPENDED
 	if(p->state == RUNNING)

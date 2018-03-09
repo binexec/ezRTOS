@@ -1,0 +1,17 @@
+#ifndef PTRLIST_H_
+#define PTRLIST_H_
+
+typedef struct ptrlist{
+	void* ptr;
+	struct ptrlist* next;
+} PtrList;
+
+
+PtrList* ptrlist_cnext(PtrList *head, PtrList *current);
+PtrList* ptrlist_findtail(PtrList *head);
+PtrList* ptrlist_addtail(PtrList *head, void* ptr);
+int ptrlist_remove(PtrList *head, PtrList *to_remove);
+void ptrlist_reset(PtrList *head);
+
+
+#endif /* PTRLIST_H_ */
