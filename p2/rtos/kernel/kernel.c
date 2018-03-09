@@ -182,14 +182,15 @@ static PtrList* Kernel_Select_Next_Task()
 	PtrList *next_dispatch = NULL;
 	int highest_priority = LOWEST_PRIORITY + 1;		
 	
-	//Iterate through every task in the process list, starting from the task AFTER the one that was previously dispatched
+	//If the RTOS has just been booted, setting Last_Dispatched to the tail process will let the scheduler iterate from the beginning
+	if(!Last_Dispatched)
+		Last_Dispatched = ptrlist_findtail(&Process);
 	
+	//Iterate through every task in the process list, starting from the task AFTER the one that was previously dispatched
 	for(j=0, i = ptrlist_cnext(&Process,Last_Dispatched); j<Task_Count; j++, i = ptrlist_cnext(&Process,i))
 	{
 		process_i = (PD*)i->ptr;
-		
-		//printf("Task %d\n", process_i->pid);
-		
+
 		if(process_i->state != READY)
 			continue;
 		
@@ -210,13 +211,7 @@ static PtrList* Kernel_Select_Next_Task()
 			break;
 		}
 		#endif
-		
-		//Stop iterating once the task that was previously dispatched has been seen and considered
-		//if(i == Last_Dispatched)	break;	
 	}
-	
-	//process_i = (PD*)next_dispatch->ptr;
-	//printf("Selected Task %d\n", process_i->pid);
 	
 	return next_dispatch;
 }
@@ -464,8 +459,8 @@ static void Kernel_Handle_Request()
 void Kernel_Reset()
 {
 	KernelActive = 0;
-	Tick_Count = 0;
-	Last_Dispatched = &Process;	
+	Tick_Count = 0;	
+	Last_Dispatched = NULL;
 	Kernel_Request_Cswitch = 0;
 	
 	#ifdef PREEMPTIVE_CSWITCH

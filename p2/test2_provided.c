@@ -76,8 +76,8 @@ void test()
 	DDRB = LED_PIN_MASK;			//Set pin 13 as output
 	Task_Create(Ping, 6, 210);
 	Task_Create(Pong, 6, 205);
-	Task_Create(suspend_pong, 4, 0);
 	Task_Create(Peng, 6, 205);
+	Task_Create(suspend_pong, 4, 0);
 }
 
 #endif
