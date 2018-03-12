@@ -5,16 +5,17 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
-
-#define TEST_SET_1
-
-
 #define LED_PIN_MASK 0x80			//Pin 13 = PB7
+
 
 void Idle()
 {
 	for(;;);
 };
+
+
+
+#define TEST_SET_3
 
 /************************************************************************/
 /*				Test 1: Task Suspension, Resume, Sleep, Yield		    */
@@ -28,7 +29,6 @@ void Ping()
 		PORTB |= LED_PIN_MASK;		//Turn on onboard LED
 		printf("A!\n");
 		Task_Sleep(50);
-		//Task_Terminate();
 		Task_Yield();
 	}
 }
@@ -145,15 +145,6 @@ void test()
 
 #ifdef TEST_SET_3
 
-#ifndef PREVENT_STARVATION
-#define PREVENT_STARVATION
-#endif
-
-#ifndef STARVATION_MAX
-#define STARVATION_MAX	MAXTHREAD*10
-#endif
-
-
 void ps1()
 {
 	for(;;)
@@ -210,29 +201,11 @@ void test()
 
 #ifdef TEST_SET_4
 
-#ifndef PREEMPTIVE_CSWITCH
-#define PREEMPTIVE_CSWITCH
-#endif
-
-#ifndef PREEMPTIVE_CSWITCH_FREQ
-#define PREEMPTIVE_CSWITCH_FREQ		25
-#endif
-
-#ifndef PREVENT_STARVATION
-#define PREVENT_STARVATION
-#endif
-
-#ifndef STARVATION_MAX
-#define STARVATION_MAX	MAXTHREAD*10
-#endif
-
-
 void ps1()
 {
 	for(;;)
 	{
 		puts("A");
-		//Task_Yield();
 	}
 
 }
@@ -242,7 +215,6 @@ void ps2()
 	for(;;)
 	{
 		puts("B");
-		//Task_Yield();
 	}
 }
 
@@ -251,7 +223,6 @@ void ps3()
 	for(;;)
 	{
 		puts("C");
-		//Task_Yield();
 	}
 }
 
@@ -260,7 +231,6 @@ void ps4()
 	for(;;)
 	{
 		puts("D");
-		//Task_Yield();
 	}
 }
 
@@ -461,15 +431,6 @@ void test()
 
 #ifdef TEST_SET_8
 
-#ifndef PREEMPTIVE_CSWITCH
-#define PREEMPTIVE_CSWITCH
-#endif
-
-#ifndef PREEMPTIVE_CSWITCH_FREQ
-#define PREEMPTIVE_CSWITCH_FREQ		25
-#endif
-
-
 MUTEX m1;
 
 void mut_t1()
@@ -531,17 +492,6 @@ void test()
  */
 
 #ifdef TEST_SET_9
-
-
-#ifndef PREEMPTIVE_CSWITCH
-#define PREEMPTIVE_CSWITCH
-#endif
-
-#ifndef PREEMPTIVE_CSWITCH_FREQ
-#define PREEMPTIVE_CSWITCH_FREQ		25
-#endif
-
-
 
 MUTEX mut;
 

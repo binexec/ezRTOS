@@ -89,7 +89,7 @@ void Task_Yield()
 	}
 
     Disable_Interrupt();
-    Current_Process ->request = YIELD;
+    Current_Process->request = YIELD;
     Enter_Kernel();
 }
 

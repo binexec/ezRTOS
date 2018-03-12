@@ -1,17 +1,13 @@
 #include "kernel.h"
-
 #include <stdio.h>
 #include <string.h>
-
-#define LED_PIN_MASK 0x80			//Pin 13 = PB7
-
 
 /*System variables used by the kernel only*/		
 volatile static unsigned int Tick_Count;				//Number of timer ticks missed
 volatile static PtrList* Last_Dispatched;				//Pointer to the global process queue of the task that was running previously
 
 //For Preemptive Cswitch
-#ifdef PREEMPTIVE_CSWITCH_FREQ
+#ifdef PREEMPTIVE_CSWITCH
 volatile static unsigned int Preemptive_Cswitch_Allowed;
 volatile static unsigned int Ticks_Since_Last_Cswitch;
 #endif
@@ -101,16 +97,16 @@ void Kernel_Tick_ISR()
 	//Increment the system-wide missed tick count
 	++Tick_Count;
 	
+	//Preemptive Scheduling: Has it been a long time since we switched to a new task?
 	#ifdef PREEMPTIVE_CSWITCH	
 	if(!Preemptive_Cswitch_Allowed)
 		return;
-
-	//Preemptive Scheduling: Has it been a long time since we switched to a new task?
+		
 	if(++Ticks_Since_Last_Cswitch >= PREEMPTIVE_CSWITCH_FREQ)
 	{
 		Disable_Interrupt();
-		Kernel_Dispatch_Next_Task();
-		CSwitch();						//same as Exit_Kernel(); interrupts are automatically enabled at the end
+		Current_Process->request = YIELD;
+		Enter_Kernel();							//Interrupts are automatically enabled once kernel is exited
 	}
 	#endif
 }
@@ -216,8 +212,11 @@ static PtrList* Kernel_Select_Next_Task()
 		#endif
 	}
 	
+	#ifdef PREVENT_STARVATION
 	if(most_starved)
 		return most_starved;
+	#endif
+	
 	return next_dispatch;
 }
 

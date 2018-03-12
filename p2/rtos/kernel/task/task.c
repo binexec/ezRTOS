@@ -170,11 +170,8 @@ void Kernel_Sleep_Task(void)
 void Kernel_Terminate_Task(void)
 {
 	Current_Process->state = DEAD;	
-	
-	//Free the PD used by the terminated task
-	ptrlist_remove(&Process, ptrlist_find(&Process, Current_Process));
+	ptrlist_remove(&Process, ptrlist_find(&Process, Current_Process));		//Free the PD used by the terminated task
 	--Task_Count;
-	
 	
 	Kernel_Request_Cswitch = 1;
 }
