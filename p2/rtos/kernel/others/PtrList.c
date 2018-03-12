@@ -45,6 +45,13 @@ PtrList* ptrlist_addtail(PtrList *head, void* ptr)
 	return e;
 }
 
+PtrList* ptrlist_find(PtrList *head, void* ptr)
+{
+	for(; head && head->ptr != ptr; head = head->next);
+	
+	//Will return NULL if not found
+	return head;
+}
 
 int ptrlist_remove(PtrList *head, PtrList *to_remove)
 {
@@ -83,7 +90,7 @@ int ptrlist_remove(PtrList *head, PtrList *to_remove)
 }
 
 
-void ptrlist_reset(PtrList *head)
+void ptrlist_destroy(PtrList *head)
 {
 	PtrList* i = head->next;
 	

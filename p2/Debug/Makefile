@@ -56,7 +56,7 @@ C_SRCS +=  \
 ../rtos/kernel/others/Queue.c \
 ../rtos/kernel/task/task.c \
 ../rtos/os.c \
-../test2_provided.c
+../rtos_test.c
 
 
 PREPROCESSING_SRCS +=  \
@@ -77,7 +77,7 @@ rtos/kernel/others/PtrList.o \
 rtos/kernel/others/Queue.o \
 rtos/kernel/task/task.o \
 rtos/os.o \
-test2_provided.o
+rtos_test.o
 
 OBJS_AS_ARGS +=  \
 rtos/kernel/hardware/cpuarch.o \
@@ -90,7 +90,7 @@ rtos/kernel/others/PtrList.o \
 rtos/kernel/others/Queue.o \
 rtos/kernel/task/task.o \
 rtos/os.o \
-test2_provided.o
+rtos_test.o
 
 C_DEPS +=  \
 rtos/kernel/hardware/cpuarch.d \
@@ -103,7 +103,7 @@ rtos/kernel/others/PtrList.d \
 rtos/kernel/others/Queue.d \
 rtos/kernel/task/task.d \
 rtos/os.d \
-test2_provided.d
+rtos_test.d
 
 C_DEPS_AS_ARGS +=  \
 rtos/kernel/hardware/cpuarch.d \
@@ -116,7 +116,7 @@ rtos/kernel/others/PtrList.d \
 rtos/kernel/others/Queue.d \
 rtos/kernel/task/task.d \
 rtos/os.d \
-test2_provided.d
+rtos_test.d
 
 OUTPUT_FILE_PATH +=ezRTOS.elf
 

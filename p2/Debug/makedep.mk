@@ -22,5 +22,5 @@ rtos\kernel\task\task.c
 
 rtos\os.c
 
-test2_provided.c
+rtos_test.c
 

@@ -165,9 +165,16 @@ void Kernel_Sleep_Task(void)
 	Kernel_Request_Cswitch = 1;
 }
 
+
+//Todo: FREE the PD
 void Kernel_Terminate_Task(void)
 {
-	Current_Process->state = DEAD;			//Mark the task as DEAD so its resources will be recycled later when new tasks are created
+	Current_Process->state = DEAD;	
+	
+	//Free the PD used by the terminated task
+	ptrlist_remove(&Process, ptrlist_find(&Process, Current_Process));
 	--Task_Count;
+	
+	
 	Kernel_Request_Cswitch = 1;
 }

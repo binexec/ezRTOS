@@ -110,8 +110,7 @@ void Kernel_Tick_ISR()
 	{
 		Disable_Interrupt();
 		Kernel_Dispatch_Next_Task();
-		CSwitch();						//same as Exit_Kernel(), interrupts are automatically enabled at the end
-		//Enable_Interrupt();
+		CSwitch();						//same as Exit_Kernel(); interrupts are automatically enabled at the end
 	}
 	#endif
 }
@@ -180,11 +179,12 @@ static PtrList* Kernel_Select_Next_Task()
 	int j;
 	
 	PtrList *next_dispatch = NULL;
-	int highest_priority = LOWEST_PRIORITY + 1;		
+	int highest_priority = LOWEST_PRIORITY + 1;	
 	
-	//If the RTOS has just been booted, setting Last_Dispatched to the tail process will let the scheduler iterate from the beginning
-	if(!Last_Dispatched)
-		Last_Dispatched = ptrlist_findtail(&Process);
+	#ifdef PREVENT_STARVATION
+	PtrList *most_starved = NULL;
+	PD *process_ms;
+	#endif	
 	
 	//Iterate through every task in the process list, starting from the task AFTER the one that was previously dispatched
 	for(j=0, i = ptrlist_cnext(&Process,Last_Dispatched); j<Task_Count; j++, i = ptrlist_cnext(&Process,i))
@@ -201,18 +201,23 @@ static PtrList* Kernel_Select_Next_Task()
 			highest_priority = process_i->pri;
 		}
 			
-		//If a READY task is found to be starving, select it immediately regardless of its priority
-		//TODO: Find the task that has been starved the most, rather than the first seen?
+		//If a READY task is found to be starving, record it if it has the highest starving count
 		#ifdef PREVENT_STARVATION
 		else if(process_i->starvation_ticks >= STARVATION_MAX)
 		{
 			printf("Found Starving task %d, tick count %d!\n", process_i->pid, process_i->starvation_ticks);
-			next_dispatch = i;
-			break;
+			
+			if(most_starved && process_ms->starvation_ticks <= process_i->starvation_ticks)
+				continue;
+			
+			most_starved = i;
+			process_ms = process_i;
 		}
 		#endif
 	}
 	
+	if(most_starved)
+		return most_starved;
 	return next_dispatch;
 }
 
@@ -236,6 +241,7 @@ static void Kernel_Dispatch_Next_Task()
 	//Check if any timer ticks came in, so more tasks can be ready for dispatching
 	Kernel_Tick_Handler();
 	
+	//Select a READY task for dispatch
 	next_dispatch = Kernel_Select_Next_Task();
 
 	//When none of the tasks in the process list is ready
@@ -252,7 +258,7 @@ static void Kernel_Dispatch_Next_Task()
 		while(process_i->state != READY)
 		{			
 			//Check if any timer ticks came in periodically
-			if(j++ >= MAXTHREAD*10)
+			if(j++ >= Task_Count*10)
 			{
 				Disable_Interrupt();
 				Kernel_Tick_Handler();
@@ -317,7 +323,9 @@ static void Kernel_Invalid_Request()
 
 static void Kernel_Handle_Request() 
 {
-	Kernel_Dispatch_Next_Task();	//Select an initial task to run
+	//Select an initial task to run
+	Last_Dispatched = ptrlist_findtail(&Process);
+	Kernel_Dispatch_Next_Task();
 
 	//After OS initialization, THIS WILL BE KERNEL'S MAIN LOOP!
 	//NOTE: When another task makes a syscall and enters the loop, it's still in the RUNNING state!

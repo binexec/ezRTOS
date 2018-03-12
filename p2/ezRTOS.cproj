@@ -203,7 +203,7 @@
     <Compile Include="rtos\os.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="test2_provided.c">
+    <Compile Include="rtos_test.c">
       <SubType>compile</SubType>
     </Compile>
   </ItemGroup>

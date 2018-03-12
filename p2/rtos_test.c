@@ -68,8 +68,14 @@ void suspend_pong()
 		Task_Resume(Pong);
 		Task_Yield();
 	}
-	
 }
+
+/*void suicide_task()
+{
+	Task_Sleep(500);
+	printf("SUICIDE TASK IS TERMINATING \n");
+	Task_Terminate();
+}*/
 
 void test()
 {
@@ -78,6 +84,8 @@ void test()
 	Task_Create(Pong, 6, 205);
 	Task_Create(Peng, 6, 205);
 	Task_Create(suspend_pong, 4, 0);
+	
+	//Task_Create(suicide_task, 1, 0);
 }
 
 #endif
@@ -137,12 +145,21 @@ void test()
 
 #ifdef TEST_SET_3
 
+#ifndef PREVENT_STARVATION
+#define PREVENT_STARVATION
+#endif
+
+#ifndef STARVATION_MAX
+#define STARVATION_MAX	MAXTHREAD*10
+#endif
+
+
 void ps1()
 {
 	for(;;)
 	{
 		puts("A");
-		//Task_Yield();
+		Task_Yield();
 	}
 
 }
@@ -152,7 +169,7 @@ void ps2()
 	for(;;)
 	{
 		puts("B");
-		//Task_Yield();
+		Task_Yield();
 	}
 }
 
@@ -161,7 +178,7 @@ void ps3()
 	for(;;)
 	{
 		puts("C");
-		//Task_Yield();
+		Task_Yield();
 	}
 }
 
@@ -170,7 +187,7 @@ void ps4()
 	for(;;)
 	{
 		puts("D");
-		//Task_Yield();
+		Task_Yield();
 	}
 }
 
@@ -192,6 +209,23 @@ void test()
 /************************************************************************/
 
 #ifdef TEST_SET_4
+
+#ifndef PREEMPTIVE_CSWITCH
+#define PREEMPTIVE_CSWITCH
+#endif
+
+#ifndef PREEMPTIVE_CSWITCH_FREQ
+#define PREEMPTIVE_CSWITCH_FREQ		25
+#endif
+
+#ifndef PREVENT_STARVATION
+#define PREVENT_STARVATION
+#endif
+
+#ifndef STARVATION_MAX
+#define STARVATION_MAX	MAXTHREAD*10
+#endif
+
 
 void ps1()
 {
@@ -427,6 +461,15 @@ void test()
 
 #ifdef TEST_SET_8
 
+#ifndef PREEMPTIVE_CSWITCH
+#define PREEMPTIVE_CSWITCH
+#endif
+
+#ifndef PREEMPTIVE_CSWITCH_FREQ
+#define PREEMPTIVE_CSWITCH_FREQ		25
+#endif
+
+
 MUTEX m1;
 
 void mut_t1()
@@ -488,6 +531,17 @@ void test()
  */
 
 #ifdef TEST_SET_9
+
+
+#ifndef PREEMPTIVE_CSWITCH
+#define PREEMPTIVE_CSWITCH
+#endif
+
+#ifndef PREEMPTIVE_CSWITCH_FREQ
+#define PREEMPTIVE_CSWITCH_FREQ		25
+#endif
+
+
 
 MUTEX mut;
 
