@@ -47,6 +47,7 @@ SUBDIRS :=  \
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS +=  \
+../rtos/kernel/event/event.c \
 ../rtos/kernel/hardware/cpuarch.c \
 ../rtos/kernel/hardware/hw.c \
 ../rtos/kernel/hardware/uart/uart.c \
@@ -69,6 +70,7 @@ ASM_SRCS +=
 
 
 OBJS +=  \
+rtos/kernel/event/event.o \
 rtos/kernel/hardware/cpuarch.o \
 rtos/kernel/hardware/cswitch.o \
 rtos/kernel/hardware/hw.o \
@@ -84,6 +86,7 @@ rtos/os.o \
 rtos_test.o
 
 OBJS_AS_ARGS +=  \
+rtos/kernel/event/event.o \
 rtos/kernel/hardware/cpuarch.o \
 rtos/kernel/hardware/cswitch.o \
 rtos/kernel/hardware/hw.o \
@@ -99,6 +102,7 @@ rtos/os.o \
 rtos_test.o
 
 C_DEPS +=  \
+rtos/kernel/event/event.d \
 rtos/kernel/hardware/cpuarch.d \
 rtos/kernel/hardware/cswitch.d \
 rtos/kernel/hardware/hw.d \
@@ -114,6 +118,7 @@ rtos/os.d \
 rtos_test.d
 
 C_DEPS_AS_ARGS +=  \
+rtos/kernel/event/event.d \
 rtos/kernel/hardware/cpuarch.d \
 rtos/kernel/hardware/cswitch.d \
 rtos/kernel/hardware/hw.d \
@@ -166,6 +171,15 @@ LINKER_SCRIPT_DEP+=
 
 
 
+
+
+
+rtos/kernel/event/%.o: ../rtos/kernel/event/%.c
+	@echo Building file: $<
+	@echo Invoking: AVR/GNU C Compiler : 5.4.0
+	$(QUOTE)C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr8\avr8-gnu-toolchain\bin\avr-gcc.exe$(QUOTE)  -x c -funsigned-char -funsigned-bitfields -DF_CPU=16000000 -DBAUD=9600  -I"C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.0.90\include"  -O1 -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -mrelax -g2 -Wall -mmcu=atmega2560 -B "C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.0.90\gcc\dev\atmega2560" -c -std=gnu99 -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 
+	@echo Finished building: $<
+	
 
 rtos/kernel/hardware/%.o: ../rtos/kernel/hardware/%.c
 	@echo Building file: $<

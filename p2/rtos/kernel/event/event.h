@@ -25,7 +25,6 @@ EVENT Kernel_Create_Event(void);
 void Kernel_Wait_Event(void);
 void Kernel_Signal_Event(void);
 EVENT_TYPE* findEventByEventID(EVENT e);
-int getEventCount(EVENT e);
 
 
 #endif /* EVENT_H_ */

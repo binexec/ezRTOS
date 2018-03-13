@@ -113,9 +113,9 @@
     </ToolchainSettings>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="rtos\kernel\event\event.c">
+    <Compile Include="rtos\kernel\event\event.c">
       <SubType>compile</SubType>
-    </None>
+    </Compile>
     <Compile Include="rtos\kernel\event\event.h">
       <SubType>compile</SubType>
     </Compile>

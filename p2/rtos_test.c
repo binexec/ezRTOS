@@ -14,7 +14,7 @@ void Idle()
 };
 
 
-#define TEST_SET_8
+#define TEST_SET_6
 
 
 /************************************************************************/
@@ -311,7 +311,8 @@ void event_wait_test()
 	printf("Signal for event e1 received!\n");
 	
 	e1 = Event_Create();
-	Task_Sleep(100);
+	printf("\n");
+	Task_Sleep(200);
 	
 	//Test pre signaling
 	printf("Waiting for event e1...\n");

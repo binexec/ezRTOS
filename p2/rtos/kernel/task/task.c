@@ -100,13 +100,14 @@ void Kernel_Suspend_Task()
 		return;
 	}
 	
-	//Ensure the task is not in a unsuspendable state
-	if(p->state == DEAD || p->state == SUSPENDED)
+	//Do not suspend tasks that are dead or waiting on resources. This may cause deadlocks. 
+	//Maybe optionally implement "deferred suspension" for tasks waiting on resources?
+	if(!(p->state == READY || p->state == RUNNING || p->state == SLEEPING))
 	{
 		#ifdef DEBUG
 		printf("Kernel_Suspend_Task: Trying to suspend a task that's in an unsuspendable state %d!\n", p->state);
 		#endif
-		err = SUSPEND_NONRUNNING_TASK_ERR;
+		err = SUSPEND_INACTIVE_TASK_ERR;
 		return;
 	}
 	

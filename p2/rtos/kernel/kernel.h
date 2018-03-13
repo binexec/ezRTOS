@@ -12,7 +12,7 @@
 #include "hardware/hw.h"
 #include "hardware/cpuarch.h"
 #include "mutex/mutex.h"
-//#include "event/event.h"
+#include "event/event.h"
 #include "semaphore/semaphore.h"
 //#include "event/event_group.h"
 

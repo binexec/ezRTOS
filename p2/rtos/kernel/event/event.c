@@ -2,30 +2,26 @@
 
 #include <string.h>
 
-volatile static EVENT_TYPE Event[MAXEVENT];		//Contains all the event objects 
+volatile static PtrList EventList;				//Contains all the event objects 
 volatile unsigned int Event_Count;				//Number of events created so far.
 volatile unsigned int Last_EventID;				//Last (also highest) EVENT value created so far.
 
 
 void Event_Reset()
-{
-	int x = 0;
-	
+{	
 	Event_Count = 0;
 	Last_EventID = 0;
 	
-	//Clear and initialize the memory used for Events
-	memset(Event, 0, MAXEVENT*sizeof(EVENT_TYPE));
-	for (x = 0; x < MAXEVENT; x++) {
-		Event[x].id = 0;
-	}
+	EventList.ptr = NULL;
+	EventList.next = NULL;
 }
 
 
 
 EVENT_TYPE* findEventByEventID(EVENT e)
 {
-	int i;
+	PtrList *i;
+	EVENT_TYPE *event_i;
 	
 	//Ensure the request event ID is > 0
 	if(e <= 0)
@@ -37,41 +33,27 @@ EVENT_TYPE* findEventByEventID(EVENT e)
 		return NULL;
 	}
 	
-	//Find the requested Event and return its pointer if found
-	for(i=0; i<MAXEVENT; i++)
+	for(i = &EventList; i; i = i->next)
 	{
-		if(Event[i].id == e)
-		return &Event[i];
+		event_i = (EVENT_TYPE*)i->ptr;
+		if (event_i->id == e)
+			return event_i;
 	}
 	
-	//Event wasn't found
-	//#ifdef DEBUG
-	//printf("findEventByEventID: The requested event %d was not found!\n", e);
-	//#endif
 	err = EVENT_NOT_FOUND_ERR;
 	return NULL;
 }
 
 
-/*Only useful if our RTOS allows more than one missed event signals to be recorded*/
-int getEventCount(EVENT e)
-{
-	EVENT_TYPE* e1 = findEventByEventID(e);
-	
-	if(e1 == NULL)
-	return 0;
-	
-	return e1->count;
-}
-
-
 /************************************************************************/
-/*                  EVENT RELATED KERNEL FUNCTIONS                      */
+/*							EVENT Creation			                    */
 /************************************************************************/
+
+//We do not need a separate Kernel_Create_Event_Direct function, since creating an event object requires no parameters
 
 EVENT Kernel_Create_Event(void)
 {
-	int i;
+	EVENT_TYPE* e;
 	
 	//Make sure the system's events are not at max
 	if(Event_Count >= MAXEVENT)
@@ -86,16 +68,15 @@ EVENT Kernel_Create_Event(void)
 		return 0;
 	}
 	
-	//Find an uninitialized Event slot
-	for(i=0; i<MAXEVENT; i++)
-		if(Event[i].id == 0) 
-			break;
-	
-	//Assign a new unique ID to the event. Note that the smallest valid Event ID is 1.
-	Event[i].id = ++Last_EventID;
-	Event[i].owner = 0;
+	//Create a new Event object
+	e = malloc(sizeof(EVENT_TYPE));
+	ptrlist_add(&EventList, e);
 	++Event_Count;
 	
+	//Assign a new unique ID to the event. Note that the smallest valid Event ID is 1.
+	e->id = ++Last_EventID;
+	e->owner = 0;
+	++Event_Count;
 	
 	#ifdef DEBUG
 	printf("Event_Init: Created Event %d!\n", Last_EventID);
@@ -103,9 +84,16 @@ EVENT Kernel_Create_Event(void)
 	
 	err = NO_ERR;
 	if(KernelActive)	
-		Current_Process->request_ret = Event[i].id;
-	return Event[i].id;
+		Current_Process->request_ret = e->id;
+		
+	return e->id;
 }
+
+
+/************************************************************************/
+/*							EVENT Operations		                   */
+/************************************************************************/
+
 
 void Kernel_Wait_Event(void)
 {
@@ -166,29 +154,20 @@ void Kernel_Signal_Event(void)
 	
 	//If the event is unowned, no need to wake anyone up
 	if(e->owner == 0)
-	{
-		#ifdef DEBUG
-		printf("Kernel_Signal_Event: *WARNING* The requested event is not being waited by anyone!\n");
-		#endif
-		err = SIGNAL_UNOWNED_EVENT_ERR;
 		return;
-	}
 	
 	//Wake up the owner of the event by setting its state to READY if it's active. The event is "consumed"
 	e_owner = findProcessByPID(e->owner);
-	if(e_owner->state != WAIT_EVENT)
-	{
-		#ifdef DEBUG
-		printf("Kernel_Signal_Event: Event owner is not in WAIT_EVENT state!\n");
-		#endif
-		return;
-	}
+	e_owner->state = READY;
 	
+	//Destroy the event object
 	e->owner = 0;
 	e->count = 0;
 	e->id = 0;
-	--Event_Count;
 	
-	e_owner->state = READY;
+	free(e);
+	ptrlist_remove(&EventList, ptrlist_find(&EventList, e));
+	--Event_Count;
+		
 	Kernel_Request_Cswitch = 1;
 }
