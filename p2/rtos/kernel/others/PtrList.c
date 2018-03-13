@@ -23,7 +23,8 @@ PtrList* ptrlist_findtail(PtrList *head)
 	return head;
 }
 
-PtrList* ptrlist_addtail(PtrList *head, void* ptr)
+//Create a new list entry for ptr, and link it after the tail
+PtrList* ptrlist_add(PtrList *head, void* ptr)
 {
 	PtrList* e;
 	

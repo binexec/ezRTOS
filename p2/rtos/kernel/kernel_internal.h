@@ -80,6 +80,7 @@
 	   GET_EG_BITS,
 	   
 	   CREATE_M,						//mutex
+	   DESTROY_M,
 	   LOCK_M,
 	   UNLOCK_M,
 	   
@@ -125,7 +126,7 @@
 /************************************************************************/
 
 //These kernel variables are accessible by other kernel modules and the OS internally
-extern volatile PtrList Processes;
+extern volatile PtrList ProcessList;
 extern volatile PD* Current_Process;	
 extern volatile unsigned int KernelActive;
 extern volatile unsigned int Kernel_Request_Cswitch;	

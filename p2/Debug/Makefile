@@ -51,6 +51,7 @@ C_SRCS +=  \
 ../rtos/kernel/hardware/hw.c \
 ../rtos/kernel/hardware/uart/uart.c \
 ../rtos/kernel/kernel.c \
+../rtos/kernel/mutex/mutex.c \
 ../rtos/kernel/others/kmalloc.c \
 ../rtos/kernel/others/PtrList.c \
 ../rtos/kernel/others/Queue.c \
@@ -73,6 +74,7 @@ rtos/kernel/hardware/cswitch.o \
 rtos/kernel/hardware/hw.o \
 rtos/kernel/hardware/uart/uart.o \
 rtos/kernel/kernel.o \
+rtos/kernel/mutex/mutex.o \
 rtos/kernel/others/kmalloc.o \
 rtos/kernel/others/PtrList.o \
 rtos/kernel/others/Queue.o \
@@ -87,6 +89,7 @@ rtos/kernel/hardware/cswitch.o \
 rtos/kernel/hardware/hw.o \
 rtos/kernel/hardware/uart/uart.o \
 rtos/kernel/kernel.o \
+rtos/kernel/mutex/mutex.o \
 rtos/kernel/others/kmalloc.o \
 rtos/kernel/others/PtrList.o \
 rtos/kernel/others/Queue.o \
@@ -101,6 +104,7 @@ rtos/kernel/hardware/cswitch.d \
 rtos/kernel/hardware/hw.d \
 rtos/kernel/hardware/uart/uart.d \
 rtos/kernel/kernel.d \
+rtos/kernel/mutex/mutex.d \
 rtos/kernel/others/kmalloc.d \
 rtos/kernel/others/PtrList.d \
 rtos/kernel/others/Queue.d \
@@ -115,6 +119,7 @@ rtos/kernel/hardware/cswitch.d \
 rtos/kernel/hardware/hw.d \
 rtos/kernel/hardware/uart/uart.d \
 rtos/kernel/kernel.d \
+rtos/kernel/mutex/mutex.d \
 rtos/kernel/others/kmalloc.d \
 rtos/kernel/others/PtrList.d \
 rtos/kernel/others/Queue.d \
@@ -160,6 +165,8 @@ LINKER_SCRIPT_DEP+=
 
 
 
+
+
 rtos/kernel/hardware/%.o: ../rtos/kernel/hardware/%.c
 	@echo Building file: $<
 	@echo Invoking: AVR/GNU C Compiler : 5.4.0
@@ -175,6 +182,13 @@ rtos/kernel/hardware/uart/%.o: ../rtos/kernel/hardware/uart/%.c
 	
 
 rtos/kernel/%.o: ../rtos/kernel/%.c
+	@echo Building file: $<
+	@echo Invoking: AVR/GNU C Compiler : 5.4.0
+	$(QUOTE)C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr8\avr8-gnu-toolchain\bin\avr-gcc.exe$(QUOTE)  -x c -funsigned-char -funsigned-bitfields -DF_CPU=16000000 -DBAUD=9600  -I"C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.0.90\include"  -O1 -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -mrelax -g2 -Wall -mmcu=atmega2560 -B "C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.0.90\gcc\dev\atmega2560" -c -std=gnu99 -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 
+	@echo Finished building: $<
+	
+
+rtos/kernel/mutex/%.o: ../rtos/kernel/mutex/%.c
 	@echo Building file: $<
 	@echo Invoking: AVR/GNU C Compiler : 5.4.0
 	$(QUOTE)C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr8\avr8-gnu-toolchain\bin\avr-gcc.exe$(QUOTE)  -x c -funsigned-char -funsigned-bitfields -DF_CPU=16000000 -DBAUD=9600  -I"C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.0.90\include"  -O1 -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -mrelax -g2 -Wall -mmcu=atmega2560 -B "C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.0.90\gcc\dev\atmega2560" -c -std=gnu99 -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 

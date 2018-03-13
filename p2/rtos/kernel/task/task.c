@@ -2,7 +2,7 @@
 #include <stdlib.h>		//Remove once kmalloc is used
 
 
-volatile PtrList Processes;						//Contains the process descriptor for all tasks, regardless of their current state.
+volatile PtrList ProcessList;						//Contains the process descriptor for all tasks, regardless of their current state.
 volatile unsigned int Task_Count;				//Number of tasks created so far.
 volatile unsigned int Last_PID;					//Last (also highest) PID value created so far.
 
@@ -12,8 +12,8 @@ void Task_Reset()
 	Task_Count = 0;
 	Last_PID = 0;
 
-	Processes.ptr = NULL;
-	Processes.next = NULL;
+	ProcessList.ptr = NULL;
+	ProcessList.next = NULL;
 }
 
 
@@ -40,7 +40,7 @@ PID Kernel_Create_Task_Direct(taskfuncptr f, PRIORITY py, int arg)
 	}
 	
 	p = malloc(sizeof(PD));
-	ptrlist_addtail(&Processes, p);
+	ptrlist_add(&ProcessList, p);
 	++Task_Count;
 	
 	/*The code below was agglomerated from Kernel_Create_Task_At;*/
@@ -170,7 +170,7 @@ void Kernel_Sleep_Task(void)
 void Kernel_Terminate_Task(void)
 {
 	Current_Process->state = DEAD;	
-	ptrlist_remove(&Processes, ptrlist_find(&Processes, Current_Process));		//Free the PD used by the terminated task
+	ptrlist_remove(&ProcessList, ptrlist_find(&ProcessList, Current_Process));		//Free the PD used by the terminated task
 	--Task_Count;
 	
 	Kernel_Request_Cswitch = 1;

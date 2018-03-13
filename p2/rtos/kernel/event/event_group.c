@@ -95,12 +95,12 @@ void Kernel_Event_Group_Set_Bits()
 	
 	for(i=0; i<MAXTHREAD; i++)
 	{
-		if(Processes[i].state == WAIT_EVENTG && ps_eventgroup_id == eg->id)						
+		if(ProcessList[i].state == WAIT_EVENTG && ps_eventgroup_id == eg->id)						
 		{
 			current_events = ps_bits_waiting & eg->events;
 			
 			if((current_events > 0 && !ps_wait_all_bits) || (current_events == ps_bits_waiting))
-				Processes[i].state = READY;
+				ProcessList[i].state = READY;
 		}
 	}
 	

@@ -23,7 +23,7 @@ extern volatile unsigned int Last_SemaphoreID;
 
 SEMAPHORE Kernel_Create_Semaphore(void);
 SEMAPHORE Kernel_Create_Semaphore_Direct(int initial_count, unsigned int is_binary);
-void Kernel_Destroy_Semaphore();
+void Kernel_Destroy_Semaphore(void);
 void Semaphore_Reset(void);
 void Kernel_Semaphore_Give(void);
 void Kernel_Semaphore_Get(void);

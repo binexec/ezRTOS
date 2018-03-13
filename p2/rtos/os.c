@@ -148,7 +148,7 @@ void Task_Sleep(TICK t)
 /************************************************************************/
 #ifdef EVENT_ENABLED
 
-EVENT Event_Init(void)
+EVENT Event_Create(void)
 {
 	EVENT retval;
 	
@@ -209,7 +209,7 @@ void Event_Signal(EVENT e)
 
 #ifdef MUTEX_ENABLED
 
-MUTEX Mutex_Init(void)
+MUTEX Mutex_Create(void)
 {
 	MUTEX retval;
 	
@@ -233,6 +233,19 @@ MUTEX Mutex_Init(void)
 	#endif
 	
 	return retval;
+}
+
+int Mutex_Destroy(MUTEX m)
+{
+	if(KernelActive)
+	{
+		Disable_Interrupt();
+		Current_Process->request = DESTROY_M;
+		Current_Process->request_args[0] = m;
+		Enter_Kernel();
+	}
+	
+	return (err > 0)? 0:1;	//return 1 if no error, return 0 if semaphore was not found
 }
 
 void Mutex_Lock(MUTEX m)
@@ -267,7 +280,7 @@ void Mutex_Unlock(MUTEX m)
 /************************************************************************/
 #ifdef SEMAPHORE_ENABLED
 
-SEMAPHORE Semaphore_Init(int initial_count, unsigned int is_binary)
+SEMAPHORE Semaphore_Create(int initial_count, unsigned int is_binary)
 {
 	SEMAPHORE retval;
 	
@@ -343,7 +356,7 @@ void Semaphore_Get(SEMAPHORE s, unsigned int amount)
 /************************************************************************/
 #ifdef EVENT_GROUP_ENABLED
 
-EVENT_GROUP Event_Group_Init()
+EVENT_GROUP Event_Group_Create(void)
 {
 	EVENT_GROUP retval;
 	

@@ -2,7 +2,7 @@
 #include <stdlib.h>		//Remove once kmalloc is used
 
 
-volatile static PtrList Semaphores;
+volatile static PtrList SemaphoreList;
 volatile unsigned int Semaphore_Count;		
 volatile unsigned int Last_SemaphoreID;
 
@@ -12,8 +12,8 @@ void Semaphore_Reset(void)
 	Semaphore_Count = 0;
 	Last_SemaphoreID = 0;
 	
-	Semaphores.ptr = NULL;
-	Semaphores.next = NULL;
+	SemaphoreList.ptr = NULL;
+	SemaphoreList.next = NULL;
 }
 
 /************************************************************************/
@@ -24,7 +24,7 @@ SEMAPHORE_TYPE* findSemaphoreByID(SEMAPHORE s)
 	PtrList *i;
 	SEMAPHORE_TYPE *sem_i;
 	
-	for(i = &Semaphores; i; i = i->next)
+	for(i = &SemaphoreList; i; i = i->next)
 	{
 		sem_i = (SEMAPHORE_TYPE*)i->ptr;
 		if (sem_i->id == s)
@@ -60,7 +60,7 @@ SEMAPHORE Kernel_Create_Semaphore_Direct(int initial_count, unsigned int is_bina
 	
 	//Create a new Semaphore object and add it to the semaphore list
 	sem = malloc(sizeof(SEMAPHORE_TYPE));
-	ptrlist_addtail(&Semaphores, sem);
+	ptrlist_add(&SemaphoreList, sem);
 	++Semaphore_Count;
 
 	sem->id = ++Last_SemaphoreID;
@@ -112,7 +112,7 @@ void Kernel_Destroy_Semaphore()
 	SEMAPHORE_TYPE *sem;	
 	
 	//Find the corresponding Semaphore object in the semaphore list
-	for(i = &Semaphores; i; i = i->next)
+	for(i = &SemaphoreList; i; i = i->next)
 	{
 		sem = (SEMAPHORE_TYPE*)i->ptr;
 		if (sem->id == req_sem_id)
@@ -131,7 +131,7 @@ void Kernel_Destroy_Semaphore()
 	/*Should we check and make sure the wait queue is empty first?*/
 	
 	free(sem);
-	ptrlist_remove(&Semaphores, i);
+	ptrlist_remove(&SemaphoreList, i);
 	
 	err = NO_ERR;
 	#undef req_sem_id
@@ -197,8 +197,6 @@ void Kernel_Semaphore_Get()
 		req_amount = 0;
 	}
 	
-	//printf("Amount Available: %d\n", sem->count);
-
 	//Are there enough counts in the semaphore to handle this request?
 	has_enough = sem->count - req_amount;
 	

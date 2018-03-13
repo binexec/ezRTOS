@@ -39,7 +39,7 @@ PD* findProcessByPID(int pid)
 	if(pid <= 0)
 		return NULL;
 	
-	for(i = &Processes; i; i = i->next)
+	for(i = &ProcessList; i; i = i->next)
 	{
 		process_i = (PD*)i->ptr;
 		if (process_i->pid == pid)
@@ -56,7 +56,7 @@ int findPIDByFuncPtr(taskfuncptr f)
 	PtrList *i;
 	PD *process_i;
 	
-	for(i = &Processes; i; i = i->next)
+	for(i = &ProcessList; i; i = i->next)
 	{
 		process_i = (PD*)i->ptr;
 		if (process_i->code == f)
@@ -73,7 +73,7 @@ void print_processes()
 	PtrList *i;
 	PD *process_i;
 	
-	for(i = &Processes; i; i = i->next)
+	for(i = &ProcessList; i; i = i->next)
 	{
 		process_i = (PD*)i->ptr;
 		if(process_i->state != DEAD)
@@ -130,7 +130,7 @@ static void Kernel_Tick_Handler()
 	if(Tick_Count == 0)
 		return;
 	
-	for(i = &Processes; i; i = i->next)
+	for(i = &ProcessList; i; i = i->next)
 	{
 		process_i = (PD*)i->ptr;
 		
@@ -188,7 +188,7 @@ static PtrList* Kernel_Select_Next_Task()
 	#endif	
 	
 	//Iterate through every task in the process list, starting from the task AFTER the one that was previously dispatched
-	for(j=0, i = ptrlist_cnext(&Processes,Last_Dispatched); j<Task_Count; j++, i = ptrlist_cnext(&Processes,i))
+	for(j=0, i = ptrlist_cnext(&ProcessList,Last_Dispatched); j<Task_Count; j++, i = ptrlist_cnext(&ProcessList,i))
 	{
 		process_i = (PD*)i->ptr;
 
@@ -270,7 +270,7 @@ static void Kernel_Dispatch_Next_Task()
 				Enable_Interrupt();
 			}
 
-			i = ptrlist_cnext(&Processes,i);
+			i = ptrlist_cnext(&ProcessList,i);
 			process_i = (PD*)i->ptr;
 		}
 		
@@ -329,7 +329,7 @@ static void Kernel_Invalid_Request()
 static void Kernel_Main_Loop() 
 {
 	//Select an initial task to run
-	Last_Dispatched = ptrlist_findtail(&Processes);
+	Last_Dispatched = ptrlist_findtail(&ProcessList);
 	Kernel_Dispatch_Next_Task();
 
 	//After OS initialization, THIS WILL BE KERNEL'S MAIN LOOP!
@@ -386,6 +386,10 @@ static void Kernel_Main_Loop()
 			#ifdef MUTEX_ENABLED
 			case CREATE_M:
 			Kernel_Create_Mutex();
+			break;
+			
+			case DESTROY_M:
+			Kernel_Destroy_Mutex();
 			break;
 			
 			case LOCK_M:

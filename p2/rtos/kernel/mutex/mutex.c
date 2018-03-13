@@ -1,8 +1,8 @@
 #include "mutex.h"
-
 #include <string.h>
+#include <stdlib.h>		//Remove once kmalloc is used
 
-volatile static MUTEX_TYPE Mutex[MAXMUTEX];		//Contains all the mutex objects
+volatile static PtrList MutexList;				//Contains all the mutex objects
 volatile unsigned int Mutex_Count;				//Number of Mutexes created so far.
 volatile unsigned int Last_MutexID;				//Last (also highest) MUTEX value created so far.
 
@@ -15,8 +15,8 @@ void Mutex_Reset()
 	Mutex_Count = 0;
 	Last_MutexID = 0;
 	
-	//Clear and initialize the memory used for Mutex
-	memset(Mutex, 0, MAXMUTEX*sizeof(MUTEX_TYPE));
+	MutexList.ptr = NULL;
+	MutexList.next = NULL;
 }
 
 /************************************************************************/
@@ -25,7 +25,8 @@ void Mutex_Reset()
 
 MUTEX_TYPE* findMutexByMutexID(MUTEX m)
 {
-	int i;
+	PtrList *i;
+	MUTEX_TYPE *mutex_i;
 	
 	//Ensure the request mutex ID is > 0
 	if(m <= 0)
@@ -37,29 +38,27 @@ MUTEX_TYPE* findMutexByMutexID(MUTEX m)
 		return NULL;
 	}
 	
-	//Find the requested Mutex and return its pointer if found
-	for(i=0; i<MAXMUTEX; i++)
+	for(i = &MutexList; i; i = i->next)
 	{
-		if(Mutex[i].id == m)
-			return &Mutex[i];
+		mutex_i = (MUTEX_TYPE*)i->ptr;
+		if (mutex_i->id == m)
+			return mutex_i;
 	}
 	
-	//mutex wasn't found
-	//#ifdef DEBUG
-	//printf("findMutexByEventID: The requested mutex %d was not found!\n", m);
-	//#endif
 	err = MUTEX_NOT_FOUND_ERR;
 	return NULL;
 }
 
 
 /************************************************************************/
-/*							MUTEX Operations		                    */
+/*							MUTEX Creation 			                    */
 /************************************************************************/
+
+//We don't need a Kernel_Create_Mutex_Direct function, since no arguments are needed to create a new mutex object
 
 MUTEX Kernel_Create_Mutex(void)
 {
-	int i;
+	MUTEX_TYPE *mut;
 	
 	//Make sure the system's mutexes are not at max
 	if(Mutex_Count >= MAXMUTEX)
@@ -74,17 +73,17 @@ MUTEX Kernel_Create_Mutex(void)
 		return 0;
 	}
 	
-	//Find an uninitialized Mutex slot
-	for(i=0; i<MAXMUTEX; i++)
-		if(Mutex[i].id == 0) 
-			break;
+	//Create a new Mutex object
+	mut = malloc(sizeof(MUTEX_TYPE));
+	ptrlist_add(&MutexList, mut);
+	++Mutex_Count; 
 	
-	Mutex[i].id = ++Last_MutexID;
-	Mutex[i].owner = 0;		
-	Mutex[i].lock_count = 0;
-	Mutex[i].highest_priority = LOWEST_PRIORITY;
-	Mutex[i].wait_queue = new_pid_queue();
-	Mutex[i].orig_priority = new_pid_queue();
+	mut->id = ++Last_MutexID;
+	mut->owner = 0;		
+	mut->lock_count = 0;
+	mut->highest_priority = LOWEST_PRIORITY;
+	mut->wait_queue = new_pid_queue();
+	mut->orig_priority = new_pid_queue();
 	
 	#ifdef DEBUG
 	printf("Kernel_Create_Mutex: Created Mutex %d!\n", Last_MutexID);
@@ -92,15 +91,56 @@ MUTEX Kernel_Create_Mutex(void)
 	
 	err = NO_ERR;
 	if(KernelActive)
-		Current_Process->request_ret = Mutex[i].id;
-	return Mutex[i].id;
+		Current_Process->request_ret = mut->id;
+	return mut->id;
+}
+
+
+void Kernel_Destroy_Mutex(void)
+{
+	#define req_mut_id		Current_Process->request_args[0]
+	
+	PtrList *i;
+	MUTEX_TYPE *mut;
+	
+	//Find the corresponding Semaphore object in the semaphore list
+	for(i = &MutexList; i; i = i->next)
+	{
+		mut = (MUTEX_TYPE*)i->ptr;
+		if (mut->id == req_mut_id)
+			break;
+	}
+
+	if(!mut)
+	{
+		#ifdef DEBUG
+		printf("Kernel_Destroy_Mutex: The requested Mutex %d was not found!\n", req_mut_id);
+		#endif
+		err = MUTEX_NOT_FOUND_ERR;
+		return;
+	}
+	
+	/*Should we check and make sure the wait queue is empty first?*/
+	
+	free(mut);
+	ptrlist_remove(&MutexList, i);
+	
+	err = NO_ERR;
+	#undef req_mut_id
 }
 
 
 
+/************************************************************************/
+/*							MUTEX Operations		                    */
+/************************************************************************/
+
+
 void Kernel_Lock_Mutex(void)
 {
-	MUTEX_TYPE *m = findMutexByMutexID(Current_Process->request_args[0]);
+	#define req_mut_id		Current_Process->request_args[0]
+	
+	MUTEX_TYPE *m = findMutexByMutexID(req_mut_id);
 	
 	if(m == NULL)
 	{
@@ -142,6 +182,8 @@ void Kernel_Lock_Mutex(void)
 	//Put myself to the wait state
 	Current_Process->state = WAIT_MUTEX;
 	Kernel_Request_Cswitch = 1;
+	
+	#undef req_mut_id
 }
 
 
@@ -176,7 +218,9 @@ static void Kernel_Lock_Mutex_From_Queue(MUTEX_TYPE *m)
 
 void Kernel_Unlock_Mutex(void)
 {
-	MUTEX_TYPE* m = findMutexByMutexID(Current_Process->request_args[0]);
+	#define req_mut_id		Current_Process->request_args[0]
+	
+	MUTEX_TYPE* m = findMutexByMutexID(req_mut_id);
 	
 	if(m == NULL)
 	{
@@ -216,4 +260,6 @@ void Kernel_Unlock_Mutex(void)
 
 	//If there are other tasks waiting for the mutex
 	Kernel_Lock_Mutex_From_Queue(m);
+	
+	#undef req_mut_id
 }

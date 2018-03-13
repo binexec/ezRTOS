@@ -10,7 +10,7 @@ typedef struct ptrlist{
 PtrList* ptrlist_cnext(PtrList *head, PtrList *current);
 PtrList* ptrlist_findtail(PtrList *head);
 PtrList* ptrlist_find(PtrList *head, void* ptr);
-PtrList* ptrlist_addtail(PtrList *head, void* ptr);
+PtrList* ptrlist_add(PtrList *head, void* ptr);
 int ptrlist_remove(PtrList *head, PtrList *to_remove);
 void ptrlist_destroy(PtrList *head);
 

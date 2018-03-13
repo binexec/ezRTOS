@@ -28,10 +28,10 @@
 
 /*Scheduler configuration*/
 #define MAX_TICK_MISSED				10
-//#define PREEMPTIVE_CSWITCH							//Enable preemptive multi-tasking
-//#define PREEMPTIVE_CSWITCH_FREQ		25				//How frequently (in ticks) does preemptive scheduling kick in?
-//#define PREVENT_STARVATION							//Enable starvation prevention in the scheduler
-//#define STARVATION_MAX				MAXTHREAD*10	//Maximum amount of ticks missed before a task is considered starving
+#define PREEMPTIVE_CSWITCH							//Enable preemptive multi-tasking
+#define PREEMPTIVE_CSWITCH_FREQ		25				//How frequently (in ticks) does preemptive scheduling kick in?
+#define PREVENT_STARVATION							//Enable starvation prevention in the scheduler
+#define STARVATION_MAX				MAXTHREAD*10	//Maximum amount of ticks missed before a task is considered starving
 
 
 //Identifiers for various RTOS objects. The values are always non-zero if it is valid
@@ -77,26 +77,27 @@ void Task_Sleep(TICK t);		// sleep time is at least t*MSECPERTICK
 
 
 /*Mutex related functions*/
-MUTEX Mutex_Init(void);
+MUTEX Mutex_Create(void);
+int Mutex_Destroy(MUTEX m);
 void Mutex_Lock(MUTEX m);
 void Mutex_Unlock(MUTEX m);
 
 
 /*EVENT related functions*/
-EVENT Event_Init(void);
+EVENT Event_Create(void);
 void Event_Wait(EVENT e);
 void Event_Signal(EVENT e);
 
 
 /*SEMAPHORE related functions*/
-SEMAPHORE Semaphore_Init(int initial_count, unsigned int is_binary);
+SEMAPHORE Semaphore_Create(int initial_count, unsigned int is_binary);
 int Semaphore_Destroy(SEMAPHORE s);
 void Semaphore_Give(SEMAPHORE s, unsigned int amount);
 void Semaphore_Get(SEMAPHORE s, unsigned int amount);
 
 
 /*EVENT GROUP related functions*/
-EVENT_GROUP Event_Group_Init();
+EVENT_GROUP Event_Group_Create(void);
 void Event_Group_Set_Bits(EVENT_GROUP e, unsigned int bits_to_set);
 void Event_Group_Clear_Bits(EVENT_GROUP e, unsigned int bits_to_clear);
 void Event_Group_Wait_Bits(EVENT_GROUP e, unsigned int bits_to_wait, unsigned int wait_all_bits, TICK timeout);

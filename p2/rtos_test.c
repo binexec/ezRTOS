@@ -14,8 +14,8 @@ void Idle()
 };
 
 
+#define TEST_SET_8
 
-#define TEST_SET_5
 
 /************************************************************************/
 /*				Test 1: Task Suspension, Resume, Sleep, Yield		    */
@@ -280,7 +280,7 @@ void sem_task1()		//consumer
 
 void test()
 {
-	s1 = Semaphore_Init(5, 0);
+	s1 = Semaphore_Create(5, 0);
 	Task_Create(sem_task0, 4, 0);
 	Task_Create(sem_task1, 5, 0);
 	
@@ -305,12 +305,12 @@ EVENT e1;
 void event_wait_test()
 {
 	//Test normal signaling
-	e1 = Event_Init();
+	e1 = Event_Create();
 	printf("Waiting for event e1...\n");
 	Event_Wait(e1);
 	printf("Signal for event e1 received!\n");
 	
-	e1 = Event_Init();
+	e1 = Event_Create();
 	Task_Sleep(100);
 	
 	//Test pre signaling
@@ -411,7 +411,7 @@ void egt4()
 
 void test()
 {
-	eg1 = Event_Group_Init();
+	eg1 = Event_Group_Create();
 	
 	Task_Create(egt1, 1, 0);
 	Task_Create(egt2, 1, 0);
@@ -443,7 +443,7 @@ void mut_t1()
 	printf("T1 unlocking m1...\n");
 	Mutex_Unlock(m1);
 	printf("T1 unlocked m1!\n");
-	//Task_Yield();
+	
     for(;;);
 }
 
@@ -464,7 +464,7 @@ void mut_t2()
 
 void test()
 {
-    m1 = Mutex_Init();
+    m1 = Mutex_Create();
 
     Task_Create(mut_t1, 1, 0);
     Task_Create(mut_t2, 2, 0);
@@ -530,7 +530,7 @@ void task_p()
 
 void test()
 {
-	mut = Mutex_Init();
+	mut = Mutex_Create();
 	Task_Create(task_p, 3, 0);
 }
 

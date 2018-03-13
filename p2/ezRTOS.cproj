@@ -161,9 +161,9 @@
     <None Include="rtos\kernel\mailbox\mailbox.h">
       <SubType>compile</SubType>
     </None>
-    <None Include="rtos\kernel\mutex\mutex.c">
+    <Compile Include="rtos\kernel\mutex\mutex.c">
       <SubType>compile</SubType>
-    </None>
+    </Compile>
     <Compile Include="rtos\kernel\mutex\mutex.h">
       <SubType>compile</SubType>
     </Compile>
