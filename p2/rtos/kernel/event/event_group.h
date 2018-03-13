@@ -17,6 +17,7 @@ typedef struct {
 
 void Event_Group_Reset(void);
 unsigned int Kernel_Create_Event_Group(void);
+void Kernel_Destroy_Event_Group(void);
 void Kernel_Event_Group_Set_Bits(void);
 void Kernel_Event_Group_Clear_Bits(void);
 void Kernel_Event_Group_Wait_Bits(void);

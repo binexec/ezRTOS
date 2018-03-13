@@ -15,6 +15,7 @@ void Kernel_Terminate_Task(void);
 
 
 /*Variables shared with the main kernel module*/
+extern volatile PtrList ProcessList;					//Be responsible when directly accessing Process Descriptors
 extern volatile unsigned int Task_Count;	
 
 

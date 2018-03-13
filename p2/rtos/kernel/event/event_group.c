@@ -1,19 +1,23 @@
 #include "event_group.h"
+#include <stdlib.h>		//Remove once kmalloc is used
 
-volatile static EVENT_GROUP_TYPE Event_Group[MAXEVENTGROUP];
-
+volatile static PtrList EventGroupList;
 volatile unsigned int Event_Group_Count;
 volatile unsigned int Last_Event_Group_ID;	
 
 
-EVENT_GROUP_TYPE* findEventGroupByID(EVENT_GROUP e)
+EVENT_GROUP_TYPE* findEventGroupByID(EVENT_GROUP eg)
 {
-	int i;
-	
-	for(i=0; i<MAXEVENTGROUP; i++)
-		if(Event_Group[i].id == e)
-			return &Event_Group[i];
-	
+	PtrList *i;
+	EVENT_GROUP_TYPE *eg_i;
+		
+	for(i = &EventGroupList; i; i = i->next)
+	{
+		eg_i = (EVENT_GROUP_TYPE*)i->ptr;
+		if (eg_i->id == eg)
+			return eg_i;
+	}
+		
 	return NULL;
 }
 
@@ -23,17 +27,18 @@ void Event_Group_Reset(void)
 	Event_Group_Count = 0;
 	Last_Event_Group_ID = 0;
 	
-	memset(&Event_Group, 0, sizeof(EVENT_GROUP_TYPE)*MAXEVENTGROUP);
+	EventGroupList.ptr = NULL;
+	EventGroupList.next = NULL;
 }
 
 
 /************************************************************************/
-/*						EVENT GROUP OPERATIONS                          */
+/*						EVENT GROUP CREATION	                      */
 /************************************************************************/
 
 unsigned int Kernel_Create_Event_Group(void)
 {
-	int i;
+	EVENT_GROUP_TYPE *eg;
 	
 	//Make sure we're not exceeding the max
 	if(Event_Group_Count >= MAXEVENTGROUP)
@@ -48,21 +53,59 @@ unsigned int Kernel_Create_Event_Group(void)
 		return 0;
 	}
 	
-	//Finding a free slot
-	for(i=0; i<MAXEVENTGROUP; i++)
-		if(Event_Group[i].id == 0)
-			break;
-	
+	//Create a new Event Group object
+	eg = malloc(sizeof(EVENT_GROUP_TYPE));
+	ptrlist_add(&EventGroupList, eg);	
 	++Event_Group_Count;
-	Event_Group[i].id = ++Last_Event_Group_ID;
-	Event_Group[i].events = 0;
+	
+	eg->id = ++Last_Event_Group_ID;
+	eg->events = 0;
 	
 	err = NO_ERR;
 	if(KernelActive)
-		Current_Process->request_ret = Event_Group[i].id;
-	return Event_Group[i].id;
+		Current_Process->request_ret = eg->id;
+		
+	return eg->id;
 }
 
+
+void Kernel_Destroy_Event_Group(void)
+{
+	#define req_eg_id		Current_Process->request_args[0]
+	
+	PtrList *i;
+	EVENT_GROUP_TYPE *eg;
+		
+	//Find the corresponding Semaphore object in the semaphore list
+	for(i = &EventGroupList; i; i = i->next)
+	{
+		eg = (EVENT_GROUP_TYPE*)i->ptr;
+		if (eg->id == req_eg_id)
+			break;
+	}
+
+	if(!eg)
+	{
+		#ifdef DEBUG
+		printf("Kernel_Destroy_Event_Group: The requested Semaphore %d was not found!\n", req_eg_id);
+		#endif
+		err = SEMAPHORE_NOT_FOUND_ERR;
+		return;
+	}
+	
+	/*Should we check and make sure the wait queue is empty first?*/
+	
+	free(eg);
+	ptrlist_remove(&EventGroupList, i);
+	
+	err = NO_ERR;
+	#undef req_eg_id
+}
+
+
+/************************************************************************/
+/*						EVENT GROUP OPERATIONS                          */
+/************************************************************************/
 
 
 void Kernel_Event_Group_Set_Bits()
@@ -71,9 +114,11 @@ void Kernel_Event_Group_Set_Bits()
 	#define req_event_id		Current_Process->request_args[0]
 	#define req_bits_to_set		Current_Process->request_args[1]
 	
-	int i;
-	unsigned int current_events;
 	EVENT_GROUP_TYPE *eg = findEventGroupByID(req_event_id);
+	
+	PtrList* i;
+	PD* process_i;
+	unsigned int current_events;
 	
 	if(eg == NULL)
 	{
@@ -87,20 +132,24 @@ void Kernel_Event_Group_Set_Bits()
 	/* Wake up any process that's currently waiting for this event group if:
 			-some of its events are ready, and it doesn't require to wait for all to be ready 
 			-OR all of its events being waited on are ready 
+		
+		Maybe use a list instead of directly accessing PDs?
 	*/
 	
-	#define ps_eventgroup_id	Process[i].request_args[0]
-	#define ps_bits_waiting		Process[i].request_args[1]
-	#define ps_wait_all_bits	Process[i].request_args[2]
+	#define ps_eventgroup_id	process_i->request_args[0]
+	#define ps_bits_waiting		process_i->request_args[1]
+	#define ps_wait_all_bits	process_i->request_args[2]
 	
-	for(i=0; i<MAXTHREAD; i++)
+	for(i = &ProcessList; i; i = i->next)
 	{
-		if(ProcessList[i].state == WAIT_EVENTG && ps_eventgroup_id == eg->id)						
+		process_i = (PD*)i->ptr;
+		
+		if(process_i->state == WAIT_EVENTG && ps_eventgroup_id == eg->id)						
 		{
 			current_events = ps_bits_waiting & eg->events;
 			
 			if((current_events > 0 && !ps_wait_all_bits) || (current_events == ps_bits_waiting))
-				ProcessList[i].state = READY;
+				process_i->state = READY;
 		}
 	}
 	

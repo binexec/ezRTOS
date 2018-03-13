@@ -119,9 +119,9 @@
     <Compile Include="rtos\kernel\event\event.h">
       <SubType>compile</SubType>
     </Compile>
-    <None Include="rtos\kernel\event\event_group.c">
+    <Compile Include="rtos\kernel\event\event_group.c">
       <SubType>compile</SubType>
-    </None>
+    </Compile>
     <Compile Include="rtos\kernel\event\event_group.h">
       <SubType>compile</SubType>
     </Compile>

@@ -14,7 +14,7 @@
 #include "mutex/mutex.h"
 #include "event/event.h"
 #include "semaphore/semaphore.h"
-//#include "event/event_group.h"
+#include "event/event_group.h"
 
 
 

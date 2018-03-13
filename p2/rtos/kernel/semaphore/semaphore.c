@@ -122,7 +122,7 @@ void Kernel_Destroy_Semaphore()
 	if(!sem)
 	{
 		#ifdef DEBUG
-		printf("Kernel_Semaphore_Get: The requested Semaphore %d was not found!\n", req_sem_id);
+		printf("Kernel_Destroy_Semaphore: The requested Semaphore %d was not found!\n", req_sem_id);
 		#endif
 		err = SEMAPHORE_NOT_FOUND_ERR;
 		return;

@@ -337,9 +337,12 @@ static void Kernel_Main_Loop()
 	while(1) 
 	{
 
-		/************************************************************************/
-		/*       If this task makes a system call, it will jump to here!        */
-		/************************************************************************/
+		/********************************************************************************************/
+		/*																							*/
+		/*	When a task makes a kernel call, it will end up HERE after Enter_Kernel() is invoked.	*/	
+		/*	The calling task's process descriptor is loaded as Current_Process.						*/
+		/*																							*/
+		/********************************************************************************************/
 
 		//Save the current task's stack pointer and proceed to handle its request
 		Current_Process->sp = CurrentSp;
@@ -424,6 +427,10 @@ static void Kernel_Main_Loop()
 			#ifdef EVENT_GROUP_ENABLED
 			case CREATE_EG:
 			Kernel_Create_Event_Group();
+			break;
+			
+			case DESTROY_EG:
+			Kernel_Destroy_Event_Group();
 			break;
 			
 			case SET_EG_BITS:

@@ -1,6 +1,5 @@
 #include "event.h"
-
-#include <string.h>
+#include <stdlib.h>		//Remove once kmalloc is used
 
 volatile static PtrList EventList;				//Contains all the event objects 
 volatile unsigned int Event_Count;				//Number of events created so far.

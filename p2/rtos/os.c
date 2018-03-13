@@ -383,6 +383,19 @@ EVENT_GROUP Event_Group_Create(void)
 	return retval;
 }
 
+int Event_Group_Destroy(EVENT_GROUP eg)
+{
+	if(KernelActive)
+	{
+		Disable_Interrupt();
+		Current_Process->request = DESTROY_EG;
+		Current_Process->request_args[0] = eg;
+		Enter_Kernel();
+	}
+	
+	return (err > 0)? 0:1;	//return 1 if no error, return 0 if semaphore was not found
+}
+
 void Event_Group_Set_Bits(EVENT_GROUP e, unsigned int bits_to_set)
 {
 	if(!KernelActive){

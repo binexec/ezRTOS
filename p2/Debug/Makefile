@@ -48,6 +48,7 @@ SUBDIRS :=  \
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS +=  \
 ../rtos/kernel/event/event.c \
+../rtos/kernel/event/event_group.c \
 ../rtos/kernel/hardware/cpuarch.c \
 ../rtos/kernel/hardware/hw.c \
 ../rtos/kernel/hardware/uart/uart.c \
@@ -71,6 +72,7 @@ ASM_SRCS +=
 
 OBJS +=  \
 rtos/kernel/event/event.o \
+rtos/kernel/event/event_group.o \
 rtos/kernel/hardware/cpuarch.o \
 rtos/kernel/hardware/cswitch.o \
 rtos/kernel/hardware/hw.o \
@@ -87,6 +89,7 @@ rtos_test.o
 
 OBJS_AS_ARGS +=  \
 rtos/kernel/event/event.o \
+rtos/kernel/event/event_group.o \
 rtos/kernel/hardware/cpuarch.o \
 rtos/kernel/hardware/cswitch.o \
 rtos/kernel/hardware/hw.o \
@@ -103,6 +106,7 @@ rtos_test.o
 
 C_DEPS +=  \
 rtos/kernel/event/event.d \
+rtos/kernel/event/event_group.d \
 rtos/kernel/hardware/cpuarch.d \
 rtos/kernel/hardware/cswitch.d \
 rtos/kernel/hardware/hw.d \
@@ -119,6 +123,7 @@ rtos_test.d
 
 C_DEPS_AS_ARGS +=  \
 rtos/kernel/event/event.d \
+rtos/kernel/event/event_group.d \
 rtos/kernel/hardware/cpuarch.d \
 rtos/kernel/hardware/cswitch.d \
 rtos/kernel/hardware/hw.d \
@@ -147,6 +152,8 @@ LINKER_SCRIPT_DEP+=
 
 
 # AVR32/GNU C Compiler
+
+
 
 
 

@@ -2,7 +2,7 @@
 #include <stdlib.h>		//Remove once kmalloc is used
 
 
-volatile PtrList ProcessList;						//Contains the process descriptor for all tasks, regardless of their current state.
+volatile PtrList ProcessList;					//Contains the process descriptor for all tasks, regardless of their current state.
 volatile unsigned int Task_Count;				//Number of tasks created so far.
 volatile unsigned int Last_PID;					//Last (also highest) PID value created so far.
 
@@ -107,7 +107,7 @@ void Kernel_Suspend_Task()
 		#ifdef DEBUG
 		printf("Kernel_Suspend_Task: Trying to suspend a task that's in an unsuspendable state %d!\n", p->state);
 		#endif
-		err = SUSPEND_INACTIVE_TASK_ERR;
+		err = UNSUSPENDABLE_TASK_STATE_ERR;
 		return;
 	}
 	
