@@ -2,7 +2,7 @@
 #include <stdlib.h>		//Remove once kmalloc is used
 
 
-volatile PtrList Process;						//Contains the process descriptor for all tasks, regardless of their current state.
+volatile PtrList Processes;						//Contains the process descriptor for all tasks, regardless of their current state.
 volatile unsigned int Task_Count;				//Number of tasks created so far.
 volatile unsigned int Last_PID;					//Last (also highest) PID value created so far.
 
@@ -12,30 +12,14 @@ void Task_Reset()
 	Task_Count = 0;
 	Last_PID = 0;
 
-	//Clear and initialize the memory used for tasks
-	Process.ptr = NULL;
-	Process.next = NULL;
-	//ptrlist_reset(&Process);
+	Processes.ptr = NULL;
+	Processes.next = NULL;
 }
 
 
 /************************************************************************/
 /*                   TASK RELATED KERNEL FUNCTIONS                      */
 /************************************************************************/
-
-//For creating a new task dynamically when the kernel is already running
-PID Kernel_Create_Task()
-{
-	#define req_func_pointer	(taskfuncptr)Current_Process->request_args[0]
-	#define req_priority		Current_Process->request_args[1]
-	#define req_taskarg			Current_Process->request_args[2]
-	
-	return Kernel_Create_Task_Direct(req_func_pointer, req_priority, req_taskarg);
-	
-	#undef req_func_pointer
-	#undef req_priority
-	#undef req_taskarg
-}
 
 PID Kernel_Create_Task_Direct(taskfuncptr f, PRIORITY py, int arg)
 {
@@ -55,9 +39,9 @@ PID Kernel_Create_Task_Direct(taskfuncptr f, PRIORITY py, int arg)
 		return 0;
 	}
 	
-	++Task_Count;
 	p = malloc(sizeof(PD));
-	ptrlist_addtail(&Process, p);
+	ptrlist_addtail(&Processes, p);
+	++Task_Count;
 	
 	/*The code below was agglomerated from Kernel_Create_Task_At;*/
 	
@@ -85,7 +69,22 @@ PID Kernel_Create_Task_Direct(taskfuncptr f, PRIORITY py, int arg)
 	return p->pid;
 }
 
-/*TODO: Check for mutex ownership. If PID owns any mutex, ignore this request*/
+
+//For creating a new task dynamically when the kernel is already running
+PID Kernel_Create_Task()
+{
+	#define req_func_pointer	(taskfuncptr)Current_Process->request_args[0]
+	#define req_priority		Current_Process->request_args[1]
+	#define req_taskarg			Current_Process->request_args[2]
+	
+	return Kernel_Create_Task_Direct(req_func_pointer, req_priority, req_taskarg);
+	
+	#undef req_func_pointer
+	#undef req_priority
+	#undef req_taskarg
+}
+
+
 void Kernel_Suspend_Task() 
 {
 	//Finds the process descriptor for the specified PID
@@ -120,6 +119,7 @@ void Kernel_Suspend_Task()
 	p->state = SUSPENDED;
 	err = NO_ERR;
 }
+
 
 void Kernel_Resume_Task()
 {
@@ -158,6 +158,7 @@ void Kernel_Resume_Task()
 	
 }
 
+
 void Kernel_Sleep_Task(void)
 {
 	//Sleep ticks is already set by the OS call
@@ -166,11 +167,10 @@ void Kernel_Sleep_Task(void)
 }
 
 
-//Todo: FREE the PD
 void Kernel_Terminate_Task(void)
 {
 	Current_Process->state = DEAD;	
-	ptrlist_remove(&Process, ptrlist_find(&Process, Current_Process));		//Free the PD used by the terminated task
+	ptrlist_remove(&Processes, ptrlist_find(&Processes, Current_Process));		//Free the PD used by the terminated task
 	--Task_Count;
 	
 	Kernel_Request_Cswitch = 1;

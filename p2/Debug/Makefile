@@ -54,6 +54,7 @@ C_SRCS +=  \
 ../rtos/kernel/others/kmalloc.c \
 ../rtos/kernel/others/PtrList.c \
 ../rtos/kernel/others/Queue.c \
+../rtos/kernel/semaphore/semaphore.c \
 ../rtos/kernel/task/task.c \
 ../rtos/os.c \
 ../rtos_test.c
@@ -75,6 +76,7 @@ rtos/kernel/kernel.o \
 rtos/kernel/others/kmalloc.o \
 rtos/kernel/others/PtrList.o \
 rtos/kernel/others/Queue.o \
+rtos/kernel/semaphore/semaphore.o \
 rtos/kernel/task/task.o \
 rtos/os.o \
 rtos_test.o
@@ -88,6 +90,7 @@ rtos/kernel/kernel.o \
 rtos/kernel/others/kmalloc.o \
 rtos/kernel/others/PtrList.o \
 rtos/kernel/others/Queue.o \
+rtos/kernel/semaphore/semaphore.o \
 rtos/kernel/task/task.o \
 rtos/os.o \
 rtos_test.o
@@ -101,6 +104,7 @@ rtos/kernel/kernel.d \
 rtos/kernel/others/kmalloc.d \
 rtos/kernel/others/PtrList.d \
 rtos/kernel/others/Queue.d \
+rtos/kernel/semaphore/semaphore.d \
 rtos/kernel/task/task.d \
 rtos/os.d \
 rtos_test.d
@@ -114,6 +118,7 @@ rtos/kernel/kernel.d \
 rtos/kernel/others/kmalloc.d \
 rtos/kernel/others/PtrList.d \
 rtos/kernel/others/Queue.d \
+rtos/kernel/semaphore/semaphore.d \
 rtos/kernel/task/task.d \
 rtos/os.d \
 rtos_test.d
@@ -132,6 +137,8 @@ LINKER_SCRIPT_DEP+=
 
 
 # AVR32/GNU C Compiler
+
+
 
 
 
@@ -175,6 +182,13 @@ rtos/kernel/%.o: ../rtos/kernel/%.c
 	
 
 rtos/kernel/others/%.o: ../rtos/kernel/others/%.c
+	@echo Building file: $<
+	@echo Invoking: AVR/GNU C Compiler : 5.4.0
+	$(QUOTE)C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr8\avr8-gnu-toolchain\bin\avr-gcc.exe$(QUOTE)  -x c -funsigned-char -funsigned-bitfields -DF_CPU=16000000 -DBAUD=9600  -I"C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.0.90\include"  -O1 -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -mrelax -g2 -Wall -mmcu=atmega2560 -B "C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.0.90\gcc\dev\atmega2560" -c -std=gnu99 -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 
+	@echo Finished building: $<
+	
+
+rtos/kernel/semaphore/%.o: ../rtos/kernel/semaphore/%.c
 	@echo Building file: $<
 	@echo Invoking: AVR/GNU C Compiler : 5.4.0
 	$(QUOTE)C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr8\avr8-gnu-toolchain\bin\avr-gcc.exe$(QUOTE)  -x c -funsigned-char -funsigned-bitfields -DF_CPU=16000000 -DBAUD=9600  -I"C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.0.90\include"  -O1 -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -mrelax -g2 -Wall -mmcu=atmega2560 -B "C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.0.90\gcc\dev\atmega2560" -c -std=gnu99 -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 

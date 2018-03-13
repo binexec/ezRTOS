@@ -15,7 +15,7 @@ void Idle()
 
 
 
-#define TEST_SET_3
+#define TEST_SET_5
 
 /************************************************************************/
 /*				Test 1: Task Suspension, Resume, Sleep, Yield		    */
@@ -70,12 +70,12 @@ void suspend_pong()
 	}
 }
 
-/*void suicide_task()
+void suicide_task()
 {
 	Task_Sleep(500);
 	printf("SUICIDE TASK IS TERMINATING \n");
 	Task_Terminate();
-}*/
+}
 
 void test()
 {
@@ -85,7 +85,7 @@ void test()
 	Task_Create(Peng, 6, 205);
 	Task_Create(suspend_pong, 4, 0);
 	
-	//Task_Create(suicide_task, 1, 0);
+	Task_Create(suicide_task, 1, 0);
 }
 
 #endif
@@ -260,9 +260,10 @@ void sem_task0()		//producer
 {
 	while(1)
 	{
+		printf("GIVING 2...\n");
 		Semaphore_Give(s1, 5);
 		printf("***GAVE 5\n");
-		Task_Sleep(1000);
+		Task_Sleep(500);
 	}
 }
 
@@ -273,13 +274,13 @@ void sem_task1()		//consumer
 		printf("GETTING 2...\n");
 		Semaphore_Get(s1, 2);
 		printf("GOT 2\n");
-		Task_Sleep(100);
+		Task_Sleep(50);
 	}
 }
 
 void test()
 {
-	s1 = Semaphore_Init(0, 0);
+	s1 = Semaphore_Init(5, 0);
 	Task_Create(sem_task0, 4, 0);
 	Task_Create(sem_task1, 5, 0);
 	

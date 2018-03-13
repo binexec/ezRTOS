@@ -68,18 +68,23 @@
 	   SUSPEND,
 	   RESUME,
 	   SLEEP,
+	   
 	   CREATE_E,						//event
 	   WAIT_E,
 	   SIGNAL_E,
+	   
 	   CREATE_EG,						//event groups
 	   SET_EG_BITS,
 	   CLEAR_EG_BITS,
 	   WAIT_EG,
 	   GET_EG_BITS,
+	   
 	   CREATE_M,						//mutex
 	   LOCK_M,
 	   UNLOCK_M,
+	   
 	   CREATE_SEM,						//semaphores
+	   DESTROY_SEM,
 	   GIVE_SEM,
 	   GET_SEM  
    } KERNEL_REQUEST;
@@ -120,7 +125,7 @@
 /************************************************************************/
 
 //These kernel variables are accessible by other kernel modules and the OS internally
-extern volatile PtrList Process;
+extern volatile PtrList Processes;
 extern volatile PD* Current_Process;	
 extern volatile unsigned int KernelActive;
 extern volatile unsigned int Kernel_Request_Cswitch;	

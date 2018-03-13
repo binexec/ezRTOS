@@ -39,7 +39,7 @@ PD* findProcessByPID(int pid)
 	if(pid <= 0)
 		return NULL;
 	
-	for(i = &Process; i; i = i->next)
+	for(i = &Processes; i; i = i->next)
 	{
 		process_i = (PD*)i->ptr;
 		if (process_i->pid == pid)
@@ -50,28 +50,13 @@ PD* findProcessByPID(int pid)
 	return NULL;
 }
 
-
-void print_processes()
-{
-	PtrList *i;
-	PD *process_i;
-	
-	for(i = &Process; i; i = i->next)
-	{
-		process_i = (PD*)i->ptr;
-		if(process_i->state != DEAD)
-			printf("\tPID: %d\t State: %d\t Priority: %d\n", process_i->pid, process_i->state, process_i->pri);
-	}
-	printf("\n");
-}
-
 /*Returns the PID associated with a function's memory address. Used by the OS*/
 int findPIDByFuncPtr(taskfuncptr f)
 {
 	PtrList *i;
 	PD *process_i;
 	
-	for(i = &Process; i; i = i->next)
+	for(i = &Processes; i; i = i->next)
 	{
 		process_i = (PD*)i->ptr;
 		if (process_i->code == f)
@@ -80,6 +65,29 @@ int findPIDByFuncPtr(taskfuncptr f)
 	
 	//No process with such PID
 	return -1;
+}
+
+
+void print_processes()
+{
+	PtrList *i;
+	PD *process_i;
+	
+	for(i = &Processes; i; i = i->next)
+	{
+		process_i = (PD*)i->ptr;
+		if(process_i->state != DEAD)
+		printf("\tPID: %d\t State: %d\t Priority: %d\t Timeout: %d\n", process_i->pid, process_i->state, process_i->pri, process_i->request_timeout);
+	}
+	printf("\n");
+}
+
+void print_process(PID p)
+{
+	PD *pd = findProcessByPID(p);
+
+	printf("\tPID: %d\t State: %d\t Priority: %d\t Timeout: %d\n", pd->pid, pd->state, pd->pri, pd->request_timeout);
+	printf("\n");
 }
 
 
@@ -114,15 +122,15 @@ void Kernel_Tick_ISR()
 //Processes all tasks that are currently sleeping and decrement their sleep ticks when called. Expired sleep tasks are placed back into their old state
 static void Kernel_Tick_Handler()
 {
-	PtrList *i;
-	PD *process_i;
+	volatile PtrList *i;
+	volatile PD *process_i;
 	int remaining_ticks;
 	
 	//No new ticks has been issued yet, skipping...
 	if(Tick_Count == 0)
 		return;
 	
-	for(i = &Process; i; i = i->next)
+	for(i = &Processes; i; i = i->next)
 	{
 		process_i = (PD*)i->ptr;
 		
@@ -136,22 +144,19 @@ static void Kernel_Tick_Handler()
 		if(process_i->request_timeout == 0)
 			continue;
 		
+		//Decrement the request timeout counter for any tasks having a nonzero counter; wake up any tasks if their counter has reached zero
 		remaining_ticks = process_i->request_timeout - Tick_Count;
 		if(remaining_ticks > 0)
 		{
 			process_i->request_timeout = remaining_ticks;
 			continue;
 		}
-		
-		//Wake up the task once its timer has expired
+
 		process_i->request_timeout = 0;
-		if(process_i->state == SLEEPING)
-			process_i->state = READY;
 		
-		else if(process_i->state == SUSPENDED && process_i->last_state == SLEEPING)		//Wake up SUSPENDED sleeping tasks (should we do this for other suspended states too?)
+		if(process_i->state == SUSPENDED)		//"Thaw" any SUSPENDED tasks but do not wake them up immediately
 			process_i->last_state = READY;
-		
-		else	//Wake up any other tasks timing out from its request, and set its return value to 0 indicate a failure.
+		else									//Wake up any other tasks timing out from its request (including sleep), and set its return value to 0 indicate a failure.
 		{
 			process_i->state = READY;
 			process_i->request_ret = 0;
@@ -183,7 +188,7 @@ static PtrList* Kernel_Select_Next_Task()
 	#endif	
 	
 	//Iterate through every task in the process list, starting from the task AFTER the one that was previously dispatched
-	for(j=0, i = ptrlist_cnext(&Process,Last_Dispatched); j<Task_Count; j++, i = ptrlist_cnext(&Process,i))
+	for(j=0, i = ptrlist_cnext(&Processes,Last_Dispatched); j<Task_Count; j++, i = ptrlist_cnext(&Processes,i))
 	{
 		process_i = (PD*)i->ptr;
 
@@ -201,8 +206,6 @@ static PtrList* Kernel_Select_Next_Task()
 		#ifdef PREVENT_STARVATION
 		else if(process_i->starvation_ticks >= STARVATION_MAX)
 		{
-			printf("Found Starving task %d, tick count %d!\n", process_i->pid, process_i->starvation_ticks);
-			
 			if(most_starved && process_ms->starvation_ticks <= process_i->starvation_ticks)
 				continue;
 			
@@ -223,10 +226,12 @@ static PtrList* Kernel_Select_Next_Task()
 /* Dispatches a new task */
 static void Kernel_Dispatch_Next_Task()
 {
-	PtrList* next_dispatch;
-	PtrList* i;
-	PD *process_i;
+ 
+	volatile PtrList* i;
+	volatile PD *process_i;
 	unsigned int j;
+	
+	PtrList* next_dispatch;
 	
 	//Don't allow preemptive cswitch to kick in again while we're waiting for a task to be ready
 	#ifdef PREEMPTIVE_CSWITCH
@@ -247,8 +252,8 @@ static void Kernel_Dispatch_Next_Task()
 	if(!next_dispatch)
 	{
 		i = Last_Dispatched;
-		j = 0;
 		process_i = (PD*)i->ptr;
+		j = 0;
 
 		//We'll temporarily re-enable interrupt in case if one or more task is waiting on events/interrupts or sleeping
 		Enable_Interrupt();
@@ -256,8 +261,8 @@ static void Kernel_Dispatch_Next_Task()
 		//Looping through the process list until any process becomes ready
 		while(process_i->state != READY)
 		{			
-			//Check if any timer ticks came in periodically
-			if(j++ >= Task_Count*10)
+			//We only need to check if any timer ticks came in periodically
+			if(++j >= Task_Count*100)
 			{
 				Disable_Interrupt();
 				Kernel_Tick_Handler();
@@ -265,12 +270,13 @@ static void Kernel_Dispatch_Next_Task()
 				Enable_Interrupt();
 			}
 
-			i = ptrlist_cnext(&Process, i);
+			i = ptrlist_cnext(&Processes,i);
+			process_i = (PD*)i->ptr;
 		}
 		
 		//Now that we have some ready tasks, interrupts must be disabled for the kernel to function properly again.
 		Disable_Interrupt();
-		next_dispatch = Kernel_Select_Next_Task();		
+		next_dispatch = Kernel_Select_Next_Task();	
 	}
 
 	//Load the next selected task's process descriptor into Cp
@@ -320,29 +326,21 @@ static void Kernel_Invalid_Request()
   * This is the main loop of our kernel, called by OS_Start().
   */
 
-static void Kernel_Handle_Request() 
+static void Kernel_Main_Loop() 
 {
 	//Select an initial task to run
-	Last_Dispatched = ptrlist_findtail(&Process);
+	Last_Dispatched = ptrlist_findtail(&Processes);
 	Kernel_Dispatch_Next_Task();
 
 	//After OS initialization, THIS WILL BE KERNEL'S MAIN LOOP!
 	//NOTE: When another task makes a syscall and enters the loop, it's still in the RUNNING state!
 	while(1) 
 	{
-		//Clears the process' request fields
-		Current_Process->request = NONE;
-
-		//Load the current task's stack pointer and switch to its context
-		CurrentSp = Current_Process->sp;
-		Exit_Kernel();
-
 
 		/************************************************************************/
-		/*     if this task makes a system call, it will return to here!		*/
+		/*       If this task makes a system call, it will jump to here!        */
 		/************************************************************************/
-		
-		
+
 		//Save the current task's stack pointer and proceed to handle its request
 		Current_Process->sp = CurrentSp;
 
@@ -405,6 +403,10 @@ static void Kernel_Handle_Request()
 			Kernel_Create_Semaphore();
 			break;
 			
+			case DESTROY_SEM:
+			Kernel_Destroy_Semaphore();
+			break;
+			
 			case GIVE_SEM:
 			Kernel_Semaphore_Give();
 			break;
@@ -447,13 +449,20 @@ static void Kernel_Handle_Request()
 			Kernel_Invalid_Request();
 			break;
        }
-	   
+		
+		//Clears the process' request field after it has been handled
+		Current_Process->request = NONE;
+		
 		//Switch to a new task if the completed kernel request requires it
 		if(Kernel_Request_Cswitch)
 		{
 			Kernel_Dispatch_Next_Task();
 			Kernel_Request_Cswitch = 0;
 		}
+		
+		//Load the newly selected task's stack pointer and switch to its context
+		CurrentSp = Current_Process->sp;
+		Exit_Kernel();
     } 
 }
 
@@ -492,6 +501,7 @@ void Kernel_Reset()
 	#endif
 	
 	#ifdef SEMAPHORE_ENABLED
+	//printf("Semaphores available\n");
 	Semaphore_Reset();
 	#endif
 	
@@ -509,7 +519,7 @@ void Kernel_Start()
 		Disable_Interrupt();
 		
 		/* we may have to initialize the interrupt vector for Enter_Kernel() here. */
-			/* here we go...  */
+		/* here we go...  */
 		KernelActive = 1;
 		
 		/*Initialize and start Timer needed for sleep*/
@@ -519,7 +529,7 @@ void Kernel_Start()
 		printf("OS begins!\n");
 		#endif
 		
-		Kernel_Handle_Request();
+		Kernel_Main_Loop();
 		/* NEVER RETURNS!!! */
 	}
 }

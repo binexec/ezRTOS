@@ -18,6 +18,8 @@ rtos\kernel\others\PtrList.c
 
 rtos\kernel\others\Queue.c
 
+rtos\kernel\semaphore\semaphore.c
+
 rtos\kernel\task\task.c
 
 rtos\os.c

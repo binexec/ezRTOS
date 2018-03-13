@@ -185,9 +185,9 @@
     <Compile Include="rtos\kernel\others\Queue.h">
       <SubType>compile</SubType>
     </Compile>
-    <None Include="rtos\kernel\semaphore\semaphore.c">
+    <Compile Include="rtos\kernel\semaphore\semaphore.c">
       <SubType>compile</SubType>
-    </None>
+    </Compile>
     <Compile Include="rtos\kernel\semaphore\semaphore.h">
       <SubType>compile</SubType>
     </Compile>

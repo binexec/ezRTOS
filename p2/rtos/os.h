@@ -6,7 +6,9 @@
 
 #ifndef _OS_H_  
 #define _OS_H_  
-      
+
+#define DEBUG
+
 	  
 /*Task*/
 #define MAXTHREAD					16
@@ -26,10 +28,10 @@
 
 /*Scheduler configuration*/
 #define MAX_TICK_MISSED				10
-#define PREEMPTIVE_CSWITCH							//Enable preemptive multi-tasking
-#define PREEMPTIVE_CSWITCH_FREQ		25				//How frequently (in ticks) does preemptive scheduling kick in?
-#define PREVENT_STARVATION							//Enable starvation prevention in the scheduler
-#define STARVATION_MAX				MAXTHREAD*10	//Maximum amount of ticks missed before a task is considered starving
+//#define PREEMPTIVE_CSWITCH							//Enable preemptive multi-tasking
+//#define PREEMPTIVE_CSWITCH_FREQ		25				//How frequently (in ticks) does preemptive scheduling kick in?
+//#define PREVENT_STARVATION							//Enable starvation prevention in the scheduler
+//#define STARVATION_MAX				MAXTHREAD*10	//Maximum amount of ticks missed before a task is considered starving
 
 
 //Identifiers for various RTOS objects. The values are always non-zero if it is valid
@@ -88,6 +90,7 @@ void Event_Signal(EVENT e);
 
 /*SEMAPHORE related functions*/
 SEMAPHORE Semaphore_Init(int initial_count, unsigned int is_binary);
+int Semaphore_Destroy(SEMAPHORE s);
 void Semaphore_Give(SEMAPHORE s, unsigned int amount);
 void Semaphore_Get(SEMAPHORE s, unsigned int amount);
 

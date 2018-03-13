@@ -295,6 +295,19 @@ SEMAPHORE Semaphore_Init(int initial_count, unsigned int is_binary)
 	return retval;
 }
 
+int Semaphore_Destroy(SEMAPHORE s)
+{
+	if(KernelActive)
+	{
+		Disable_Interrupt();
+		Current_Process->request = DESTROY_SEM;
+		Current_Process->request_args[0] = s;
+		Enter_Kernel();
+	}
+	
+	return (err > 0)? 0:1;	//return 1 if no error, return 0 if semaphore was not found
+}
+
 void Semaphore_Give(SEMAPHORE s, unsigned int amount)
 {
 	if(!KernelActive){
