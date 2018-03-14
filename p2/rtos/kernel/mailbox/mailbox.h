@@ -15,7 +15,7 @@ typedef struct {
 typedef struct {
 
 	MAILBOX id;
-	Queue queue;	
+	Queue value;	
 	
 } MAILBOX_TYPE;
 

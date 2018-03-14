@@ -2,28 +2,28 @@
 #define QUEUE_H_
 
 #include "../../os.h"
-#include <string.h>
-#include <stdio.h>
-
-#define QUEUE_LENGTH	MAXTHREAD		//Maximum length of each queue. Maybe allow each queue to have a different length?
 
 
 /*Individual elements of a queue, allowing either a pointer or an int value*/
-typedef union{
+typedef struct queue_element{	
+	union 
+	{	
+		unsigned int intval;
+		void* ptrval;
+	};
 	
-	unsigned int val;
-	void* ptr;
+	struct queue_element *next;
 	
 } QElement;
+
 
 
 /*Queue data structure*/
 typedef struct {
 		
-	QElement queue[QUEUE_LENGTH];	//Note that a queue must contain only pointers, or only PIDs
+	QElement *head;
+	QElement *tail;
 	unsigned int count;
-	unsigned int head;
-	unsigned int tail;	
 	
 	//If queue of pointer is used
 	unsigned int is_ptr_queue :1;

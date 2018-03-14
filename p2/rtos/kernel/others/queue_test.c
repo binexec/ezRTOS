@@ -1,4 +1,17 @@
 #include "Queue.h"
+#include <stdio.h>
+
+
+void print_pid_queue(Queue *q)
+{
+	QElement *i;
+	
+	for(i = q->head; i; i = i->next)
+	{
+		printf("%d, ", i->intval);
+	}
+	printf("\n");
+}
 
 
 void test_pid_queue()
@@ -6,8 +19,11 @@ void test_pid_queue()
 	Queue q = new_pid_queue();
 	
 	printf("Enqueue 0: \t%d\n", enqueue_pid(&q, 0));
+	//printf("Head %d, Tail %d\n", q.head->intval, q.tail->intval);
 	printf("Enqueue 1: \t%d\n", enqueue_pid(&q, 1));
+	//printf("Head %d, Tail %d\n", q.head->intval, q.tail->intval);
 	printf("Enqueue 2: \t%d\n", enqueue_pid(&q, 2));
+	//printf("Head %d, Tail %d\n", q.head->intval, q.tail->intval);
 	printf("Enqueue 3: \t%d\n", enqueue_pid(&q, 3));
 	printf("Enqueue 4: \t%d\n", enqueue_pid(&q, 4));
 	printf("Enqueue 5: \t%d\n", enqueue_pid(&q, 5));
@@ -17,7 +33,7 @@ void test_pid_queue()
 	printf("Enqueue 9: \t%d\n", enqueue_pid(&q, 9));
 			
 	printf("\n\n");
-	print_queue(&q);
+	print_pid_queue(&q);
 	printf("\n\n");
 			
 	printf("Dequeue 0: \t%d\n", dequeue_pid(&q));
@@ -25,7 +41,7 @@ void test_pid_queue()
 	printf("Dequeue 2: \t%d\n", dequeue_pid(&q));
 			
 	printf("\n\n");
-	print_queue(&q);
+	print_pid_queue(&q);
 	printf("\n\n");
 			
 	printf("Enqueue 7: \t%d\n", enqueue_pid(&q, 7));
@@ -34,7 +50,7 @@ void test_pid_queue()
 	printf("Enqueue 10: \t%d\n", enqueue_pid(&q, 10));
 			
 	printf("\n\n");
-	print_queue(&q);
+	print_pid_queue(&q);
 	printf("\n\n");
 }
 
@@ -57,23 +73,21 @@ Msg msgs[10] = {{"aaa", 3}, {"bbb", 3}, {"ccc", 3}, {"ddd", 3},
 	
 void print_msg_queue(Queue *q)
 {
-	int i;
+	QElement *i;
 	Msg *current;
 	
-	current = iterate_ptr_queue(q);
-	printf("%s ", current->str);
-	
-	for(i=0; i<q->count-1; i++)
+	for(i = q->head; i; i = i->next)
 	{
-		current = iterate_ptr_queue(NULL);
-		printf("%s ", current->str);
+		current = i->ptrval;
+		printf("%d, %s\n", current->leng, current->str);
 	}
+	
 }
 
 
 void test_ptr_queue()
 {
-	Queue q = new_ptr_queue(sizeof(Msg));
+	Queue q = new_ptr_queue();
 	Msg *temp;
 	
 	printf("Enqueue aaa: \t%d\n", enqueue_ptr(&q, &msgs[0]));
@@ -122,5 +136,6 @@ void test_ptr_queue()
 
 int main()
 {
+	//test_pid_queue();
 	test_ptr_queue();
 }
