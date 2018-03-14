@@ -1,11 +1,12 @@
 #ifndef EVENT_H_
 #define EVENT_H_
 
-#define EVENT_ENABLED
+#include "../kernel_shared.h"
 
-#include "../kernel_internal.h"
 
-#define MAX_EVENT_SIG_MISS 1	//The maximum number of missed signals to record for an event. 0 = unlimited
+#define MAXEVENT					8
+#define MAX_EVENT_SIG_MISS 1					//The maximum number of missed signals to record for an event. 0 = unlimited
+
 
 //For the ease of manageability, we're making a new event data type. The old EVENT type defined in OS.h will simply serve as an identifier.
 typedef struct event_type

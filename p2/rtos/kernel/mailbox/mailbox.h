@@ -1,8 +1,12 @@
 #ifndef MAILBOX_H_
 #define MAILBOX_H_
 
-#include "../kernel_internal.h"
+#include "../kernel_shared.h"
 #include "../others/Queue.h"
+
+
+#define MAXMAILBOX					8
+
 
 typedef struct {
 	

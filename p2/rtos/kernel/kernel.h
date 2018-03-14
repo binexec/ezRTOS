@@ -7,14 +7,29 @@
 #ifndef KERNEL_H_
 #define KERNEL_H_
 
-#include "kernel_internal.h"
+#include "kernel_shared.h"
 #include "task/task.h"
 #include "hardware/hw.h"
 #include "hardware/cpuarch.h"
+
+
+/* Include optional kernel modules only if they're enabled in ../os.h */
+
+#ifdef MUTEX_ENABLED
 #include "mutex/mutex.h"
+#endif
+
+#ifdef EVENT_ENABLED
 #include "event/event.h"
+#endif
+
+#ifdef SEMAPHORE_ENABLED
 #include "semaphore/semaphore.h"
+#endif
+
+#ifdef EVENT_GROUP_ENABLED
 #include "event/event_group.h"
+#endif
 
 
 

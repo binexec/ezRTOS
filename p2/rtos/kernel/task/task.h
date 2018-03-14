@@ -1,7 +1,7 @@
 #ifndef TASK_H_
 #define TASK_H_
 
-#include "../kernel_internal.h"
+#include "../kernel_shared.h"
 #include "../hardware/cpuarch.h"
 
 

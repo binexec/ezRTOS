@@ -10,21 +10,16 @@
 #define DEBUG
 
 	  
-/*Task*/
+/*Task and Memory*/
 #define MAXTHREAD					16
-#define LOWEST_PRIORITY				10		// 0 is the highest priority, 10 the lowest
-#define WORKSPACE					256		// in bytes, per THREAD
-#define KERNEL_HEAP_SIZE			1024
+#define LOWEST_PRIORITY				10				//0 is the highest priority, 10 the lowest
+#define WORKSPACE					256				//Stack size (in bytes) for each user task
+#define KERNEL_HEAP_SIZE			1024			//Heap size (in bytes) allocated for the kernel for allocating kernel objects
 
-/*Optional Kernel Modules*/
-#define MAXMUTEX					8
-#define MAXSEMAPHORE				8
-#define MAXEVENT					8
-#define MAXEVENTGROUP				8
-#define MAXMAILBOX					8
 
 /*Timer*/
-#define MSECPERTICK					10		// resolution of a system tick in milliseconds
+#define MSECPERTICK					10				//resolution of a system tick (in milliseconds).
+
 
 /*Scheduler configuration*/
 #define MAX_TICK_MISSED				10
@@ -32,6 +27,16 @@
 #define PREEMPTIVE_CSWITCH_FREQ		25				//How frequently (in ticks) does preemptive scheduling kick in?
 #define PREVENT_STARVATION							//Enable starvation prevention in the scheduler
 #define STARVATION_MAX				MAXTHREAD*10	//Maximum amount of ticks missed before a task is considered starving
+
+
+/*Choose which optional kernel modules to enable*/
+#define EVENT_ENABLED
+#define MUTEX_ENABLED
+#define EVENT_GROUP_ENABLED
+#define SEMAPHORE_ENABLED
+
+
+
 
 
 //Identifiers for various RTOS objects. The values are always non-zero if it is valid

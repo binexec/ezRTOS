@@ -1,7 +1,7 @@
 #ifndef CPUARCH_H_
 #define CPUARCH_H_
 
-#include "../kernel_internal.h"
+#include "../kernel_shared.h"
 
 
 

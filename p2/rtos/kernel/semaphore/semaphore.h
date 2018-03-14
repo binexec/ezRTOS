@@ -1,10 +1,12 @@
 #ifndef SEMAPHORE_H_
 #define SEMAPHORE_H_
 
-#define SEMAPHORE_ENABLED
-
-#include "../kernel_internal.h"
+#include "../kernel_shared.h"
 #include "../others/Queue.h"
+
+
+#define MAXSEMAPHORE				8
+
 
 typedef struct {
 	

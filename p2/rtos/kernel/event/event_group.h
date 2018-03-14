@@ -1,11 +1,12 @@
 #ifndef EVENT_GROUP_H_
 #define EVENT_GROUP_H_
 
-#define EVENT_GROUP_ENABLED
+#include "../kernel_shared.h"
 
-#include "../kernel_internal.h"
 
+#define MAXEVENTGROUP		8
 #define MAX_EVENT_BITS		16				//Maximum number of events represented within a event group
+
 
 typedef struct {	
 	

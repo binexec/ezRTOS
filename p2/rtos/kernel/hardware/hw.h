@@ -1,7 +1,7 @@
 #ifndef HW_H_
 #define HW_H_
 
-#include "../kernel_internal.h"
+#include "../kernel_shared.h"
 
 //Include any hardware libraries needed
 #include <avr/io.h>

@@ -2,8 +2,8 @@
  * Kernel variables and declarations that are used among all other kernel modules
  */ 
 
-#ifndef KERNEL_INTERNAL_H_
-#define KERNEL_INTERNAL_H_
+#ifndef KERNEL_SHARED_H_
+#define KERNEL_SHARED_H_
 
 #include "../os.h"			//will also include kernel.h
 #include "others/PtrList.h"
