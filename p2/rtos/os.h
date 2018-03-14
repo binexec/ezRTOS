@@ -71,6 +71,7 @@ void OS_Start(void);
 void OS_Abort(void);
 
 
+
 /*Task/Thread related functions*/
 PID  Task_Create(taskfuncptr f, PRIORITY py, int arg);
 void Task_Suspend(taskfuncptr f);		//Suspend/Resume tasks by the function name instead
@@ -81,31 +82,40 @@ int  Task_GetArg(void);
 void Task_Sleep(TICK t);		// sleep time is at least t*MSECPERTICK
 
 
+
 /*Mutex related functions*/
+#ifdef MUTEX_ENABLED
 MUTEX Mutex_Create(void);
 int Mutex_Destroy(MUTEX m);
 void Mutex_Lock(MUTEX m);
 void Mutex_Unlock(MUTEX m);
+#endif
 
 
 /*EVENT related functions*/
+#ifdef EVENT_ENABLED
 EVENT Event_Create(void);
 void Event_Wait(EVENT e);
 void Event_Signal(EVENT e);
+#endif
 
 
 /*SEMAPHORE related functions*/
+#ifdef SEMAPHORE_ENABLED
 SEMAPHORE Semaphore_Create(int initial_count, unsigned int is_binary);
 int Semaphore_Destroy(SEMAPHORE s);
 void Semaphore_Give(SEMAPHORE s, unsigned int amount);
 void Semaphore_Get(SEMAPHORE s, unsigned int amount);
+#endif
 
 
 /*EVENT GROUP related functions*/
+#ifdef EVENT_GROUP_ENABLED
 EVENT_GROUP Event_Group_Create(void);
 void Event_Group_Set_Bits(EVENT_GROUP e, unsigned int bits_to_set);
 void Event_Group_Clear_Bits(EVENT_GROUP e, unsigned int bits_to_clear);
 void Event_Group_Wait_Bits(EVENT_GROUP e, unsigned int bits_to_wait, unsigned int wait_all_bits, TICK timeout);
+#endif
 
 
 #endif /* _OS_H_ */
