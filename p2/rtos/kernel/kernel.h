@@ -31,6 +31,10 @@
 #include "event/event_group.h"
 #endif
 
+#ifdef MAILBOX_ENABLED
+#include "mailbox/mailbox.h"
+#endif
+
 
 
 /************************************************************************/

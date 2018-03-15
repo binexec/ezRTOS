@@ -21,11 +21,11 @@
 
 
 /*Scheduler configuration*/
-#define PREEMPTIVE_CSWITCH							//Enable preemptive multi-tasking
+/*#define PREEMPTIVE_CSWITCH							//Enable preemptive multi-tasking
 #define PREEMPTIVE_CSWITCH_FREQ		25				//How frequently (in ticks) does preemptive scheduling kick in?
 #define PREVENT_STARVATION							//Enable starvation prevention in the scheduler
 #define STARVATION_MAX				MAXTHREAD*10	//Maximum amount of ticks missed before a task is considered starving
-
+*/
 
 /*Timer*/
 #define MSECPERTICK					10				//resolution of a system tick (in milliseconds).
@@ -36,6 +36,7 @@
 #define MUTEX_ENABLED
 #define EVENT_GROUP_ENABLED
 #define SEMAPHORE_ENABLED
+#define MAILBOX_ENABLED
 
 
 
@@ -76,12 +77,13 @@ void OS_Abort(void);
 
 /*Task/Thread related functions*/
 PID Task_Create(taskfuncptr f, size_t stack_size, PRIORITY py, int arg);
+void Task_Terminate(void);
+void Task_Sleep(TICK t);													// sleep time is at least t*MSECPERTICK
 void Task_Suspend(taskfuncptr f);											//Suspend/Resume tasks by the function name instead
 void Task_Resume(taskfuncptr f);
-void Task_Terminate(void);
 void Task_Yield(void);
 int  Task_GetArg(void);
-void Task_Sleep(TICK t);		// sleep time is at least t*MSECPERTICK
+
 
 
 
@@ -114,10 +116,24 @@ void Semaphore_Get(SEMAPHORE s, unsigned int amount);
 /*EVENT GROUP related functions*/
 #ifdef EVENT_GROUP_ENABLED
 EVENT_GROUP Event_Group_Create(void);
+int Event_Group_Destroy(EVENT_GROUP eg);
 void Event_Group_Set_Bits(EVENT_GROUP e, unsigned int bits_to_set);
 void Event_Group_Clear_Bits(EVENT_GROUP e, unsigned int bits_to_clear);
 void Event_Group_Wait_Bits(EVENT_GROUP e, unsigned int bits_to_wait, unsigned int wait_all_bits, TICK timeout);
 #endif
+
+
+/*MAILBOX*/
+#ifdef MAILBOX_ENABLED
+typedef struct MAIL MAIL;													//Formally declared in mailbox/mailbox.h
+
+MAILBOX Mailbox_Create(unsigned int capacity);
+void Mailbox_Destroy(MAILBOX mb);
+int Mailbox_Check_Mail(MAILBOX mb);
+int Mailbox_Send_Mail(MAILBOX mb, MAIL* m);
+int Mailbox_Get_Mail(MAILBOX mb, MAIL* received);
+int Mailbox_Wait_Mail(MAILBOX mb, MAIL* received, TICK timeout);
+#endif 
 
 
 #endif /* _OS_H_ */

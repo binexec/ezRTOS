@@ -39,7 +39,7 @@ EVENT_TYPE* findEventByEventID(EVENT e)
 			return event_i;
 	}
 	
-	err = EVENT_NOT_FOUND_ERR;
+	err = OBJECT_NOT_FOUND_ERR;
 	return NULL;
 }
 
@@ -61,7 +61,7 @@ EVENT Kernel_Create_Event(void)
 		printf("Event_Init: Failed to create Event. The system is at its max event threshold.\n");
 		#endif
 		
-		err = MAX_EVENT_ERR;
+		err = MAX_OBJECT_ERR;
 		if(KernelActive)
 			Current_Process->request_ret = 0;
 		return 0;
@@ -75,7 +75,6 @@ EVENT Kernel_Create_Event(void)
 	//Assign a new unique ID to the event. Note that the smallest valid Event ID is 1.
 	e->id = ++Last_EventID;
 	e->owner = 0;
-	++Event_Count;
 	
 	#ifdef DEBUG
 	printf("Event_Init: Created Event %d!\n", Last_EventID);
@@ -86,6 +85,18 @@ EVENT Kernel_Create_Event(void)
 		Current_Process->request_ret = e->id;
 		
 	return e->id;
+}
+
+static void Kernel_Destroy_Event_Internal(EVENT_TYPE *e)
+{
+	//Destroy the event object
+	e->owner = 0;
+	e->count = 0;
+	e->id = 0;
+	
+	free(e);
+	ptrlist_remove(&EventList, ptrlist_find(&EventList, e));
+	--Event_Count;
 }
 
 
@@ -112,17 +123,14 @@ void Kernel_Wait_Event(void)
 		#ifdef DEBUG
 		printf("Kernel_Wait_Event: The requested event is already being waited by PID %d\n", e->owner);
 		#endif
-		err = EVENT_NOT_FOUND_ERR;
+		err = OBJECT_NOT_FOUND_ERR;
 		return;
 	}
 	
 	//Has this event been signaled already? If yes, "consume" event and keep executing the same task
 	if(e->count > 0)
 	{
-		e->owner = 0;
-		e->count = 0;
-		e->id = 0;
-		--Event_Count;
+		Kernel_Destroy_Event_Internal(e);
 		return;
 	}
 	
@@ -158,15 +166,7 @@ void Kernel_Signal_Event(void)
 	//Wake up the owner of the event by setting its state to READY if it's active. The event is "consumed"
 	e_owner = findProcessByPID(e->owner);
 	e_owner->state = READY;
-	
-	//Destroy the event object
-	e->owner = 0;
-	e->count = 0;
-	e->id = 0;
-	
-	free(e);
-	ptrlist_remove(&EventList, ptrlist_find(&EventList, e));
-	--Event_Count;
+	Kernel_Destroy_Event_Internal(e);
 		
 	Kernel_Request_Cswitch = 1;
 }

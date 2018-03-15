@@ -33,8 +33,6 @@ PID Kernel_Create_Task_Direct(taskfuncptr f, size_t stack_size, PRIORITY py, int
 		#endif
 		
 		err = MAX_PROCESS_ERR;
-		if(KernelActive)
-			Current_Process->request_ret = 0;
 		return 0;
 	}
 	
@@ -74,23 +72,20 @@ PID Kernel_Create_Task_Direct(taskfuncptr f, size_t stack_size, PRIORITY py, int
 	p->sp = &p->stack[stack_size-1];
 	Kernel_Init_Task_Stack(&p->sp, f);
 	
-	
 	err = NO_ERR;
-	if(KernelActive)
-		Current_Process->request_ret = p->pid;
 	return p->pid;
 }
 
 
 //For creating a new task dynamically when the kernel is already running
-PID Kernel_Create_Task()
+void Kernel_Create_Task(void)
 {
 	#define req_func_pointer	Current_Process->request_ptr
 	#define req_stack_size		Current_Process->request_args[0]
 	#define req_priority		Current_Process->request_args[1]
 	#define req_taskarg			Current_Process->request_args[2]
 	
-	return Kernel_Create_Task_Direct(req_func_pointer, req_stack_size, req_priority, req_taskarg);
+	Current_Process->request_ret = Kernel_Create_Task_Direct(req_func_pointer, req_stack_size, req_priority, req_taskarg);
 	
 	#undef req_func_pointer
 	#undef req_func_pointer

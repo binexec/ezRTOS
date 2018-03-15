@@ -52,9 +52,7 @@ SEMAPHORE Kernel_Create_Semaphore_Direct(int initial_count, unsigned int is_bina
 		printf("Kernel_Create_Semaphore: Failed to create Semaphore. The system is at its max semaphore threshold.\n");
 		#endif
 		
-		err = MAX_SEMAPHORE_ERR;
-		if(KernelActive)
-			Current_Process->request_ret = 0;
+		err = MAX_OBJECT_ERR;
 		return 0;
 	}
 	
@@ -86,18 +84,16 @@ SEMAPHORE Kernel_Create_Semaphore_Direct(int initial_count, unsigned int is_bina
 	
 	
 	err = NO_ERR;
-	if(KernelActive)
-		Current_Process->request_ret = sem->id;
 	return sem->id;
 }
 
 
-SEMAPHORE Kernel_Create_Semaphore()
+void Kernel_Create_Semaphore()
 {
 	#define req_initial_count		Current_Process->request_args[0]
 	#define req_is_binary			Current_Process->request_args[1]
 	
-	return Kernel_Create_Semaphore_Direct(req_initial_count, req_is_binary);
+	Current_Process->request_ret = Kernel_Create_Semaphore_Direct(req_initial_count, req_is_binary);
 	
 	#undef req_initial_count
 	#undef req_is_binary
@@ -124,7 +120,7 @@ void Kernel_Destroy_Semaphore()
 		#ifdef DEBUG
 		printf("Kernel_Destroy_Semaphore: The requested Semaphore %d was not found!\n", req_sem_id);
 		#endif
-		err = SEMAPHORE_NOT_FOUND_ERR;
+		err = OBJECT_NOT_FOUND_ERR;
 		return;
 	}
 	
@@ -132,6 +128,7 @@ void Kernel_Destroy_Semaphore()
 	
 	free(sem);
 	ptrlist_remove(&SemaphoreList, i);
+	--Semaphore_Count;
 	
 	err = NO_ERR;
 	#undef req_sem_id
@@ -156,7 +153,7 @@ static inline void Kernel_Semaphore_Get_From_Queue(SEMAPHORE_TYPE *sem, unsigned
 			#ifdef DEBUG
 			printf("Kernel_Semaphore_Get_From_Queue: Head of the wait queue isn't waiting for a semaphore!\n");
 			#endif
-			err = SEMAPHORE_NOT_FOUND_ERR;
+			err = OBJECT_NOT_FOUND_ERR;
 			return;
 		}
 		
@@ -184,7 +181,7 @@ void Kernel_Semaphore_Get()
 		#ifdef DEBUG
 		printf("Kernel_Semaphore_Get: The requested Semaphore %d was not found!\n", req_sem_id);
 		#endif
-		err = SEMAPHORE_NOT_FOUND_ERR;
+		err = OBJECT_NOT_FOUND_ERR;
 		return;
 	}
 	
@@ -228,7 +225,7 @@ void Kernel_Semaphore_Give()
 		#ifdef DEBUG
 		printf("Kernel_Semaphore_Give: The requested Semaphore %d was not found!\n", req_sem_id);
 		#endif
-		err = SEMAPHORE_NOT_FOUND_ERR;
+		err = OBJECT_NOT_FOUND_ERR;
 		return;
 	}
 	

@@ -1,3 +1,5 @@
+/* The TASK module is a mandatory extension of the kernel. It cannot be omitted. */
+
 #ifndef TASK_H_
 #define TASK_H_
 
@@ -5,8 +7,9 @@
 #include "../hardware/cpuarch.h"
 
 
-PID Kernel_Create_Task(void);
+
 PID Kernel_Create_Task_Direct(taskfuncptr f, size_t stack_size, PRIORITY py, int arg);
+void Kernel_Create_Task(void);
 void Task_Reset(void);
 void Kernel_Suspend_Task(void);
 void Kernel_Resume_Task(void); 

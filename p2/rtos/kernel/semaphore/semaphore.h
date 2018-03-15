@@ -23,7 +23,7 @@ extern volatile unsigned int Semaphore_Count;		//Number of Mutexes created so fa
 extern volatile unsigned int Last_SemaphoreID;
 
 
-SEMAPHORE Kernel_Create_Semaphore(void);
+void Kernel_Create_Semaphore(void);
 SEMAPHORE Kernel_Create_Semaphore_Direct(int initial_count, unsigned int is_binary);
 void Kernel_Destroy_Semaphore(void);
 void Semaphore_Reset(void);

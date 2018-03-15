@@ -2,10 +2,9 @@
 
 
 /*System variables used by the kernel only*/		
-volatile static unsigned int Tick_Count;				//Number of timer ticks missed
-volatile static PtrList* Last_Dispatched;				//Pointer to the global process queue of the task that was running previously
+volatile static unsigned int Tick_Count;							//Number of timer ticks missed
+volatile static PtrList* Last_Dispatched;							//Pointer to the global process queue of the task that was running previously
 
-//For Preemptive Cswitch
 #ifdef PREEMPTIVE_CSWITCH
 volatile static unsigned int Preemptive_Cswitch_Allowed;
 volatile static unsigned int Ticks_Since_Last_Cswitch;
@@ -13,16 +12,16 @@ volatile static unsigned int Ticks_Since_Last_Cswitch;
 
 
 /*Variables accessible by OS and other kernel modules*/
-volatile PD* Current_Process;						//Process descriptor for the last running process before entering the kernel
-volatile unsigned char *KernelSp;					//Pointer to the Kernel's own stack location.
-volatile unsigned char *CurrentSp;					//Pointer to the stack location of the current running task. Used for saving into PD during ctxswitch.						//The process descriptor of the currently RUNNING task. CP is used to pass information from OS calls to the kernel telling it what to do.
-volatile unsigned int KernelActive;					//Indicates if kernel has been initialzied by OS_Start().
-volatile unsigned int Kernel_Request_Cswitch;		//If a kernel request set this variable to 1, the kernel will switch to a different task after the request completes
-volatile ERROR_CODE err;							//Error code for the previous kernel operation (if any)		
+volatile PD* Current_Process;										//Process descriptor for the last running process before entering the kernel
+volatile unsigned char *KernelSp;									//Pointer to the Kernel's own stack location.
+volatile unsigned char *CurrentSp;									//Pointer to the stack location of the current running task. Used for saving into PD during ctxswitch.						//The process descriptor of the currently RUNNING task. CP is used to pass information from OS calls to the kernel telling it what to do.
+volatile unsigned int KernelActive;									//Indicates if kernel has been initialzied by OS_Start().
+volatile unsigned int Kernel_Request_Cswitch;						//If a kernel request set this variable to 1, the kernel will switch to a different task after the request completes
+volatile ERROR_CODE err;											//Error code for the previous kernel operation (if any)		
 
 
-//uchar Kernel_Heap[KERNEL_HEAP_SIZE];							//Heap for kerel object allocation, used by kmalloc
-//uchar Task_Workspace_Pool[WORKSPACE_HEAP_SIZE];				//Heap for kerel object allocation, used by kmalloc
+//uchar Kernel_Heap[KERNEL_HEAP_SIZE];								//Heap for kerel object allocation, used by kmalloc
+//uchar Task_Workspace_Pool[WORKSPACE_HEAP_SIZE];					//Heap for kerel object allocation, used by kmalloc
 //volatile void* Workspace_Pool_End;
 
 
@@ -71,7 +70,7 @@ int findPIDByFuncPtr(taskfuncptr f)
 	return -1;
 }
 
-
+/*
 void print_processes()
 {
 	PtrList *i;
@@ -93,6 +92,7 @@ void print_process(PID p)
 	printf("\tPID: %d\t State: %d\t Priority: %d\t Timeout: %d\n", pd->pid, pd->state, pd->pri, pd->request_timeout);
 	printf("\n");
 }
+*/
 
 
 
@@ -117,7 +117,7 @@ void Kernel_Tick_ISR()
 	if(++Ticks_Since_Last_Cswitch >= PREEMPTIVE_CSWITCH_FREQ)
 	{
 		Disable_Interrupt();
-		Current_Process->request = YIELD;
+		Current_Process->request = TASK_YIELD;
 		Enter_Kernel();							//Interrupts are automatically enabled once kernel is exited
 	}
 	#endif
@@ -283,14 +283,13 @@ static void Kernel_Dispatch_Next_Task()
 		next_dispatch = Kernel_Select_Next_Task();	
 	}
 
-	//Load the next selected task's process descriptor into Cp
+	//Load the next selected task's process descriptor into Current_Process and dispatch it to run 
 	Last_Dispatched = next_dispatch;
 	Current_Process = (PD*)next_dispatch->ptr;
 	CurrentSp = Current_Process->sp;
 	Current_Process->state = RUNNING;
 	
-	//printf("Dispatching PID:%d\n", Current_Process->pid);
-		
+	
 	//Reset Preemptive cswitch
 	#ifdef PREEMPTIVE_CSWITCH
 	Ticks_Since_Last_Cswitch = 0;
@@ -354,108 +353,108 @@ static void Kernel_Main_Loop()
 		//Because each branch only calls a function, this switch statement should hopefully be converted to a jump table by the compiler
 		switch(Current_Process->request)
 		{
-			case CREATE_T:
+			case TASK_CREATE:
 			Kernel_Create_Task();
 			break;
 			
-			case TERMINATE:
+			case TASK_TERMINATE:
 			Kernel_Terminate_Task();
 			break;
 		   
-			case SUSPEND:
+			case TASK_SUSPEND:
 			Kernel_Suspend_Task();
 			break;
 			
-			case RESUME:
+			case TASK_RESUME:
 			Kernel_Resume_Task();
 			break;
 			
-			case SLEEP:
+			case TASK_SLEEP:
 			Kernel_Sleep_Task();					
 			break;
 			
 			
 			#ifdef EVENT_ENABLED
-			case CREATE_E:
+			case E_CREATE:
 			Kernel_Create_Event();
 			break;
 			
-			case WAIT_E:
+			case E_WAIT:
 			Kernel_Wait_Event();	
 			break;
 			
-			case SIGNAL_E:
+			case E_SIGNAL:
 			Kernel_Signal_Event();
 			break;
 			#endif
 			
 			
 			#ifdef MUTEX_ENABLED
-			case CREATE_M:
+			case MUT_CREATE:
 			Kernel_Create_Mutex();
 			break;
 			
-			case DESTROY_M:
+			case MUT_DESTROY:
 			Kernel_Destroy_Mutex();
 			break;
 			
-			case LOCK_M:
+			case MUT_LOCK:
 			Kernel_Lock_Mutex();
 			break;
 			
-			case UNLOCK_M:
+			case MUT_UNLOCK:
 			Kernel_Unlock_Mutex();
 			break;
 			#endif
 			
 			
 			#ifdef SEMAPHORE_ENABLED
-			case CREATE_SEM:
+			case SEM_CREATE:
 			Kernel_Create_Semaphore();
 			break;
 			
-			case DESTROY_SEM:
+			case SEM_DESTROY:
 			Kernel_Destroy_Semaphore();
 			break;
 			
-			case GIVE_SEM:
+			case SEM_GIVE:
 			Kernel_Semaphore_Give();
 			break;
 			
-			case GET_SEM:
+			case SEM_GET:
 			Kernel_Semaphore_Get();
 			break;
 			#endif
 			
 			
 			#ifdef EVENT_GROUP_ENABLED
-			case CREATE_EG:
+			case EG_CREATE:
 			Kernel_Create_Event_Group();
 			break;
 			
-			case DESTROY_EG:
+			case EG_DESTROY:
 			Kernel_Destroy_Event_Group();
 			break;
 			
-			case SET_EG_BITS:
+			case EG_SETBITS:
 			Kernel_Event_Group_Set_Bits();
 			break;
 			
-			case CLEAR_EG_BITS:
+			case EG_CLEARBITS:
 			Kernel_Event_Group_Clear_Bits();
 			break;
 			
-			case WAIT_EG:
+			case EG_WAITBITS:
 			Kernel_Event_Group_Wait_Bits();
 			break;
 			
-			case GET_EG_BITS:
+			case EG_GETBITS:
 			Kernel_Event_Group_Get_Bits();
 			break;
 			#endif
 			
 		   
-			case YIELD:
+			case TASK_YIELD:
 			case NONE:							// NONE could be caused by a timer interrupt
 			Kernel_Dispatch_Next_Task();
 			break;

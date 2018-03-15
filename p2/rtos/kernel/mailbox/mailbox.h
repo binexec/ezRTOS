@@ -4,11 +4,9 @@
 #include "../kernel_shared.h"
 #include "../others/Queue.h"
 
-
 #define MAXMAILBOX					8
 
-
-typedef struct {
+typedef struct MAIL{
 	
 	void* ptr;
 	unsigned int size;
@@ -19,17 +17,31 @@ typedef struct {
 typedef struct {
 
 	MAILBOX id;
-	Queue value;	
+	unsigned int capacity;
+	Queue mails;	
 	
 } MAILBOX_TYPE;
 
 
+/*Shared variables*/
+extern volatile unsigned int Last_MailboxID;
+
+
+
 void reset_mailbox(void);
-MAILBOX Kernel_Create_Mailbox(void);
-int Kernel_Mailbox_Check_Mail(MAILBOX mb);
-int Kernel_Mailbox_Send_Mail(MAILBOX mb, MAIL m);
-int Kernel_Mailbox_Get_Mail(MAILBOX mb, MAIL* received);
-int Kernel_Mailbox_Wait_Mail(MAILBOX mb, MAIL* received, TICK timeout);
+MAILBOX_TYPE* findMailboxByID(MAILBOX mb);
+
+void Kernel_Create_Mailbox(void);
+MAILBOX Kernel_Create_Mailbox_Direct(unsigned int capacity);
+void Kernel_Destroy_Mailbox(void);
+
+int Kernel_Mailbox_Check_Mail(void);
+int Kernel_Mailbox_Send_Mail(void);
+int Kernel_Mailbox_Get_Mail(void);
+int Kernel_Mailbox_Wait_Mail(void);
+
+
+
 
 
 

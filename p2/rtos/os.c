@@ -48,7 +48,7 @@ PID Task_Create(taskfuncptr f, size_t stack_size, PRIORITY py, int arg)
 	 Current_Process->request_args[0] = stack_size;
 	 Current_Process->request_args[1] = py;
 	 Current_Process->request_args[2] = arg;
-	 Current_Process->request = CREATE_T;
+	 Current_Process->request = TASK_CREATE;
      Enter_Kernel();									//Interrupts are automatically reenabled once the kernel is exited
 	 
 	 //Retrieve the return value once the kernel exits
@@ -77,7 +77,7 @@ void Task_Terminate()
 	}
 
 	Disable_Interrupt();
-	Current_Process -> request = TERMINATE;
+	Current_Process -> request = TASK_TERMINATE;
 	Enter_Kernel();			
 }
 
@@ -90,7 +90,7 @@ void Task_Yield()
 	}
 
     Disable_Interrupt();
-    Current_Process->request = YIELD;
+    Current_Process->request = TASK_YIELD;
     Enter_Kernel();
 }
 
@@ -111,7 +111,7 @@ void Task_Suspend(taskfuncptr f)
 	}
 	
 	Disable_Interrupt();
-	Current_Process->request = SUSPEND;
+	Current_Process->request = TASK_SUSPEND;
 	Current_Process->request_args[0] = findPIDByFuncPtr(f);
 	Enter_Kernel();
 }
@@ -124,7 +124,7 @@ void Task_Resume(taskfuncptr f)
 	}
 	
 	Disable_Interrupt();
-	Current_Process->request = RESUME;
+	Current_Process->request = TASK_RESUME;
 	Current_Process->request_args[0] = findPIDByFuncPtr(f);
 	Enter_Kernel();
 }
@@ -138,7 +138,7 @@ void Task_Sleep(TICK t)
 	}
 	
 	Disable_Interrupt();
-	Current_Process->request = SLEEP;
+	Current_Process->request = TASK_SLEEP;
 	Current_Process->request_timeout = t;
 	Enter_Kernel();
 }
@@ -156,7 +156,7 @@ EVENT Event_Create(void)
 	if(KernelActive)
 	{
 		Disable_Interrupt();
-		Current_Process->request = CREATE_E;
+		Current_Process->request = E_CREATE;
 		Enter_Kernel();
 		
 		retval = Current_Process->request_ret;
@@ -165,7 +165,7 @@ EVENT Event_Create(void)
 		retval = Kernel_Create_Event();		//Call the kernel function directly if kernel has not started yet.	
 	
 	//Return zero as Event ID if the event creation process gave errors. Note that the smallest valid event ID is 1
-	if (err == MAX_EVENT_ERR)
+	if (err == MAX_OBJECT_ERR)
 		return 0;
 	
 	#ifdef DEBUG
@@ -183,7 +183,7 @@ void Event_Wait(EVENT e)
 	}
 	
 	Disable_Interrupt();
-	Current_Process->request = WAIT_E;
+	Current_Process->request = E_WAIT;
 	Current_Process->request_args[0] = e;
 	Enter_Kernel();
 	
@@ -197,7 +197,7 @@ void Event_Signal(EVENT e)
 	}
 	
 	Disable_Interrupt();
-	Current_Process->request = SIGNAL_E;
+	Current_Process->request = E_SIGNAL;
 	Current_Process->request_args[0] = e;
 	Enter_Kernel();	
 }
@@ -217,7 +217,7 @@ MUTEX Mutex_Create(void)
 	if(KernelActive)
 	{
 		Disable_Interrupt();
-		Current_Process->request = CREATE_M;
+		Current_Process->request = MUT_CREATE;
 		Enter_Kernel();
 		
 		retval = Current_Process->request_ret;
@@ -226,7 +226,7 @@ MUTEX Mutex_Create(void)
 		retval = Kernel_Create_Mutex();	//Call the kernel function directly if OS hasn't start yet
 		
 	//Return zero as Mutex ID if the mutex creation process gave errors. Note that the smallest valid mutex ID is 1
-	if (err == MAX_MUTEX_ERR)
+	if (err == MAX_OBJECT_ERR)
 	return 0;
 	
 	#ifdef DEBUG
@@ -241,7 +241,7 @@ int Mutex_Destroy(MUTEX m)
 	if(KernelActive)
 	{
 		Disable_Interrupt();
-		Current_Process->request = DESTROY_M;
+		Current_Process->request = MUT_DESTROY;
 		Current_Process->request_args[0] = m;
 		Enter_Kernel();
 	}
@@ -257,7 +257,7 @@ void Mutex_Lock(MUTEX m)
 	}
 	
 	Disable_Interrupt();
-	Current_Process->request = LOCK_M;
+	Current_Process->request = MUT_LOCK;
 	Current_Process->request_args[0] = m;
 	Enter_Kernel();
 }
@@ -270,7 +270,7 @@ void Mutex_Unlock(MUTEX m)
 	}
 	
 	Disable_Interrupt();
-	Current_Process->request = UNLOCK_M;
+	Current_Process->request = MUT_UNLOCK;
 	Current_Process->request_args[0] = m;
 	Enter_Kernel();
 }
@@ -288,7 +288,7 @@ SEMAPHORE Semaphore_Create(int initial_count, unsigned int is_binary)
 	if(KernelActive)
 	{
 		Disable_Interrupt();
-		Current_Process->request = CREATE_SEM;
+		Current_Process->request = SEM_CREATE;
 		Current_Process->request_args[0] = initial_count;
 		Current_Process->request_args[1] = is_binary;
 		Enter_Kernel();
@@ -314,7 +314,7 @@ int Semaphore_Destroy(SEMAPHORE s)
 	if(KernelActive)
 	{
 		Disable_Interrupt();
-		Current_Process->request = DESTROY_SEM;
+		Current_Process->request = SEM_DESTROY;
 		Current_Process->request_args[0] = s;
 		Enter_Kernel();
 	}
@@ -330,7 +330,7 @@ void Semaphore_Give(SEMAPHORE s, unsigned int amount)
 	}
 	
 	Disable_Interrupt();
-	Current_Process->request = GIVE_SEM;
+	Current_Process->request = SEM_GIVE;
 	Current_Process->request_args[0] = s;
 	Current_Process->request_args[1] = amount;
 	Enter_Kernel();
@@ -344,7 +344,7 @@ void Semaphore_Get(SEMAPHORE s, unsigned int amount)
 	}
 	
 	Disable_Interrupt();
-	Current_Process->request = GET_SEM;
+	Current_Process->request = SEM_GET;
 	Current_Process->request_args[0] = s;
 	Current_Process->request_args[1] = amount;
 	Enter_Kernel();
@@ -364,7 +364,7 @@ EVENT_GROUP Event_Group_Create(void)
 	if(KernelActive)
 	{
 		Disable_Interrupt();
-		Current_Process->request = CREATE_EG;
+		Current_Process->request = EG_CREATE;
 		Enter_Kernel();
 		
 		retval = Current_Process->request_ret;
@@ -374,7 +374,7 @@ EVENT_GROUP Event_Group_Create(void)
 	
 	
 	//Return zero as Event ID if the event creation process gave errors. Note that the smallest valid event ID is 1
-	if (err == MAX_EVENT_ERR)
+	if (err == MAX_OBJECT_ERR)
 	return 0;
 	
 	#ifdef DEBUG
@@ -389,7 +389,7 @@ int Event_Group_Destroy(EVENT_GROUP eg)
 	if(KernelActive)
 	{
 		Disable_Interrupt();
-		Current_Process->request = DESTROY_EG;
+		Current_Process->request = EG_DESTROY;
 		Current_Process->request_args[0] = eg;
 		Enter_Kernel();
 	}
@@ -405,7 +405,7 @@ void Event_Group_Set_Bits(EVENT_GROUP e, unsigned int bits_to_set)
 	}
 	
 	Disable_Interrupt();
-	Current_Process->request = SET_EG_BITS;
+	Current_Process->request = EG_SETBITS;
 	Current_Process->request_args[0] = e;
 	Current_Process->request_args[1] = bits_to_set;
 	Enter_Kernel();
@@ -419,7 +419,7 @@ void Event_Group_Clear_Bits(EVENT_GROUP e, unsigned int bits_to_clear)
 	}
 	
 	Disable_Interrupt();
-	Current_Process->request = CLEAR_EG_BITS;
+	Current_Process->request = EG_CLEARBITS;
 	Current_Process->request_args[0] = e;
 	Current_Process->request_args[1] = bits_to_clear;
 	Enter_Kernel();
@@ -433,7 +433,7 @@ void Event_Group_Wait_Bits(EVENT_GROUP e, unsigned int bits_to_wait, unsigned in
 	}
 	
 	Disable_Interrupt();
-	Current_Process->request = WAIT_EG;
+	Current_Process->request = EG_WAITBITS;
 	Current_Process->request_args[0] = e;
 	Current_Process->request_args[1] = bits_to_wait;
 	Current_Process->request_args[2] = wait_all_bits;
@@ -450,7 +450,119 @@ unsigned int Event_Group_Get_Bits(EVENT_GROUP e)
 	}
 	
 	Disable_Interrupt();
-	Current_Process->request = GET_EG_BITS;
+	Current_Process->request = EG_GETBITS;
+	Enter_Kernel();
+	
+	return Current_Process->request_ret;
+}
+
+#endif
+
+
+/************************************************************************/
+/*						Mailbox related API			                */
+/************************************************************************/
+#ifdef MAILBOX_ENABLED
+
+MAILBOX Mailbox_Create(unsigned int capacity)
+{
+	MAILBOX retval;
+	
+	if(KernelActive)
+	{
+		Disable_Interrupt();
+		Current_Process->request = MB_CREATE;
+		Current_Process->request_args[0] = capacity;
+		Enter_Kernel();
+		
+		retval = Current_Process->request_ret;
+	}
+	else
+		retval = Kernel_Create_Mailbox_Direct(capacity);		//Call the kernel function directly if OS hasn't start yet
+	
+	//Return the created semaphore's ID, or 0 if failed
+	if(err != NO_ERR)
+		return 0;
+	
+	#ifdef DEBUG
+	printf("Created Mailbox: %d\n", Last_MailboxID);
+	#endif
+	
+	return retval;
+}
+
+void Mailbox_Destroy(MAILBOX mb)
+{
+	if(!KernelActive){
+		err = KERNEL_INACTIVE_ERR;
+		return;
+	}
+		
+	Disable_Interrupt();
+	Current_Process->request = MB_DESTROY;
+	Current_Process->request_args[0] = mb;
+	Enter_Kernel();
+}
+
+int Mailbox_Check_Mail(MAILBOX mb)
+{
+	if(!KernelActive){
+		err = KERNEL_INACTIVE_ERR;
+		return 0;
+	}
+	
+	Disable_Interrupt();
+	Current_Process->request = MB_CHECKMAIL;
+	Current_Process->request_args[0] = mb;
+	Enter_Kernel();
+	
+	return Current_Process->request_ret;
+}
+
+int Mailbox_Send_Mail(MAILBOX mb, MAIL* m)
+{
+	if(!KernelActive){
+		err = KERNEL_INACTIVE_ERR;
+		return 0;
+	}
+	
+	Disable_Interrupt();
+	Current_Process->request = MB_SENDMAIL;
+	Current_Process->request_args[0] = mb;
+	Current_Process->request_args[1] = m;
+	Enter_Kernel();
+	
+	return Current_Process->request_ret;
+}
+
+int Mailbox_Get_Mail(MAILBOX mb, MAIL* received)
+{
+	if(!KernelActive){
+		err = KERNEL_INACTIVE_ERR;
+		return 0;
+	}
+		
+	Disable_Interrupt();
+	Current_Process->request = MB_GETMAIL;
+	Current_Process->request_args[0] = mb;
+	Current_Process->request_args[1] = received;
+	Enter_Kernel();
+	
+	return Current_Process->request_ret;
+}
+
+int Mailbox_Wait_Mail(MAILBOX mb, MAIL* received, TICK timeout)
+{
+	if(!KernelActive){
+		err = KERNEL_INACTIVE_ERR;
+		return 0;
+	}
+	
+	Disable_Interrupt();
+	Current_Process->request = MB_WAITMAIL;
+	Current_Process->request_args[0] = mb;
+	Current_Process->request_args[1] = received;
+	Current_Process->request_timeout = timeout;
 	Enter_Kernel();
 	
 	return Current_Process->request_ret;

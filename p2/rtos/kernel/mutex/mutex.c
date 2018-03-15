@@ -45,7 +45,7 @@ MUTEX_TYPE* findMutexByMutexID(MUTEX m)
 			return mutex_i;
 	}
 	
-	err = MUTEX_NOT_FOUND_ERR;
+	err = OBJECT_NOT_FOUND_ERR;
 	return NULL;
 }
 
@@ -67,7 +67,7 @@ MUTEX Kernel_Create_Mutex(void)
 		printf("Kernel_Create_Mutex: Failed to create Mutex. The system is at its max mutex threshold.\n");
 		#endif
 		
-		err = MAX_MUTEX_ERR;
+		err = MAX_OBJECT_ERR;
 		if(KernelActive)
 			Current_Process->request_ret = 0;
 		return 0;
@@ -116,7 +116,7 @@ void Kernel_Destroy_Mutex(void)
 		#ifdef DEBUG
 		printf("Kernel_Destroy_Mutex: The requested Mutex %d was not found!\n", req_mut_id);
 		#endif
-		err = MUTEX_NOT_FOUND_ERR;
+		err = OBJECT_NOT_FOUND_ERR;
 		return;
 	}
 	
@@ -124,6 +124,7 @@ void Kernel_Destroy_Mutex(void)
 	
 	free(mut);
 	ptrlist_remove(&MutexList, i);
+	--Mutex_Count;
 	
 	err = NO_ERR;
 	#undef req_mut_id
@@ -236,7 +237,7 @@ void Kernel_Unlock_Mutex(void)
 		#ifdef DEBUG
 		printf("Kernel_Unlock_Mutex: Mutex was attempted to be unlocked not by its owner!\n");
 		#endif
-		err = MUTEX_NOT_FOUND_ERR;
+		err = OBJECT_NOT_FOUND_ERR;
 		return;
 	}
 	

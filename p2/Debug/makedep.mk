@@ -16,6 +16,8 @@ rtos\kernel\hardware\uart\uart.c
 
 rtos\kernel\kernel.c
 
+rtos\kernel\mailbox\mailbox.c
+
 rtos\kernel\mutex\mutex.c
 
 rtos\kernel\others\kmalloc.c

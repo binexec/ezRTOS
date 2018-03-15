@@ -36,6 +36,17 @@ int get_queue_type(Queue *q)
 }
 
 
+static QElement* dequeue(Queue *q);
+
+//Destroy all elements within a queue
+void free_queue(Queue *q)
+{
+	while(q->head)
+		dequeue(q);
+	
+}
+
+
 
 /************************************************************************/
 /*								Enqueue                                 */
