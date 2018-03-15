@@ -7,26 +7,28 @@
 #ifndef _OS_H_  
 #define _OS_H_  
 
+#include <stdint.h>
+#include <stddef.h>
+
 #define DEBUG
 
 	  
 /*Task and Memory*/
 #define MAXTHREAD					16
 #define LOWEST_PRIORITY				10				//0 is the highest priority, 10 the lowest
-#define WORKSPACE					256				//Stack size (in bytes) for each user task
+#define WORKSPACE_HEAP_SIZE			4096			//The total amount of workspace memory dedicated across ALL tasks
 #define KERNEL_HEAP_SIZE			1024			//Heap size (in bytes) allocated for the kernel for allocating kernel objects
 
 
-/*Timer*/
-#define MSECPERTICK					10				//resolution of a system tick (in milliseconds).
-
-
 /*Scheduler configuration*/
-#define MAX_TICK_MISSED				10
 #define PREEMPTIVE_CSWITCH							//Enable preemptive multi-tasking
 #define PREEMPTIVE_CSWITCH_FREQ		25				//How frequently (in ticks) does preemptive scheduling kick in?
 #define PREVENT_STARVATION							//Enable starvation prevention in the scheduler
 #define STARVATION_MAX				MAXTHREAD*10	//Maximum amount of ticks missed before a task is considered starving
+
+
+/*Timer*/
+#define MSECPERTICK					10				//resolution of a system tick (in milliseconds).
 
 
 /*Choose which optional kernel modules to enable*/
@@ -73,8 +75,8 @@ void OS_Abort(void);
 
 
 /*Task/Thread related functions*/
-PID  Task_Create(taskfuncptr f, PRIORITY py, int arg);
-void Task_Suspend(taskfuncptr f);		//Suspend/Resume tasks by the function name instead
+PID Task_Create(taskfuncptr f, size_t stack_size, PRIORITY py, int arg);
+void Task_Suspend(taskfuncptr f);											//Suspend/Resume tasks by the function name instead
 void Task_Resume(taskfuncptr f);
 void Task_Terminate(void);
 void Task_Yield(void);

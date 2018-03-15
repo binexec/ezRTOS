@@ -36,7 +36,7 @@ int main()
 
 
 /* OS call to create a new task */
-PID Task_Create(taskfuncptr f, PRIORITY py, int arg)
+PID Task_Create(taskfuncptr f, size_t stack_size, PRIORITY py, int arg)
 {
    PID retval;
    
@@ -44,7 +44,8 @@ PID Task_Create(taskfuncptr f, PRIORITY py, int arg)
    if (KernelActive) 
    {
      Disable_Interrupt();
-	 Current_Process->request_args[0] = f;				//Will throw warning about converting from pointer to int; just ignore it. Ensure pointers are 32-bits or less for target arch 
+	 Current_Process->request_ptr = f;
+	 Current_Process->request_args[0] = stack_size;
 	 Current_Process->request_args[1] = py;
 	 Current_Process->request_args[2] = arg;
 	 Current_Process->request = CREATE_T;
@@ -54,7 +55,7 @@ PID Task_Create(taskfuncptr f, PRIORITY py, int arg)
 	 retval = Current_Process->request_ret;
    } 
    else 
-	  retval = Kernel_Create_Task_Direct(f,py,arg);				//If kernel hasn't started yet, manually create the task
+	  retval = Kernel_Create_Task_Direct(f,stack_size,py,arg);				//If kernel hasn't started yet, manually create the task
    
    //Return zero as PID if the task creation process gave errors. Note that the smallest valid PID is 1
    if (err == MAX_PROCESS_ERR)

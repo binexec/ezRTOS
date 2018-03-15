@@ -7,6 +7,8 @@
 
 #define LED_PIN_MASK 0x80			//Pin 13 = PB7
 
+#define TASK_STACK_SIZE					256				//Stack size (in bytes) for each user task
+
 
 void Idle()
 {
@@ -15,6 +17,32 @@ void Idle()
 
 
 #define TEST_SET_1
+
+
+/************************************************************************/
+/*					TEST_SET_0 is an empty template						*/
+/************************************************************************/
+#ifdef TEST_SET_0
+
+void t1()
+{
+	Task_Yield();
+}
+
+void t2()
+{
+	Task_Yield();
+}
+
+void test()
+{
+	Task_Create(t1, TASK_STACK_SIZE, 1, 0);
+	Task_Create(t2, TASK_STACK_SIZE, 1, 0);
+}
+
+#endif
+
+
 
 
 /************************************************************************/
@@ -80,12 +108,12 @@ void suicide_task()
 void test()
 {
 	DDRB = LED_PIN_MASK;			//Set pin 13 as output
-	Task_Create(Ping, 6, 210);
-	Task_Create(Pong, 6, 205);
-	Task_Create(Peng, 6, 205);
-	Task_Create(suspend_pong, 4, 0);
+	Task_Create(Ping, TASK_STACK_SIZE, 6, 210);
+	Task_Create(Pong, TASK_STACK_SIZE, 6, 205);
+	Task_Create(Peng, TASK_STACK_SIZE, 6, 205);
+	Task_Create(suspend_pong, TASK_STACK_SIZE, 4, 0);
 	
-	Task_Create(suicide_task, 1, 0);
+	Task_Create(suicide_task, TASK_STACK_SIZE, 1, 0);
 }
 
 #endif
@@ -129,9 +157,9 @@ void priority3()
 void test()
 {
 	//These tasks tests priority scheduling
-	Task_Create(priority1, 1, 0);
-	Task_Create(priority2, 2, 0);
-	Task_Create(priority3, 3, 0);
+	Task_Create(priority1, TASK_STACK_SIZE, 1, 0);
+	Task_Create(priority2, TASK_STACK_SIZE, 2, 0);
+	Task_Create(priority3, TASK_STACK_SIZE, 3, 0);
 }
 
 #endif
@@ -157,18 +185,26 @@ void ps1()
 
 void ps2()
 {
+	int i;
+	
 	for(;;)
 	{
-		puts("B");
+		for(i=0; i<50; i++)
+			puts("B");
+			
 		Task_Yield();
 	}
 }
 
 void ps3()
 {
+	int i;
+	
 	for(;;)
 	{
-		puts("C");
+		for(i=0; i<50; i++)
+			puts("c");
+			
 		Task_Yield();
 	}
 }
@@ -185,10 +221,10 @@ void ps4()
 void test()
 {
 	//These tasks tests priority scheduling
-	Task_Create(ps1, 1, 0);
-	Task_Create(ps2, 2, 0);
-	Task_Create(ps3, 3, 0);
-	Task_Create(ps4, 4, 0);
+	Task_Create(ps1, TASK_STACK_SIZE, 1, 0);
+	Task_Create(ps2, TASK_STACK_SIZE, 2, 0);
+	Task_Create(ps3, TASK_STACK_SIZE, 3, 0);
+	Task_Create(ps4, TASK_STACK_SIZE, 4, 0);
 }
 
 #endif
@@ -237,10 +273,10 @@ void ps4()
 void test()
 {
 	//These tasks tests priority scheduling
-	Task_Create(ps1, 1, 0);
-	Task_Create(ps2, 1, 0);
-	Task_Create(ps3, 1, 0);
-	Task_Create(ps4, 1, 0);
+	Task_Create(ps1, TASK_STACK_SIZE, 1, 0);
+	Task_Create(ps2, TASK_STACK_SIZE, 1, 0);
+	Task_Create(ps3, TASK_STACK_SIZE, 1, 0);
+	Task_Create(ps4, TASK_STACK_SIZE, 1, 0);
 }
 
 #endif
@@ -281,14 +317,14 @@ void sem_task1()		//consumer
 void test()
 {
 	s1 = Semaphore_Create(5, 0);
-	Task_Create(sem_task0, 4, 0);
-	Task_Create(sem_task1, 5, 0);
+	Task_Create(sem_task0, TASK_STACK_SIZE, 4, 0);
+	Task_Create(sem_task1, TASK_STACK_SIZE, 5, 0);
 	
-	Task_Create(sem_task1, 5, 0);
-	Task_Create(sem_task1, 5, 0);
-	Task_Create(sem_task1, 5, 0);
-	Task_Create(sem_task1, 5, 0);
-	Task_Create(sem_task1, 5, 0);
+	Task_Create(sem_task1, TASK_STACK_SIZE, 5, 0);
+	Task_Create(sem_task1, TASK_STACK_SIZE, 5, 0);
+	Task_Create(sem_task1, TASK_STACK_SIZE, 5, 0);
+	Task_Create(sem_task1, TASK_STACK_SIZE, 5, 0);
+	Task_Create(sem_task1, TASK_STACK_SIZE, 5, 0);
 }
 
 #endif
@@ -335,8 +371,8 @@ void event_signal_test()
 
 void test()
 {
-	Task_Create(event_wait_test, 4, 0);
-	Task_Create(event_signal_test, 5, 0);
+	Task_Create(event_wait_test, TASK_STACK_SIZE, 4, 0);
+	Task_Create(event_signal_test, TASK_STACK_SIZE, 5, 0);
 }
 
 #endif
@@ -354,25 +390,19 @@ void egt1()
 	printf("T1 waking up event 0...\n");
 	Event_Group_Set_Bits(eg1, (1<<0));
 	
-	//printf("T1 sleeping...");
 	Task_Sleep(100);
-	//print_processes();
 	printf("T1 waking up event 6...\n");
 	Event_Group_Set_Bits(eg1, (1<<6));
-	//print_processes();
 	Task_Sleep(100);
 	
 	printf("T1 waking up event 9...\n");
 	Event_Group_Set_Bits(eg1, (1<<9));
-	//print_processes();
 	Task_Sleep(100);
 	
 	printf("T1 waking up event 3...\n");
 	Event_Group_Set_Bits(eg1, (1<<3));
-	//print_processes();
 	
 	Task_Terminate();
-	
 	//for(;;)	Task_Yield();
 }
 
@@ -383,7 +413,6 @@ void egt2()
 	printf("T2 got bit 3 AND 6!\n");
 	
 	//Task_Terminate();
-	
 	for(;;)	Task_Yield();
 }
 
@@ -393,9 +422,8 @@ void egt3()
 	Event_Group_Wait_Bits(eg1, (1<<6) | (1<<9), 0, 0);
 	printf("T3 got bit 6 OR 9!\n");
 	
-	//Task_Terminate();
-	
-	for(;;)	Task_Yield();
+	Task_Terminate();
+	//for(;;)	Task_Yield();
 }
 
 void egt4()
@@ -404,9 +432,8 @@ void egt4()
 	Event_Group_Wait_Bits(eg1, (1<<10), 0, 500);
 	printf("T4 Timed out!\n");
 	
-	//Task_Terminate();
-	
-	for(;;)	Task_Yield();
+	Task_Terminate();
+	//for(;;)	Task_Yield();
 
 }
 
@@ -414,12 +441,10 @@ void test()
 {
 	eg1 = Event_Group_Create();
 	
-	Task_Create(egt1, 1, 0);
-	Task_Create(egt2, 1, 0);
-	Task_Create(egt3, 1, 0);
-	Task_Create(egt4, 1, 0);
-	
-	//Task_Terminate();
+	Task_Create(egt1, TASK_STACK_SIZE, 1, 0);
+	Task_Create(egt2, TASK_STACK_SIZE, 1, 0);
+	Task_Create(egt3, TASK_STACK_SIZE, 1, 0);
+	Task_Create(egt4, TASK_STACK_SIZE, 1, 0);
 }
 
 #endif
@@ -467,11 +492,8 @@ void test()
 {
     m1 = Mutex_Create();
 
-    Task_Create(mut_t1, 1, 0);
-    Task_Create(mut_t2, 2, 0);
-
-    //Task_Terminate();
-	//for(;;);
+    Task_Create(mut_t1, TASK_STACK_SIZE, 1, 0);
+    Task_Create(mut_t2, TASK_STACK_SIZE, 2, 0);
 }
 
 #endif
@@ -507,7 +529,7 @@ void task_q()
 {
 	printf("q: hello, gonna create R\n");
 
-	Task_Create(task_r, 2, 0);
+	Task_Create(task_r, TASK_STACK_SIZE, 2, 0);
 	printf("q: gonna try to lock mut\n");
 	Mutex_Lock(mut);
 	printf("q: I got into the mutex yeah! But I will let it go\n");
@@ -521,7 +543,7 @@ void task_p()
 	printf("p:hello, gonna lock mut\n");
 	Mutex_Lock(mut);
 	printf("p: gonna create q\n");
-	Task_Create(task_q, 1, 0);
+	Task_Create(task_q, TASK_STACK_SIZE, 1, 0);
 	Task_Yield();
 	printf("p: gonna unlock mut\n");
 	Mutex_Unlock(mut);
@@ -532,7 +554,7 @@ void task_p()
 void test()
 {
 	mut = Mutex_Create();
-	Task_Create(task_p, 3, 0);
+	Task_Create(task_p, TASK_STACK_SIZE, 3, 0);
 }
 
 #endif

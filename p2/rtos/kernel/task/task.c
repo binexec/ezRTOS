@@ -21,9 +21,8 @@ void Task_Reset()
 /*                   TASK RELATED KERNEL FUNCTIONS                      */
 /************************************************************************/
 
-PID Kernel_Create_Task_Direct(taskfuncptr f, PRIORITY py, int arg)
+PID Kernel_Create_Task_Direct(taskfuncptr f, size_t stack_size, PRIORITY py, int arg)
 {
-	unsigned char *sp;
 	PD *p;
 	
 	//Make sure the system can still have enough resources to create more tasks
@@ -40,28 +39,41 @@ PID Kernel_Create_Task_Direct(taskfuncptr f, PRIORITY py, int arg)
 	}
 	
 	p = malloc(sizeof(PD));
+	if(!p)
+	{
+		err = MALLOC_FAILED_ERR;
+		return 0;
+	}
 	ptrlist_add(&ProcessList, p);
 	++Task_Count;
 	
-	/*The code below was agglomerated from Kernel_Create_Task_At;*/
-	
-	//Initializing the workspace memory for the new task
-	sp = (unsigned char *) &(p->workSpace[WORKSPACE-1]);
-	memset(&(p->workSpace), 0, WORKSPACE);
-	Kernel_Init_Task_Stack(&sp, f);
 
 	//Build the process descriptor for the new task
 	p->pid = ++Last_PID;
 	p->pri = py;
+	p->stack_size = stack_size;
 	p->arg = arg;
 	p->request = NONE;
 	p->state = READY;
-	p->sp = sp;					/* stack pointer into the "workSpace" */
-	p->code = f;				/* function to be executed as a task */
+	p->code = f;
 	
 	#ifdef PREVENT_STARVATION
 	p->starvation_ticks = 0;
 	#endif
+	
+	
+	//Initializing the workspace memory (stack and sp) for the new task
+	p->stack = malloc(stack_size);
+	if(!p->stack)
+	{
+		err = MALLOC_FAILED_ERR;
+		return 0;
+	}
+	
+	memset(p->stack, 0, stack_size);
+	p->sp = &p->stack[stack_size-1];
+	Kernel_Init_Task_Stack(&p->sp, f);
+	
 	
 	err = NO_ERR;
 	if(KernelActive)
@@ -73,12 +85,14 @@ PID Kernel_Create_Task_Direct(taskfuncptr f, PRIORITY py, int arg)
 //For creating a new task dynamically when the kernel is already running
 PID Kernel_Create_Task()
 {
-	#define req_func_pointer	(taskfuncptr)Current_Process->request_args[0]
+	#define req_func_pointer	Current_Process->request_ptr
+	#define req_stack_size		Current_Process->request_args[0]
 	#define req_priority		Current_Process->request_args[1]
 	#define req_taskarg			Current_Process->request_args[2]
 	
-	return Kernel_Create_Task_Direct(req_func_pointer, req_priority, req_taskarg);
+	return Kernel_Create_Task_Direct(req_func_pointer, req_stack_size, req_priority, req_taskarg);
 	
+	#undef req_func_pointer
 	#undef req_func_pointer
 	#undef req_priority
 	#undef req_taskarg
@@ -171,8 +185,11 @@ void Kernel_Sleep_Task(void)
 void Kernel_Terminate_Task(void)
 {
 	Current_Process->state = DEAD;	
-	ptrlist_remove(&ProcessList, ptrlist_find(&ProcessList, Current_Process));		//Free the PD used by the terminated task
 	--Task_Count;
+	
+	//Free the task's stack and its PD
+	free(Current_Process->stack);
+	ptrlist_remove(&ProcessList, ptrlist_find(&ProcessList, Current_Process));		//Free the PD used by the terminated task
 	
 	Kernel_Request_Cswitch = 1;
 }

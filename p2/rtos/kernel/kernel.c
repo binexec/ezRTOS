@@ -1,6 +1,5 @@
 #include "kernel.h"
-#include <stdio.h>
-#include <string.h>
+
 
 /*System variables used by the kernel only*/		
 volatile static unsigned int Tick_Count;				//Number of timer ticks missed
@@ -22,7 +21,12 @@ volatile unsigned int Kernel_Request_Cswitch;		//If a kernel request set this va
 volatile ERROR_CODE err;							//Error code for the previous kernel operation (if any)		
 
 
-//uchar Kernel_Heap[KERNEL_HEAP_SIZE];				//Heap for kerel object allocation, used by kmalloc
+//uchar Kernel_Heap[KERNEL_HEAP_SIZE];							//Heap for kerel object allocation, used by kmalloc
+//uchar Task_Workspace_Pool[WORKSPACE_HEAP_SIZE];				//Heap for kerel object allocation, used by kmalloc
+//volatile void* Workspace_Pool_End;
+
+
+
 
 
 /************************************************************************/
