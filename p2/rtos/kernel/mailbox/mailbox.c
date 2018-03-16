@@ -85,7 +85,7 @@ MAILBOX Kernel_Create_Mailbox_Direct(unsigned int capacity)
 
 void Kernel_Create_Mailbox(void)
 {
-	#define req_capacity		Current_Process->request_args[0]
+	#define req_capacity		Current_Process->request_args[0].val
 	
 	Current_Process->request_ret = Kernel_Create_Mailbox_Direct(req_capacity);
 	
@@ -94,7 +94,7 @@ void Kernel_Create_Mailbox(void)
 
 void Kernel_Destroy_Mailbox(void)
 {
-	#define req_mb_id		Current_Process->request_args[0]
+	#define req_mb_id		Current_Process->request_args[0].val
 		
 	PtrList *i;
 	MAILBOX_TYPE *mb;
@@ -134,15 +134,15 @@ void Kernel_Destroy_Mailbox(void)
 
 int Kernel_Mailbox_Check_Mail(void)
 {
-	#define req_mb_id		Current_Process->request_args[0]
+	#define req_mb_id		Current_Process->request_args[0].val
 	
 	return 0;
 }
 
 int Kernel_Mailbox_Send_Mail(void)
 {
-	#define req_mb_id		Current_Process->request_args[0]
-	#define req_mail		Current_Process->request_args[1]
+	#define req_mb_id		Current_Process->request_args[0].val
+	#define req_mail		Current_Process->request_args[1].ptr
 	
 	return 0;
 	
@@ -152,8 +152,8 @@ int Kernel_Mailbox_Send_Mail(void)
 
 int Kernel_Mailbox_Get_Mail(void)
 {
-	#define req_mb_id		Current_Process->request_args[0]
-	#define req_mail		Current_Process->request_args[1]
+	#define req_mb_id		Current_Process->request_args[0].val
+	#define req_mail		Current_Process->request_args[1].ptr
 			
 	return 0;
 	
@@ -163,8 +163,8 @@ int Kernel_Mailbox_Get_Mail(void)
 
 int Kernel_Mailbox_Wait_Mail(void)
 {
-	#define req_mb_id		Current_Process->request_args[0]
-	#define req_mail		Current_Process->request_args[1]
+	#define req_mb_id		Current_Process->request_args[0].val
+	#define req_mail		Current_Process->request_args[1].ptr
 	//req_timeout is also used
 		
 	return 0;

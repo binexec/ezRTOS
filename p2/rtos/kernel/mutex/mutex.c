@@ -98,7 +98,7 @@ MUTEX Kernel_Create_Mutex(void)
 
 void Kernel_Destroy_Mutex(void)
 {
-	#define req_mut_id		Current_Process->request_args[0]
+	#define req_mut_id		Current_Process->request_args[0].val
 	
 	PtrList *i;
 	MUTEX_TYPE *mut;
@@ -139,7 +139,7 @@ void Kernel_Destroy_Mutex(void)
 
 void Kernel_Lock_Mutex(void)
 {
-	#define req_mut_id		Current_Process->request_args[0]
+	#define req_mut_id		Current_Process->request_args[0].val
 	
 	MUTEX_TYPE *m = findMutexByMutexID(req_mut_id);
 	
@@ -219,7 +219,7 @@ static void Kernel_Lock_Mutex_From_Queue(MUTEX_TYPE *m)
 
 void Kernel_Unlock_Mutex(void)
 {
-	#define req_mut_id		Current_Process->request_args[0]
+	#define req_mut_id		Current_Process->request_args[0].val
 	
 	MUTEX_TYPE* m = findMutexByMutexID(req_mut_id);
 	

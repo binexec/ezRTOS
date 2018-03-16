@@ -71,7 +71,7 @@ unsigned int Kernel_Create_Event_Group(void)
 
 void Kernel_Destroy_Event_Group(void)
 {
-	#define req_eg_id		Current_Process->request_args[0]
+	#define req_eg_id		Current_Process->request_args[0].val
 	
 	PtrList *i;
 	EVENT_GROUP_TYPE *eg;
@@ -112,8 +112,8 @@ void Kernel_Destroy_Event_Group(void)
 void Kernel_Event_Group_Set_Bits()
 {
 	//Request args for the kernel call
-	#define req_event_id		Current_Process->request_args[0]
-	#define req_bits_to_set		Current_Process->request_args[1]
+	#define req_event_id		Current_Process->request_args[0].val
+	#define req_bits_to_set		Current_Process->request_args[1].val
 	
 	EVENT_GROUP_TYPE *eg = findEventGroupByID(req_event_id);
 	
@@ -137,9 +137,9 @@ void Kernel_Event_Group_Set_Bits()
 		Maybe use a list instead of directly accessing PDs?
 	*/
 	
-	#define ps_eventgroup_id	process_i->request_args[0]
-	#define ps_bits_waiting		process_i->request_args[1]
-	#define ps_wait_all_bits	process_i->request_args[2]
+	#define ps_eventgroup_id	process_i->request_args[0].val
+	#define ps_bits_waiting		process_i->request_args[1].val
+	#define ps_wait_all_bits	process_i->request_args[2].val
 	
 	for(i = &ProcessList; i; i = i->next)
 	{
@@ -164,8 +164,8 @@ void Kernel_Event_Group_Set_Bits()
 void Kernel_Event_Group_Clear_Bits()
 {
 	//Request args for the kernel call
-	#define req_event_id		Current_Process->request_args[0]
-	#define req_bits_to_clear	Current_Process->request_args[1]
+	#define req_event_id		Current_Process->request_args[0].val
+	#define req_bits_to_clear	Current_Process->request_args[1].val
 	
 	EVENT_GROUP_TYPE *eg = findEventGroupByID(req_event_id);
 	
@@ -185,9 +185,9 @@ void Kernel_Event_Group_Clear_Bits()
 void Kernel_Event_Group_Wait_Bits()
 {
 	//Request args for the kernel call
-	#define req_event_id		Current_Process->request_args[0]
-	#define req_bits_to_wait	Current_Process->request_args[1]
-	#define req_wait_all_bits	Current_Process->request_args[2]
+	#define req_event_id		Current_Process->request_args[0].val
+	#define req_bits_to_wait	Current_Process->request_args[1].val
+	#define req_wait_all_bits	Current_Process->request_args[2].val
 	
 	EVENT_GROUP_TYPE *eg = findEventGroupByID(req_event_id);
 	unsigned int current_events;
@@ -220,7 +220,7 @@ void Kernel_Event_Group_Wait_Bits()
 unsigned int Kernel_Event_Group_Get_Bits()
 {
 	//Request args for the kernel call
-	#define req_event_id		Current_Process->request_args[0]
+	#define req_event_id		Current_Process->request_args[0].val
 	
 	EVENT_GROUP_TYPE *eg = findEventGroupByID(req_event_id);
 	

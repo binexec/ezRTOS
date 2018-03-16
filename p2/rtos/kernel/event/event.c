@@ -107,7 +107,7 @@ static void Kernel_Destroy_Event_Internal(EVENT_TYPE *e)
 
 void Kernel_Wait_Event(void)
 {
-	EVENT_TYPE* e = findEventByEventID(Current_Process->request_args[0]);
+	EVENT_TYPE* e = findEventByEventID(Current_Process->request_args[0].val);
 	
 	if(e == NULL)
 	{
@@ -144,7 +144,7 @@ void Kernel_Wait_Event(void)
 
 void Kernel_Signal_Event(void)
 {
-	EVENT_TYPE* e = findEventByEventID(Current_Process->request_args[0]);
+	EVENT_TYPE* e = findEventByEventID(Current_Process->request_args[0].val);
 	PD *e_owner;
 	
 	if(e == NULL)

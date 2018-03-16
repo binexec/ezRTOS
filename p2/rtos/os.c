@@ -44,10 +44,10 @@ PID Task_Create(taskfuncptr f, size_t stack_size, PRIORITY py, int arg)
    if (KernelActive) 
    {
      Disable_Interrupt();
-	 Current_Process->request_ptr = f;
-	 Current_Process->request_args[0] = stack_size;
-	 Current_Process->request_args[1] = py;
-	 Current_Process->request_args[2] = arg;
+	 Current_Process->request_args[0].ptr = f;
+	 Current_Process->request_args[1].val = stack_size;
+	 Current_Process->request_args[2].val = py;
+	 Current_Process->request_args[3].val = arg;
 	 Current_Process->request = TASK_CREATE;
      Enter_Kernel();									//Interrupts are automatically reenabled once the kernel is exited
 	 
@@ -112,7 +112,7 @@ void Task_Suspend(taskfuncptr f)
 	
 	Disable_Interrupt();
 	Current_Process->request = TASK_SUSPEND;
-	Current_Process->request_args[0] = findPIDByFuncPtr(f);
+	Current_Process->request_args[0].val = findPIDByFuncPtr(f);
 	Enter_Kernel();
 }
 
@@ -125,7 +125,7 @@ void Task_Resume(taskfuncptr f)
 	
 	Disable_Interrupt();
 	Current_Process->request = TASK_RESUME;
-	Current_Process->request_args[0] = findPIDByFuncPtr(f);
+	Current_Process->request_args[0].val = findPIDByFuncPtr(f);
 	Enter_Kernel();
 }
 
@@ -184,7 +184,7 @@ void Event_Wait(EVENT e)
 	
 	Disable_Interrupt();
 	Current_Process->request = E_WAIT;
-	Current_Process->request_args[0] = e;
+	Current_Process->request_args[0].val = e;
 	Enter_Kernel();
 	
 }
@@ -198,7 +198,7 @@ void Event_Signal(EVENT e)
 	
 	Disable_Interrupt();
 	Current_Process->request = E_SIGNAL;
-	Current_Process->request_args[0] = e;
+	Current_Process->request_args[0].val = e;
 	Enter_Kernel();	
 }
 
@@ -242,7 +242,7 @@ int Mutex_Destroy(MUTEX m)
 	{
 		Disable_Interrupt();
 		Current_Process->request = MUT_DESTROY;
-		Current_Process->request_args[0] = m;
+		Current_Process->request_args[0].val = m;
 		Enter_Kernel();
 	}
 	
@@ -258,7 +258,7 @@ void Mutex_Lock(MUTEX m)
 	
 	Disable_Interrupt();
 	Current_Process->request = MUT_LOCK;
-	Current_Process->request_args[0] = m;
+	Current_Process->request_args[0].val = m;
 	Enter_Kernel();
 }
 
@@ -271,7 +271,7 @@ void Mutex_Unlock(MUTEX m)
 	
 	Disable_Interrupt();
 	Current_Process->request = MUT_UNLOCK;
-	Current_Process->request_args[0] = m;
+	Current_Process->request_args[0].val = m;
 	Enter_Kernel();
 }
 #endif
@@ -289,8 +289,8 @@ SEMAPHORE Semaphore_Create(int initial_count, unsigned int is_binary)
 	{
 		Disable_Interrupt();
 		Current_Process->request = SEM_CREATE;
-		Current_Process->request_args[0] = initial_count;
-		Current_Process->request_args[1] = is_binary;
+		Current_Process->request_args[0].val = initial_count;
+		Current_Process->request_args[1].val = is_binary;
 		Enter_Kernel();
 		
 		retval = Current_Process->request_ret;
@@ -315,7 +315,7 @@ int Semaphore_Destroy(SEMAPHORE s)
 	{
 		Disable_Interrupt();
 		Current_Process->request = SEM_DESTROY;
-		Current_Process->request_args[0] = s;
+		Current_Process->request_args[0].val = s;
 		Enter_Kernel();
 	}
 	
@@ -331,8 +331,8 @@ void Semaphore_Give(SEMAPHORE s, unsigned int amount)
 	
 	Disable_Interrupt();
 	Current_Process->request = SEM_GIVE;
-	Current_Process->request_args[0] = s;
-	Current_Process->request_args[1] = amount;
+	Current_Process->request_args[0].val = s;
+	Current_Process->request_args[1].val = amount;
 	Enter_Kernel();
 }
 
@@ -345,8 +345,8 @@ void Semaphore_Get(SEMAPHORE s, unsigned int amount)
 	
 	Disable_Interrupt();
 	Current_Process->request = SEM_GET;
-	Current_Process->request_args[0] = s;
-	Current_Process->request_args[1] = amount;
+	Current_Process->request_args[0].val = s;
+	Current_Process->request_args[1].val = amount;
 	Enter_Kernel();
 }
 
@@ -390,7 +390,7 @@ int Event_Group_Destroy(EVENT_GROUP eg)
 	{
 		Disable_Interrupt();
 		Current_Process->request = EG_DESTROY;
-		Current_Process->request_args[0] = eg;
+		Current_Process->request_args[0].val = eg;
 		Enter_Kernel();
 	}
 	
@@ -406,8 +406,8 @@ void Event_Group_Set_Bits(EVENT_GROUP e, unsigned int bits_to_set)
 	
 	Disable_Interrupt();
 	Current_Process->request = EG_SETBITS;
-	Current_Process->request_args[0] = e;
-	Current_Process->request_args[1] = bits_to_set;
+	Current_Process->request_args[0].val = e;
+	Current_Process->request_args[1].val = bits_to_set;
 	Enter_Kernel();
 }
 
@@ -420,8 +420,8 @@ void Event_Group_Clear_Bits(EVENT_GROUP e, unsigned int bits_to_clear)
 	
 	Disable_Interrupt();
 	Current_Process->request = EG_CLEARBITS;
-	Current_Process->request_args[0] = e;
-	Current_Process->request_args[1] = bits_to_clear;
+	Current_Process->request_args[0].val = e;
+	Current_Process->request_args[1].val = bits_to_clear;
 	Enter_Kernel();
 }
 
@@ -434,9 +434,9 @@ void Event_Group_Wait_Bits(EVENT_GROUP e, unsigned int bits_to_wait, unsigned in
 	
 	Disable_Interrupt();
 	Current_Process->request = EG_WAITBITS;
-	Current_Process->request_args[0] = e;
-	Current_Process->request_args[1] = bits_to_wait;
-	Current_Process->request_args[2] = wait_all_bits;
+	Current_Process->request_args[0].val = e;
+	Current_Process->request_args[1].val = bits_to_wait;
+	Current_Process->request_args[2].val = wait_all_bits;
 	Current_Process->request_timeout = timeout;
 	Enter_Kernel();
 }
@@ -472,7 +472,7 @@ MAILBOX Mailbox_Create(unsigned int capacity)
 	{
 		Disable_Interrupt();
 		Current_Process->request = MB_CREATE;
-		Current_Process->request_args[0] = capacity;
+		Current_Process->request_args[0].val = capacity;
 		Enter_Kernel();
 		
 		retval = Current_Process->request_ret;
@@ -500,7 +500,7 @@ void Mailbox_Destroy(MAILBOX mb)
 		
 	Disable_Interrupt();
 	Current_Process->request = MB_DESTROY;
-	Current_Process->request_args[0] = mb;
+	Current_Process->request_args[0].val = mb;
 	Enter_Kernel();
 }
 
@@ -513,7 +513,7 @@ int Mailbox_Check_Mail(MAILBOX mb)
 	
 	Disable_Interrupt();
 	Current_Process->request = MB_CHECKMAIL;
-	Current_Process->request_args[0] = mb;
+	Current_Process->request_args[0].val = mb;
 	Enter_Kernel();
 	
 	return Current_Process->request_ret;
@@ -528,8 +528,8 @@ int Mailbox_Send_Mail(MAILBOX mb, MAIL* m)
 	
 	Disable_Interrupt();
 	Current_Process->request = MB_SENDMAIL;
-	Current_Process->request_args[0] = mb;
-	Current_Process->request_args[1] = m;
+	Current_Process->request_args[0].val = mb;
+	Current_Process->request_args[1].val = m;
 	Enter_Kernel();
 	
 	return Current_Process->request_ret;
@@ -544,8 +544,8 @@ int Mailbox_Get_Mail(MAILBOX mb, MAIL* received)
 		
 	Disable_Interrupt();
 	Current_Process->request = MB_GETMAIL;
-	Current_Process->request_args[0] = mb;
-	Current_Process->request_args[1] = received;
+	Current_Process->request_args[0].val = mb;
+	Current_Process->request_args[1].ptr = received;
 	Enter_Kernel();
 	
 	return Current_Process->request_ret;
@@ -560,8 +560,8 @@ int Mailbox_Wait_Mail(MAILBOX mb, MAIL* received, TICK timeout)
 	
 	Disable_Interrupt();
 	Current_Process->request = MB_WAITMAIL;
-	Current_Process->request_args[0] = mb;
-	Current_Process->request_args[1] = received;
+	Current_Process->request_args[0].val = mb;
+	Current_Process->request_args[1].ptr = received;
 	Current_Process->request_timeout = timeout;
 	Enter_Kernel();
 	

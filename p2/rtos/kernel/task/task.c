@@ -80,10 +80,10 @@ PID Kernel_Create_Task_Direct(taskfuncptr f, size_t stack_size, PRIORITY py, int
 //For creating a new task dynamically when the kernel is already running
 void Kernel_Create_Task(void)
 {
-	#define req_func_pointer	Current_Process->request_ptr
-	#define req_stack_size		Current_Process->request_args[0]
-	#define req_priority		Current_Process->request_args[1]
-	#define req_taskarg			Current_Process->request_args[2]
+	#define req_func_pointer	Current_Process->request_args[0].ptr
+	#define req_stack_size		Current_Process->request_args[1].val
+	#define req_priority		Current_Process->request_args[2].val
+	#define req_taskarg			Current_Process->request_args[3].val
 	
 	Current_Process->request_ret = Kernel_Create_Task_Direct(req_func_pointer, req_stack_size, req_priority, req_taskarg);
 	
@@ -97,7 +97,7 @@ void Kernel_Create_Task(void)
 void Kernel_Suspend_Task() 
 {
 	//Finds the process descriptor for the specified PID
-	PD* p = findProcessByPID(Current_Process->request_args[0]);
+	PD* p = findProcessByPID(Current_Process->request_args[0].val);
 	
 	//Ensure the PID specified in the PD currently exists in the global process list
 	if(p == NULL)
@@ -134,7 +134,7 @@ void Kernel_Suspend_Task()
 void Kernel_Resume_Task()
 {
 	//Finds the process descriptor for the specified PID
-	PD* p = findProcessByPID(Current_Process->request_args[0]);
+	PD* p = findProcessByPID(Current_Process->request_args[0].val);
 	
 	//Ensure the PID specified in the PD currently exists in the global process list
 	if(p == NULL)

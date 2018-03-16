@@ -100,9 +100,6 @@ void print_process(PID p)
 /*                  KERNEL TIMER TICK HANDLERS							*/
 /************************************************************************/
 
-static void Kernel_Dispatch_Next_Task();
-static void Kernel_Tick_Handler();
-
 //This function is called ONLY by the timer ISR. Therefore, it will not enter the kernel through regular modes
 void Kernel_Tick_ISR()
 {

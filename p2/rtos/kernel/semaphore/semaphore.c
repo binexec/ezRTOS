@@ -90,8 +90,8 @@ SEMAPHORE Kernel_Create_Semaphore_Direct(int initial_count, unsigned int is_bina
 
 void Kernel_Create_Semaphore()
 {
-	#define req_initial_count		Current_Process->request_args[0]
-	#define req_is_binary			Current_Process->request_args[1]
+	#define req_initial_count		Current_Process->request_args[0].val
+	#define req_is_binary			Current_Process->request_args[1].val
 	
 	Current_Process->request_ret = Kernel_Create_Semaphore_Direct(req_initial_count, req_is_binary);
 	
@@ -102,7 +102,7 @@ void Kernel_Create_Semaphore()
 
 void Kernel_Destroy_Semaphore()
 {
-	#define req_sem_id		Current_Process->request_args[0]
+	#define req_sem_id		Current_Process->request_args[0].val
 	
 	PtrList *i;
 	SEMAPHORE_TYPE *sem;	
@@ -141,7 +141,7 @@ void Kernel_Destroy_Semaphore()
 
 static inline void Kernel_Semaphore_Get_From_Queue(SEMAPHORE_TYPE *sem, unsigned int amount)
 {
-	#define head_req_amount		head->request_args[1]
+	#define head_req_amount		head->request_args[1].val
 	
 	PD *head = findProcessByPID(queue_peek_pid(&sem->wait_queue));	
 	
@@ -170,8 +170,8 @@ static inline void Kernel_Semaphore_Get_From_Queue(SEMAPHORE_TYPE *sem, unsigned
 
 void Kernel_Semaphore_Get()
 {
-	#define req_sem_id		Current_Process->request_args[0]
-	#define req_amount		Current_Process->request_args[1]
+	#define req_sem_id		Current_Process->request_args[0].val
+	#define req_amount		Current_Process->request_args[1].val
 	
 	SEMAPHORE_TYPE *sem = findSemaphoreByID(req_sem_id);
 	int has_enough;
@@ -215,8 +215,8 @@ void Kernel_Semaphore_Get()
 
 void Kernel_Semaphore_Give()
 {
-	#define req_sem_id		Current_Process->request_args[0]
-	#define req_amount		Current_Process->request_args[1]
+	#define req_sem_id		Current_Process->request_args[0].val
+	#define req_amount		Current_Process->request_args[1].val
 	
 	SEMAPHORE_TYPE *sem = findSemaphoreByID(req_sem_id);
 	

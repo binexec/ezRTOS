@@ -31,7 +31,8 @@ typedef enum
 	RESUME_NONSUSPENDED_TASK_ERR,
 	MAX_OBJECT_ERR,
 	OBJECT_NOT_FOUND_ERR,
-	MALLOC_FAILED_ERR
+	MALLOC_FAILED_ERR,
+	UNKNOWN_ERR
 	
 } ERROR_CODE;
 
@@ -114,6 +115,10 @@ typedef enum
 } KERNEL_REQUEST;
 
 
+typedef union {
+	int val;
+	void* ptr;
+} Kernel_Request_Arg;
 
 /*Process descriptor for a task*/
 typedef struct ProcessDescriptor
@@ -134,8 +139,8 @@ typedef struct ProcessDescriptor
 	   
 	/*Used to pass requests from task to kernel*/
 	KERNEL_REQUEST request;								//What the task want the kernel to do (when needed).
-	int request_args[MAX_KERNEL_ARGS];					//What values are needed for the specified kernel request.
-	void* request_ptr;									//Some request needs a void function pointer as an input. It will be stored here
+	Kernel_Request_Arg request_args[MAX_KERNEL_ARGS];	//What values are needed for the specified kernel request.
+	//void* request_ptr;									//Some request needs a void function pointer as an input. It will be stored here
 	int request_ret;										//Value returned by the kernel after handling the request
 	TICK request_timeout;						
 	   
