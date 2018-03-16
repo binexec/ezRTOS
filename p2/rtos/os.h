@@ -79,8 +79,8 @@ void OS_Abort(void);
 PID Task_Create(taskfuncptr f, size_t stack_size, PRIORITY py, int arg);
 void Task_Terminate(void);
 void Task_Sleep(TICK t);													// sleep time is at least t*MSECPERTICK
-void Task_Suspend(taskfuncptr f);											//Suspend/Resume tasks by the function name instead
-void Task_Resume(taskfuncptr f);
+void Task_Suspend(PID p);													//Suspend/Resume tasks by the function name instead
+void Task_Resume(PID p);
 void Task_Yield(void);
 int  Task_GetArg(void);
 

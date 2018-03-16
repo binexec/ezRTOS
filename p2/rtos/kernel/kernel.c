@@ -53,24 +53,8 @@ PD* findProcessByPID(int pid)
 	return NULL;
 }
 
-/*Returns the PID associated with a function's memory address. Used by the OS*/
-int findPIDByFuncPtr(taskfuncptr f)
-{
-	PtrList *i;
-	PD *process_i;
-	
-	for(i = &ProcessList; i; i = i->next)
-	{
-		process_i = (PD*)i->ptr;
-		if (process_i->code == f)
-			return process_i->pid;
-	}
-	
-	//No process with such PID
-	return -1;
-}
 
-/*
+
 void print_processes()
 {
 	PtrList *i;
@@ -92,7 +76,7 @@ void print_process(PID p)
 	printf("\tPID: %d\t State: %d\t Priority: %d\t Timeout: %d\n", pd->pid, pd->state, pd->pri, pd->request_timeout);
 	printf("\n");
 }
-*/
+
 
 
 

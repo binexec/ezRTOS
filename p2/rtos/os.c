@@ -103,7 +103,7 @@ int Task_GetArg()
 }
 
 //Calling task should not try and suspend itself?
-void Task_Suspend(taskfuncptr f)
+void Task_Suspend(PID p)
 {
 	if(!KernelActive){
 		err = KERNEL_INACTIVE_ERR;
@@ -112,11 +112,11 @@ void Task_Suspend(taskfuncptr f)
 	
 	Disable_Interrupt();
 	Current_Process->request = TASK_SUSPEND;
-	Current_Process->request_args[0].val = findPIDByFuncPtr(f);
+	Current_Process->request_args[0].val = p;
 	Enter_Kernel();
 }
 
-void Task_Resume(taskfuncptr f)
+void Task_Resume(PID p)
 {
 	if(!KernelActive){
 		err = KERNEL_INACTIVE_ERR;
@@ -125,7 +125,7 @@ void Task_Resume(taskfuncptr f)
 	
 	Disable_Interrupt();
 	Current_Process->request = TASK_RESUME;
-	Current_Process->request_args[0].val = findPIDByFuncPtr(f);
+	Current_Process->request_args[0].val = p;
 	Enter_Kernel();
 }
 

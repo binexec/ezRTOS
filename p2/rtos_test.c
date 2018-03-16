@@ -16,7 +16,7 @@ void Idle()
 };
 
 
-#define TEST_SET_9
+#define TEST_SET_1
 
 
 /************************************************************************/
@@ -49,6 +49,8 @@ void test()
 /*				Test 1: Task Suspension, Resume, Sleep, Yield		    */
 /************************************************************************/
 #ifdef TEST_SET_1
+
+PID Ping_PID, Pong_PID;
 
 void Ping()
 {
@@ -88,12 +90,12 @@ void suspend_pong()
 	{
 		Task_Sleep(300);
 		printf("SUSPENDING PONG!\n");
-		Task_Suspend(Pong);
+		Task_Suspend(Pong_PID);
 		Task_Yield();
 		
 		Task_Sleep(300);
 		printf("RESUMING PONG!\n");
-		Task_Resume(Pong);
+		Task_Resume(Pong_PID);
 		Task_Yield();
 	}
 }
@@ -108,13 +110,14 @@ void suicide_task()
 void test()
 {
 	DDRB = LED_PIN_MASK;			//Set pin 13 as output
-	Task_Create(Ping, TASK_STACK_SIZE, 6, 210);
-	Task_Create(Pong, TASK_STACK_SIZE, 6, 205);
+	Ping_PID = Task_Create(Ping, TASK_STACK_SIZE, 6, 210);
+	Pong_PID = Task_Create(Pong, TASK_STACK_SIZE, 6, 205);
 	Task_Create(Peng, TASK_STACK_SIZE, 6, 205);
-	Task_Create(suspend_pong, TASK_STACK_SIZE, 4, 0);
 	
+	Task_Create(suspend_pong, TASK_STACK_SIZE, 4, 0);
 	Task_Create(suicide_task, TASK_STACK_SIZE, 1, 0);
 }
+
 
 #endif
 

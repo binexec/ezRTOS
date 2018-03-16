@@ -46,12 +46,13 @@ void Kernel_Reset();
 void Kernel_Start();
 
 
-/*Create kernel objects before */
-int findPIDByFuncPtr(taskfuncptr f);
-void print_processes();
-
 /*Hardware Related*/
 void Kernel_Tick_ISR();
+
+
+/*Debug*/
+void print_processes();
+void print_process(PID p);
 
 
 
