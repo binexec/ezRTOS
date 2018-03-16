@@ -68,7 +68,7 @@ int enqueue_pid(Queue *q, PID p)
 	QElement *qe;
 	
 	if(q->is_ptr_queue)
-		return -1;
+		return 0;
 		
 	qe = malloc(sizeof(QElement));
 	qe->intval = p;
@@ -83,7 +83,7 @@ int enqueue_ptr(Queue *q, void *p)
 	QElement *qe;
 	
 	if(!q->is_ptr_queue)
-		return -1;
+		return 0;
 	
 	qe = malloc(sizeof(QElement));
 	qe->ptrval = p;
@@ -165,7 +165,7 @@ PID queue_peek_pid(Queue *q)
 {
 	QElement *retval = queue_peek(q);
 	
-	if(!retval || q->count <= 0)
+	if(!retval || q->count == 0)
 		return 0;
 	
 	return retval->intval;
@@ -175,7 +175,7 @@ void* queue_peek_ptr(Queue *q)
 {
 	QElement *retval = queue_peek(q);
 	
-	if(!retval || q->count <= 0)
+	if(!retval || q->count == 0)
 		return NULL;
 	
 	return retval->ptrval;

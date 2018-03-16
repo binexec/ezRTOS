@@ -139,7 +139,7 @@ void Kernel_Destroy_Semaphore()
 /*						Semaphore Operations                            */
 /************************************************************************/
 
-static inline void Kernel_Semaphore_Get_From_Queue(SEMAPHORE_TYPE *sem, unsigned int amount)
+static inline void Kernel_Semaphore_Get_From_Queue(SEMAPHORE_TYPE *sem)
 {
 	#define head_req_amount		head->request_args[1].val
 	
@@ -237,7 +237,7 @@ void Kernel_Semaphore_Give()
 	
 	//Check if any processes are currently waiting for this semaphore, if it's now positive
 	if(sem->count > 0 && sem->wait_queue.count > 0)
-		Kernel_Semaphore_Get_From_Queue(sem, req_amount);
+		Kernel_Semaphore_Get_From_Queue(sem);
 		
 	#undef req_sem_id
 	#undef req_amount
