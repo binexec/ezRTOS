@@ -28,17 +28,24 @@ extern volatile unsigned int Last_MailboxID;
 
 
 
-void reset_mailbox(void);
+void Mailbox_Reset(void);
 MAILBOX_TYPE* findMailboxByID(MAILBOX mb);
 
 void Kernel_Create_Mailbox(void);
 MAILBOX Kernel_Create_Mailbox_Direct(unsigned int capacity);
 void Kernel_Destroy_Mailbox(void);
+void Kernel_Mailbox_Destroy_Mail(void);
 
-int Kernel_Mailbox_Check_Mail(void);
-int Kernel_Mailbox_Send_Mail(void);
-int Kernel_Mailbox_Get_Mail(void);
-int Kernel_Mailbox_Wait_Mail(void);
+/*Asynchronous Operations*/
+void Kernel_Mailbox_Check_Mail(void);
+void Kernel_Mailbox_Send_Mail(void);
+void Kernel_Mailbox_Get_Mail(void);
+
+/*Blocking Operations*/
+/*
+void Kernel_Mailbox_Blocking_Send_Mail(void)
+void Kernel_Mailbox_Blocking_Get_Mail(void)
+*/
 
 
 

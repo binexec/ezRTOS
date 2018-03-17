@@ -144,7 +144,7 @@ static void Kernel_Tick_Handler()
 		else									//Wake up any other tasks timing out from its request (including sleep), and set its return value to 0 indicate a failure.
 		{
 			process_i->state = READY;
-			process_i->request_ret = 0;
+			process_i->request_retval = 0;
 		}
 	}
 	
@@ -334,6 +334,8 @@ static void Kernel_Main_Loop()
 		//Because each branch only calls a function, this switch statement should hopefully be converted to a jump table by the compiler
 		switch(Current_Process->request)
 		{
+			
+			/*TASK*/
 			case TASK_CREATE:
 			Kernel_Create_Task();
 			break;
@@ -355,21 +357,7 @@ static void Kernel_Main_Loop()
 			break;
 			
 			
-			#ifdef EVENT_ENABLED
-			case E_CREATE:
-			Kernel_Create_Event();
-			break;
-			
-			case E_WAIT:
-			Kernel_Wait_Event();	
-			break;
-			
-			case E_SIGNAL:
-			Kernel_Signal_Event();
-			break;
-			#endif
-			
-			
+			/*MUTEX*/
 			#ifdef MUTEX_ENABLED
 			case MUT_CREATE:
 			Kernel_Create_Mutex();
@@ -389,6 +377,7 @@ static void Kernel_Main_Loop()
 			#endif
 			
 			
+			/*SEMAPHORE*/
 			#ifdef SEMAPHORE_ENABLED
 			case SEM_CREATE:
 			Kernel_Create_Semaphore();
@@ -408,6 +397,23 @@ static void Kernel_Main_Loop()
 			#endif
 			
 			
+			/*EVENT*/
+			#ifdef EVENT_ENABLED
+			case E_CREATE:
+			Kernel_Create_Event();
+			break;
+			
+			case E_WAIT:
+			Kernel_Wait_Event();
+			break;
+			
+			case E_SIGNAL:
+			Kernel_Signal_Event();
+			break;
+			#endif
+			
+			
+			/*EVENT GROUP*/
 			#ifdef EVENT_GROUP_ENABLED
 			case EG_CREATE:
 			Kernel_Create_Event_Group();
@@ -434,7 +440,36 @@ static void Kernel_Main_Loop()
 			break;
 			#endif
 			
+			
+			/*MAILBOX*/
+			#ifdef MAILBOX_ENABLED
+			case MB_CREATE:
+			Kernel_Create_Mailbox();
+			break;
+			
+			case MB_DESTROY:
+			Kernel_Destroy_Mailbox();
+			break;
+			
+			case MB_CHECKMAIL:
+			Kernel_Mailbox_Check_Mail();
+			break;
+			
+			case MB_SENDMAIL:
+			Kernel_Mailbox_Send_Mail();
+			break;
+			
+			case MB_GETMAIL:
+			Kernel_Mailbox_Get_Mail();
+			break;
+			
+			case MB_DESTROYM:
+			Kernel_Mailbox_Destroy_Mail();
+			break;
+			#endif
 		   
+		   
+		    /*OTHERS*/
 			case TASK_YIELD:
 			case NONE:							// NONE could be caused by a timer interrupt
 			Kernel_Dispatch_Next_Task();
@@ -473,14 +508,13 @@ void Kernel_Reset()
 	Tick_Count = 0;	
 	Last_Dispatched = NULL;
 	Kernel_Request_Cswitch = 0;
+	err = NO_ERR;
 	
 	#ifdef PREEMPTIVE_CSWITCH
 	Preemptive_Cswitch_Allowed = 1;
 	Ticks_Since_Last_Cswitch = 0;
 	#endif
-	
-	err = NO_ERR;
-	
+
 	Task_Reset();
 	
 	#ifdef EVENT_ENABLED
@@ -496,8 +530,11 @@ void Kernel_Reset()
 	#endif
 	
 	#ifdef SEMAPHORE_ENABLED
-	//printf("Semaphores available\n");
 	Semaphore_Reset();
+	#endif
+	
+	#ifdef MAILBOX_ENABLED
+	Mailbox_Reset();
 	#endif
 	
 	#ifdef DEBUG

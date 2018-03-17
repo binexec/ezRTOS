@@ -85,7 +85,7 @@ void Kernel_Create_Task(void)
 	#define req_priority		Current_Process->request_args[2].val
 	#define req_taskarg			Current_Process->request_args[3].val
 	
-	Current_Process->request_ret = Kernel_Create_Task_Direct(req_func_pointer, req_stack_size, req_priority, req_taskarg);
+	Current_Process->request_retval = Kernel_Create_Task_Direct(req_func_pointer, req_stack_size, req_priority, req_taskarg);
 	
 	#undef req_func_pointer
 	#undef req_func_pointer

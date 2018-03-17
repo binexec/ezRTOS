@@ -5,7 +5,7 @@
 #ifndef KERNEL_SHARED_H_
 #define KERNEL_SHARED_H_
 
-#include "../os.h"			//will also include kernel.h
+#include "../os.h"							//will also include kernel.h
 #include "others/PtrList.h"
 #include <stdio.h>
 #include <string.h>
@@ -107,7 +107,7 @@ typedef enum
 	MB_CHECKMAIL,
 	MB_SENDMAIL,
 	MB_GETMAIL,
-	MB_WAITMAIL,
+	MB_DESTROYM,
 	#endif
 	
 	INVALID					//Not an actual request. do not use!
@@ -124,13 +124,13 @@ typedef union {
 typedef struct ProcessDescriptor
 { 
 	PID pid;												//An unique process ID for this task.
-	PRIORITY pri;										//The priority of this task, from 0 (highest) to 10 (lowest).
+	PRIORITY pri;											//The priority of this task, from 0 (highest) to 10 (lowest).
 	PROCESS_STATE state;									//What's the current state of this task?
 	   
-	size_t stack_size;									//Total size of the stack in bytes
-	unsigned char *stack;								//The origin location of where the stack was allocated at (ie, start of the stack)
-	unsigned char *sp;									//The task's current stack pointer, relative to the task's current context
-	taskfuncptr code;									//The function to be executed when this process is running.
+	size_t stack_size;										//Total size of the stack in bytes
+	unsigned char *stack;									//The origin location of where the stack was allocated at (ie, start of the stack)
+	unsigned char *sp;										//The task's current stack pointer, relative to the task's current context
+	taskfuncptr code;										//The function to be executed when this process is running.
 	   
 	   
 	/*User defined task args*/
@@ -138,15 +138,14 @@ typedef struct ProcessDescriptor
 	   
 	   
 	/*Used to pass requests from task to kernel*/
-	KERNEL_REQUEST request;								//What the task want the kernel to do (when needed).
-	Kernel_Request_Arg request_args[MAX_KERNEL_ARGS];	//What values are needed for the specified kernel request.
-	//void* request_ptr;									//Some request needs a void function pointer as an input. It will be stored here
-	int request_ret;										//Value returned by the kernel after handling the request
+	KERNEL_REQUEST request;									//What the task want the kernel to do (when needed).
+	Kernel_Request_Arg request_args[MAX_KERNEL_ARGS];		//What values are needed for the specified kernel request.
+	int request_retval;										//Value returned by the kernel after handling the request
 	TICK request_timeout;						
 	   
 	   
 	/*Used for task suspension/resuming*/
-	PROCESS_STATE last_state;							//What's the PREVIOUS state of this task? Used for task suspension/resume.
+	PROCESS_STATE last_state;								//What's the PREVIOUS state of this task? Used for task suspension/resume.
 	   
 	   
 	/*Used for other scheduling modes*/

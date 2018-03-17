@@ -49,7 +49,7 @@ unsigned int Kernel_Create_Event_Group(void)
 		
 		err = MAX_OBJECT_ERR;
 		if(KernelActive)
-			Current_Process->request_ret = 0;
+			Current_Process->request_retval = 0;
 		return 0;
 	}
 	
@@ -63,7 +63,7 @@ unsigned int Kernel_Create_Event_Group(void)
 	
 	err = NO_ERR;
 	if(KernelActive)
-		Current_Process->request_ret = eg->id;
+		Current_Process->request_retval = eg->id;
 		
 	return eg->id;
 }
@@ -231,7 +231,7 @@ unsigned int Kernel_Event_Group_Get_Bits()
 		return 0;
 	}
 	
-	Current_Process->request_ret = eg->events;
+	Current_Process->request_retval = eg->events;
 	return eg->events;
 	
 	#undef req_event_id

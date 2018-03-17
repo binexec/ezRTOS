@@ -52,7 +52,7 @@ PID Task_Create(taskfuncptr f, size_t stack_size, PRIORITY py, int arg)
      Enter_Kernel();									//Interrupts are automatically reenabled once the kernel is exited
 	 
 	 //Retrieve the return value once the kernel exits
-	 retval = Current_Process->request_ret;
+	 retval = Current_Process->request_retval;
    } 
    else 
 	  retval = Kernel_Create_Task_Direct(f,stack_size,py,arg);				//If kernel hasn't started yet, manually create the task
@@ -159,7 +159,7 @@ EVENT Event_Create(void)
 		Current_Process->request = E_CREATE;
 		Enter_Kernel();
 		
-		retval = Current_Process->request_ret;
+		retval = Current_Process->request_retval;
 	}
 	else
 		retval = Kernel_Create_Event();		//Call the kernel function directly if kernel has not started yet.	
@@ -220,7 +220,7 @@ MUTEX Mutex_Create(void)
 		Current_Process->request = MUT_CREATE;
 		Enter_Kernel();
 		
-		retval = Current_Process->request_ret;
+		retval = Current_Process->request_retval;
 	}
 	else
 		retval = Kernel_Create_Mutex();	//Call the kernel function directly if OS hasn't start yet
@@ -293,7 +293,7 @@ SEMAPHORE Semaphore_Create(int initial_count, unsigned int is_binary)
 		Current_Process->request_args[1].val = is_binary;
 		Enter_Kernel();
 		
-		retval = Current_Process->request_ret;
+		retval = Current_Process->request_retval;
 	}
 	else
 		retval = Kernel_Create_Semaphore_Direct(initial_count, is_binary);		//Call the kernel function directly if OS hasn't start yet
@@ -367,7 +367,7 @@ EVENT_GROUP Event_Group_Create(void)
 		Current_Process->request = EG_CREATE;
 		Enter_Kernel();
 		
-		retval = Current_Process->request_ret;
+		retval = Current_Process->request_retval;
 	}
 	else
 		retval = Kernel_Create_Event_Group();	//Call the kernel function directly if kernel has not started yet.
@@ -453,7 +453,7 @@ unsigned int Event_Group_Get_Bits(EVENT_GROUP e)
 	Current_Process->request = EG_GETBITS;
 	Enter_Kernel();
 	
-	return Current_Process->request_ret;
+	return Current_Process->request_retval;
 }
 
 #endif
@@ -475,12 +475,11 @@ MAILBOX Mailbox_Create(unsigned int capacity)
 		Current_Process->request_args[0].val = capacity;
 		Enter_Kernel();
 		
-		retval = Current_Process->request_ret;
+		retval = Current_Process->request_retval;
 	}
 	else
 		retval = Kernel_Create_Mailbox_Direct(capacity);		//Call the kernel function directly if OS hasn't start yet
 	
-	//Return the created semaphore's ID, or 0 if failed
 	if(err != NO_ERR)
 		return 0;
 	
@@ -490,6 +489,7 @@ MAILBOX Mailbox_Create(unsigned int capacity)
 	
 	return retval;
 }
+
 
 void Mailbox_Destroy(MAILBOX mb)
 {
@@ -504,6 +504,23 @@ void Mailbox_Destroy(MAILBOX mb)
 	Enter_Kernel();
 }
 
+
+int Mailbox_Destroy_Mail(MAIL* received)
+{
+	if(!KernelActive){
+		err = KERNEL_INACTIVE_ERR;
+		return 0;
+	}
+	
+	Disable_Interrupt();
+	Current_Process->request = MB_DESTROYM;
+	Current_Process->request_args[0].ptr = received;
+	Enter_Kernel();
+	
+	return Current_Process->request_retval;
+}
+
+
 int Mailbox_Check_Mail(MAILBOX mb)
 {
 	if(!KernelActive){
@@ -516,10 +533,11 @@ int Mailbox_Check_Mail(MAILBOX mb)
 	Current_Process->request_args[0].val = mb;
 	Enter_Kernel();
 	
-	return Current_Process->request_ret;
+	return Current_Process->request_retval;
 }
 
-int Mailbox_Send_Mail(MAILBOX mb, MAIL* m)
+
+int Mailbox_Send_Mail(MAILBOX mb, void *msg, size_t msg_size)
 {
 	if(!KernelActive){
 		err = KERNEL_INACTIVE_ERR;
@@ -529,11 +547,13 @@ int Mailbox_Send_Mail(MAILBOX mb, MAIL* m)
 	Disable_Interrupt();
 	Current_Process->request = MB_SENDMAIL;
 	Current_Process->request_args[0].val = mb;
-	Current_Process->request_args[1].val = m;
+	Current_Process->request_args[1].ptr = msg;
+	Current_Process->request_args[2].val = msg_size;
 	Enter_Kernel();
 	
-	return Current_Process->request_ret;
+	return Current_Process->request_retval;
 }
+
 
 int Mailbox_Get_Mail(MAILBOX mb, MAIL* received)
 {
@@ -548,24 +568,9 @@ int Mailbox_Get_Mail(MAILBOX mb, MAIL* received)
 	Current_Process->request_args[1].ptr = received;
 	Enter_Kernel();
 	
-	return Current_Process->request_ret;
+	return Current_Process->request_retval;
 }
 
-int Mailbox_Wait_Mail(MAILBOX mb, MAIL* received, TICK timeout)
-{
-	if(!KernelActive){
-		err = KERNEL_INACTIVE_ERR;
-		return 0;
-	}
-	
-	Disable_Interrupt();
-	Current_Process->request = MB_WAITMAIL;
-	Current_Process->request_args[0].val = mb;
-	Current_Process->request_args[1].ptr = received;
-	Current_Process->request_timeout = timeout;
-	Enter_Kernel();
-	
-	return Current_Process->request_ret;
-}
+
 
 #endif

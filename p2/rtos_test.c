@@ -1,6 +1,7 @@
 #include "rtos/os.h"
 #include "rtos/kernel/kernel.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
@@ -16,7 +17,7 @@ void Idle()
 };
 
 
-#define TEST_SET_1
+#define TEST_SET_10
 
 
 /************************************************************************/
@@ -563,6 +564,60 @@ void test()
 #endif
 
 
+#ifdef TEST_SET_10
+
+typedef struct {
+	int a;
+	int b;
+}Sample_Msg;
+
+
+MAILBOX mb;
+
+void t1()
+{
+	Sample_Msg msg1 ;
+		
+	msg1.a = 69;
+	msg1.b = 420;
+	
+	printf("T1: Sending Mail...\n");
+	Mailbox_Send_Mail(mb, &msg1, sizeof(Sample_Msg));
+	
+	Task_Terminate();
+}
+
+void t2()
+{
+	MAIL r1;
+	Sample_Msg *msg1;
+	
+	Task_Sleep(100);
+	printf("T2: Mailbox has %d unread mails!\n", Mailbox_Check_Mail(mb));
+	
+	Mailbox_Get_Mail(mb, &r1);
+	printf("Mail from %d, size %d\n", r1.source, r1.size);
+	
+	msg1 = r1.ptr;
+	printf("a: %d, b: %d\n", msg1->a, msg1->b);
+	
+	Mailbox_Destroy_Mail(&r1);
+	//printf("r1 pointer: %p, size: %d, source: %d\n", r1.ptr, r1.size, r1.source);
+	
+	Task_Terminate();
+		
+}
+
+void test()
+{
+	mb = Mailbox_Create(10);
+	
+	Task_Create(t1, TASK_STACK_SIZE, 1, 0);
+	Task_Create(t2, TASK_STACK_SIZE, 1, 0);
+	
+}
+
+#endif
 
 
 

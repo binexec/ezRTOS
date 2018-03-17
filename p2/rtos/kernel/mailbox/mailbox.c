@@ -1,4 +1,5 @@
 #include "mailbox.h"
+#include <string.h>
 #include <stdlib.h>		//Remove once kmalloc is used
 
 volatile PtrList MailboxList;
@@ -7,7 +8,7 @@ volatile unsigned int Last_MailboxID;
 
 
 
-void reset_mailbox(void)
+void Mailbox_Reset(void)
 {
 	Mailbox_Count = 0;
 	Last_MailboxID = 0;
@@ -83,14 +84,16 @@ MAILBOX Kernel_Create_Mailbox_Direct(unsigned int capacity)
 	return mb->id;
 }
 
+
 void Kernel_Create_Mailbox(void)
 {
 	#define req_capacity		Current_Process->request_args[0].val
 	
-	Current_Process->request_ret = Kernel_Create_Mailbox_Direct(req_capacity);
+	Current_Process->request_retval = Kernel_Create_Mailbox_Direct(req_capacity);
 	
 	#undef req_capacity
 }
+
 
 void Kernel_Destroy_Mailbox(void)
 {
@@ -99,7 +102,7 @@ void Kernel_Destroy_Mailbox(void)
 	PtrList *i;
 	MAILBOX_TYPE *mb;
 		
-	//Find the corresponding Semaphore object in the semaphore list
+	//Find the corresponding mailbox object in the mailbox list
 	for(i = &MailboxList; i; i = i->next)
 	{
 		mb = (MAILBOX_TYPE*)i->ptr;
@@ -127,48 +130,202 @@ void Kernel_Destroy_Mailbox(void)
 }
 
 
-/************************************************************************/
-/*							Mailbox Operations		                   */
-/************************************************************************/
+void Kernel_Mailbox_Destroy_Mail(void)
+{
+	#define req_mail Current_Process->request_args[0].ptr
+	
+	MAIL* m = req_mail;
+	
+	/*Should we also check if the mail requested is still an unread mail sitting in a mailbox???*/
+	
+	if(!m)
+	{
+		#ifdef DEBUG
+		printf("Kernel_Mailbox_Destroy_Mail: Attempted to destroy invalid mail\n");
+		#endif
+		err = OBJECT_NOT_FOUND_ERR;
+		Current_Process->request_retval = 0;
+	}
+	
+	free(m->ptr);
+	m->ptr = NULL;
+	m->size = 0;
+	m->source = 0;
+	
+	err = NO_ERR;
+	Current_Process->request_retval = 1;
+	
+	#undef req_mail
+}
 
 
-int Kernel_Mailbox_Check_Mail(void)
+
+
+/************************************************************************/
+/*					Asynchronous Mailbox Operations		                */
+/************************************************************************/
+
+void Kernel_Mailbox_Check_Mail(void)
 {
 	#define req_mb_id		Current_Process->request_args[0].val
 	
-	return 0;
+	MAILBOX_TYPE *mb = findMailboxByID(req_mb_id);
+	
+	if(!mb)
+	{
+		#ifdef DEBUG
+		printf("Kernel_Mailbox_Check_Mail: The requested Mailbox %d was not found!\n", req_mb_id);
+		#endif
+		err = OBJECT_NOT_FOUND_ERR;
+		Current_Process->request_retval = 0;
+		return;
+	}
+	Current_Process->request_retval = mb->mails.count;
+	
+	#undef req_mb_id
 }
 
-int Kernel_Mailbox_Send_Mail(void)
+
+void Kernel_Mailbox_Send_Mail(void)
+{
+	#define req_mb_id		Current_Process->request_args[0].val
+	#define req_msg_ptr		Current_Process->request_args[1].ptr
+	#define req_msg_size	Current_Process->request_args[2].val
+	
+	MAILBOX_TYPE *mb = findMailboxByID(req_mb_id);
+	MAIL *m;
+	
+	if(!mb)
+	{
+		#ifdef DEBUG
+		printf("Kernel_Mailbox_Send_Mail: The requested Mailbox %d was not found!\n", req_mb_id);
+		#endif
+		err = OBJECT_NOT_FOUND_ERR;
+		Current_Process->request_retval = 0;
+		return;
+	}
+	
+	//Check if the mailbox still have free space left
+	if(mb->mails.count >= mb->capacity)
+	{
+		#ifdef DEBUG
+		printf("Mailbox Full, cannot send at this time...\n");
+		#endif
+
+		/*TODO: Maybe allow the sender to wait if the queue is full?*/
+
+		Current_Process->request_retval = 0;
+		return;
+	}
+	
+	//Allocate a new MAIL object, and copy the specified message/data into it
+	m = malloc(sizeof(MAIL));
+	m->source = Current_Process->pid;
+	m->size = req_msg_size;
+	m->ptr = malloc(req_msg_size);
+	
+	if(!m->ptr)
+	{
+		printf("Malloc Failed...\n");
+		err = MALLOC_FAILED_ERR;
+		Current_Process->request_retval = 0;
+		return;
+	}
+	memcpy(m->ptr, req_msg_ptr, req_msg_size);
+	
+	//Add the new MAIL into the mailbox queue
+	enqueue_ptr(&mb->mails, m);
+	
+	err = NO_ERR;
+	Current_Process->request_retval = mb->mails.count;
+	
+	#undef req_mb_id
+	#undef req_msg_ptr
+	#undef req_msg_size
+}
+
+
+void Kernel_Mailbox_Get_Mail(void)
 {
 	#define req_mb_id		Current_Process->request_args[0].val
 	#define req_mail		Current_Process->request_args[1].ptr
 	
-	return 0;
+	MAILBOX_TYPE *mb = findMailboxByID(req_mb_id);
+	MAIL *m, *dest = req_mail;
+	
+	if(!mb)
+	{
+		#ifdef DEBUG
+		printf("Kernel_Mailbox_Send_Mail: The requested Mailbox %d was not found!\n", req_mb_id);
+		#endif
+		
+		req_mail = NULL;
+		err = OBJECT_NOT_FOUND_ERR;
+		Current_Process->request_retval = 0;
+		return;
+	}
+	
+	if(mb->mails.count == 0)
+	{
+		#ifdef DEBUG
+		printf("Mailbox is empty...\n");
+		#endif
+		
+		dest->ptr = NULL;
+		dest->size = 0;
+		dest->source = 0;
+		Current_Process->request_retval = 0;
+		return;
+	}
+	
+	m = dequeue_ptr(&mb->mails);
+	dest->ptr = m->ptr;
+	dest->size = m->size;
+	dest->source = m->source;
+	free(m);
+	printf("Received %d bytes, from %d\n", dest->size, dest->source);
+	
+	Current_Process->request_retval = mb->mails.count;
 	
 	#undef req_mb_id
 	#undef req_mail
 }
 
-int Kernel_Mailbox_Get_Mail(void)
+
+
+/************************************************************************/
+/*					Blocking Mailbox Operations		                */
+/************************************************************************/
+
+/*
+void Kernel_Mailbox_Blocking_Send_Mail(void)
 {
 	#define req_mb_id		Current_Process->request_args[0].val
-	#define req_mail		Current_Process->request_args[1].ptr
-			
-	return 0;
+	#define req_msg_ptr		Current_Process->request_args[1].ptr
+	#define req_msg_size	Current_Process->request_args[2].val
+	//req_timeout is also used
+	
+
 	
 	#undef req_mb_id
-	#undef req_mail
+	#undef req_msg_ptr
+	#undef req_msg_size
 }
 
-int Kernel_Mailbox_Wait_Mail(void)
+
+void Kernel_Mailbox_Blocking_Get_Mail(void)
 {
 	#define req_mb_id		Current_Process->request_args[0].val
 	#define req_mail		Current_Process->request_args[1].ptr
 	//req_timeout is also used
 		
-	return 0;
+
 	
 	#undef req_mb_id
 	#undef req_mail
 }
+*/
+
+
+
+

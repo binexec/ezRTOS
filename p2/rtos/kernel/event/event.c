@@ -63,7 +63,7 @@ EVENT Kernel_Create_Event(void)
 		
 		err = MAX_OBJECT_ERR;
 		if(KernelActive)
-			Current_Process->request_ret = 0;
+			Current_Process->request_retval = 0;
 		return 0;
 	}
 	
@@ -82,7 +82,7 @@ EVENT Kernel_Create_Event(void)
 	
 	err = NO_ERR;
 	if(KernelActive)	
-		Current_Process->request_ret = e->id;
+		Current_Process->request_retval = e->id;
 		
 	return e->id;
 }

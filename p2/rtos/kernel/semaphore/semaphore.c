@@ -93,7 +93,7 @@ void Kernel_Create_Semaphore()
 	#define req_initial_count		Current_Process->request_args[0].val
 	#define req_is_binary			Current_Process->request_args[1].val
 	
-	Current_Process->request_ret = Kernel_Create_Semaphore_Direct(req_initial_count, req_is_binary);
+	Current_Process->request_retval = Kernel_Create_Semaphore_Direct(req_initial_count, req_is_binary);
 	
 	#undef req_initial_count
 	#undef req_is_binary

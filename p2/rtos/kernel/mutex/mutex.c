@@ -69,7 +69,7 @@ MUTEX Kernel_Create_Mutex(void)
 		
 		err = MAX_OBJECT_ERR;
 		if(KernelActive)
-			Current_Process->request_ret = 0;
+			Current_Process->request_retval = 0;
 		return 0;
 	}
 	
@@ -91,7 +91,7 @@ MUTEX Kernel_Create_Mutex(void)
 	
 	err = NO_ERR;
 	if(KernelActive)
-		Current_Process->request_ret = mut->id;
+		Current_Process->request_retval = mut->id;
 	return mut->id;
 }
 
