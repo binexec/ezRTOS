@@ -16,6 +16,8 @@ rtos\kernel\hardware\uart\uart.c
 
 rtos\kernel\kernel.c
 
+rtos\kernel\kernel_errors.c
+
 rtos\kernel\mailbox\mailbox.c
 
 rtos\kernel\mutex\mutex.c

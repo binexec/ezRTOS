@@ -47,7 +47,7 @@ unsigned int Kernel_Create_Event_Group(void)
 		printf("Task_Create: Failed to create task. The system is at its process threshold.\n");
 		#endif
 		
-		err = MAX_OBJECT_ERR;
+		kernel_raise_error(MAX_OBJECT_ERR);
 		if(KernelActive)
 			Current_Process->request_retval = 0;
 		return 0;
@@ -61,7 +61,7 @@ unsigned int Kernel_Create_Event_Group(void)
 	eg->id = ++Last_Event_Group_ID;
 	eg->events = 0;
 	
-	err = NO_ERR;
+	
 	if(KernelActive)
 		Current_Process->request_retval = eg->id;
 		
@@ -89,7 +89,7 @@ void Kernel_Destroy_Event_Group(void)
 		#ifdef DEBUG
 		printf("Kernel_Destroy_Event_Group: The requested Semaphore %d was not found!\n", req_eg_id);
 		#endif
-		err = OBJECT_NOT_FOUND_ERR;
+		kernel_raise_error(OBJECT_NOT_FOUND_ERR);
 		return;
 	}
 	
@@ -99,7 +99,7 @@ void Kernel_Destroy_Event_Group(void)
 	ptrlist_remove(&EventGroupList, i);
 	--Event_Group_Count;
 	
-	err = NO_ERR;
+	
 	#undef req_eg_id
 }
 
@@ -124,7 +124,7 @@ void Kernel_Event_Group_Set_Bits()
 	if(eg == NULL)
 	{
 		printf("Event_Group_Set_Bits: Event group %d was not found!\n", req_event_id);
-		err = OBJECT_NOT_FOUND_ERR;
+		kernel_raise_error(OBJECT_NOT_FOUND_ERR);
 		return;
 	}
 	
@@ -172,7 +172,7 @@ void Kernel_Event_Group_Clear_Bits()
 	if(eg == NULL)
 	{
 		printf("Event_Group_Set_Bits: Event group %d was not found!\n", req_event_id);
-		err = OBJECT_NOT_FOUND_ERR;
+		kernel_raise_error(OBJECT_NOT_FOUND_ERR);
 		return;
 	}
 	
@@ -227,7 +227,7 @@ unsigned int Kernel_Event_Group_Get_Bits()
 	if(eg == NULL)
 	{
 		printf("Event_Group_Set_Bits: Event group %d was not found!\n", req_event_id);
-		err = OBJECT_NOT_FOUND_ERR;
+		kernel_raise_error(OBJECT_NOT_FOUND_ERR);
 		return 0;
 	}
 	

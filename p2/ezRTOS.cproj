@@ -152,6 +152,12 @@
     <Compile Include="rtos\kernel\kernel.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="rtos\kernel\kernel_errors.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="rtos\kernel\kernel_errors.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="rtos\kernel\kernel_shared.h">
       <SubType>compile</SubType>
     </Compile>

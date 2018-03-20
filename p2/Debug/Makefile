@@ -53,6 +53,7 @@ C_SRCS +=  \
 ../rtos/kernel/hardware/hw.c \
 ../rtos/kernel/hardware/uart/uart.c \
 ../rtos/kernel/kernel.c \
+../rtos/kernel/kernel_errors.c \
 ../rtos/kernel/mailbox/mailbox.c \
 ../rtos/kernel/mutex/mutex.c \
 ../rtos/kernel/others/kmalloc.c \
@@ -79,6 +80,7 @@ rtos/kernel/hardware/cswitch.o \
 rtos/kernel/hardware/hw.o \
 rtos/kernel/hardware/uart/uart.o \
 rtos/kernel/kernel.o \
+rtos/kernel/kernel_errors.o \
 rtos/kernel/mailbox/mailbox.o \
 rtos/kernel/mutex/mutex.o \
 rtos/kernel/others/kmalloc.o \
@@ -97,6 +99,7 @@ rtos/kernel/hardware/cswitch.o \
 rtos/kernel/hardware/hw.o \
 rtos/kernel/hardware/uart/uart.o \
 rtos/kernel/kernel.o \
+rtos/kernel/kernel_errors.o \
 rtos/kernel/mailbox/mailbox.o \
 rtos/kernel/mutex/mutex.o \
 rtos/kernel/others/kmalloc.o \
@@ -115,6 +118,7 @@ rtos/kernel/hardware/cswitch.d \
 rtos/kernel/hardware/hw.d \
 rtos/kernel/hardware/uart/uart.d \
 rtos/kernel/kernel.d \
+rtos/kernel/kernel_errors.d \
 rtos/kernel/mailbox/mailbox.d \
 rtos/kernel/mutex/mutex.d \
 rtos/kernel/others/kmalloc.d \
@@ -133,6 +137,7 @@ rtos/kernel/hardware/cswitch.d \
 rtos/kernel/hardware/hw.d \
 rtos/kernel/hardware/uart/uart.d \
 rtos/kernel/kernel.d \
+rtos/kernel/kernel_errors.d \
 rtos/kernel/mailbox/mailbox.d \
 rtos/kernel/mutex/mutex.d \
 rtos/kernel/others/kmalloc.d \
@@ -157,6 +162,8 @@ LINKER_SCRIPT_DEP+=
 
 
 # AVR32/GNU C Compiler
+
+
 
 
 

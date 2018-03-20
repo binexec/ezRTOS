@@ -35,5 +35,6 @@ char uart_getchar(FILE *stream) {
 void uart_setredir(void)
 {
 	stdout = &uart_output;
+	stderr = &uart_output;
 	stdin  = &uart_input;
 }

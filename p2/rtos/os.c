@@ -58,7 +58,7 @@ PID Task_Create(taskfuncptr f, size_t stack_size, PRIORITY py, int arg)
 	  retval = Kernel_Create_Task_Direct(f,stack_size,py,arg);				//If kernel hasn't started yet, manually create the task
    
    //Return zero as PID if the task creation process gave errors. Note that the smallest valid PID is 1
-   if (err == MAX_PROCESS_ERR)
+   if (err == MAX_OBJECT_ERR)
 		return 0;
    
    #ifdef DEBUG
@@ -72,7 +72,7 @@ PID Task_Create(taskfuncptr f, size_t stack_size, PRIORITY py, int arg)
 void Task_Terminate()
 {
 	if(!KernelActive){
-		err = KERNEL_INACTIVE_ERR;
+		kernel_raise_error(KERNEL_INACTIVE_ERR);
 		return;
 	}
 
@@ -85,7 +85,7 @@ void Task_Terminate()
 void Task_Yield() 
 {	
 	if(!KernelActive){
-		err = KERNEL_INACTIVE_ERR;
+		kernel_raise_error(KERNEL_INACTIVE_ERR);
 		return;
 	}
 
@@ -106,7 +106,7 @@ int Task_GetArg()
 void Task_Suspend(PID p)
 {
 	if(!KernelActive){
-		err = KERNEL_INACTIVE_ERR;
+		kernel_raise_error(KERNEL_INACTIVE_ERR);
 		return;
 	}
 	
@@ -119,7 +119,7 @@ void Task_Suspend(PID p)
 void Task_Resume(PID p)
 {
 	if(!KernelActive){
-		err = KERNEL_INACTIVE_ERR;
+		kernel_raise_error(KERNEL_INACTIVE_ERR);
 		return;
 	}
 	
@@ -133,7 +133,7 @@ void Task_Resume(PID p)
 void Task_Sleep(TICK t)
 {
 	if(!KernelActive){
-		err = KERNEL_INACTIVE_ERR;
+		kernel_raise_error(KERNEL_INACTIVE_ERR);
 		return;
 	}
 	
@@ -178,7 +178,7 @@ EVENT Event_Create(void)
 void Event_Wait(EVENT e)
 {
 	if(!KernelActive){
-		err = KERNEL_INACTIVE_ERR;
+		kernel_raise_error(KERNEL_INACTIVE_ERR);
 		return;
 	}
 	
@@ -192,7 +192,7 @@ void Event_Wait(EVENT e)
 void Event_Signal(EVENT e)
 {
 	if(!KernelActive){
-		err = KERNEL_INACTIVE_ERR;
+		kernel_raise_error(KERNEL_INACTIVE_ERR);
 		return;
 	}
 	
@@ -252,7 +252,7 @@ int Mutex_Destroy(MUTEX m)
 void Mutex_Lock(MUTEX m)
 {
 	if(!KernelActive){
-		err = KERNEL_INACTIVE_ERR;
+		kernel_raise_error(KERNEL_INACTIVE_ERR);
 		return;
 	}
 	
@@ -265,7 +265,7 @@ void Mutex_Lock(MUTEX m)
 void Mutex_Unlock(MUTEX m)
 {
 	if(!KernelActive){
-		err = KERNEL_INACTIVE_ERR;
+		kernel_raise_error(KERNEL_INACTIVE_ERR);
 		return;
 	}
 	
@@ -325,7 +325,7 @@ int Semaphore_Destroy(SEMAPHORE s)
 void Semaphore_Give(SEMAPHORE s, unsigned int amount)
 {
 	if(!KernelActive){
-		err = KERNEL_INACTIVE_ERR;
+		kernel_raise_error(KERNEL_INACTIVE_ERR);
 		return;
 	}
 	
@@ -339,7 +339,7 @@ void Semaphore_Give(SEMAPHORE s, unsigned int amount)
 void Semaphore_Get(SEMAPHORE s, unsigned int amount)
 {
 	if(!KernelActive){
-		err = KERNEL_INACTIVE_ERR;
+		kernel_raise_error(KERNEL_INACTIVE_ERR);
 		return;
 	}
 	
@@ -400,7 +400,7 @@ int Event_Group_Destroy(EVENT_GROUP eg)
 void Event_Group_Set_Bits(EVENT_GROUP e, unsigned int bits_to_set)
 {
 	if(!KernelActive){
-		err = KERNEL_INACTIVE_ERR;
+		kernel_raise_error(KERNEL_INACTIVE_ERR);
 		return;
 	}
 	
@@ -414,7 +414,7 @@ void Event_Group_Set_Bits(EVENT_GROUP e, unsigned int bits_to_set)
 void Event_Group_Clear_Bits(EVENT_GROUP e, unsigned int bits_to_clear)
 {
 	if(!KernelActive){
-		err = KERNEL_INACTIVE_ERR;
+		kernel_raise_error(KERNEL_INACTIVE_ERR);
 		return;
 	}
 	
@@ -428,7 +428,7 @@ void Event_Group_Clear_Bits(EVENT_GROUP e, unsigned int bits_to_clear)
 void Event_Group_Wait_Bits(EVENT_GROUP e, unsigned int bits_to_wait, unsigned int wait_all_bits, TICK timeout)
 {
 	if(!KernelActive){
-		err = KERNEL_INACTIVE_ERR;
+		kernel_raise_error(KERNEL_INACTIVE_ERR);
 		return;
 	}
 	
@@ -445,7 +445,7 @@ void Event_Group_Wait_Bits(EVENT_GROUP e, unsigned int bits_to_wait, unsigned in
 unsigned int Event_Group_Get_Bits(EVENT_GROUP e)
 {
 	if(!KernelActive){
-		err = KERNEL_INACTIVE_ERR;
+		kernel_raise_error(KERNEL_INACTIVE_ERR);
 		return 0;
 	}
 	
@@ -494,7 +494,7 @@ MAILBOX Mailbox_Create(unsigned int capacity)
 void Mailbox_Destroy(MAILBOX mb)
 {
 	if(!KernelActive){
-		err = KERNEL_INACTIVE_ERR;
+		kernel_raise_error(KERNEL_INACTIVE_ERR);
 		return;
 	}
 		
@@ -508,7 +508,7 @@ void Mailbox_Destroy(MAILBOX mb)
 int Mailbox_Destroy_Mail(MAIL* received)
 {
 	if(!KernelActive){
-		err = KERNEL_INACTIVE_ERR;
+		kernel_raise_error(KERNEL_INACTIVE_ERR);
 		return 0;
 	}
 	
@@ -524,7 +524,7 @@ int Mailbox_Destroy_Mail(MAIL* received)
 int Mailbox_Check_Mail(MAILBOX mb)
 {
 	if(!KernelActive){
-		err = KERNEL_INACTIVE_ERR;
+		kernel_raise_error(KERNEL_INACTIVE_ERR);
 		return 0;
 	}
 	
@@ -540,7 +540,7 @@ int Mailbox_Check_Mail(MAILBOX mb)
 int Mailbox_Send_Mail(MAILBOX mb, void *msg, size_t msg_size)
 {
 	if(!KernelActive){
-		err = KERNEL_INACTIVE_ERR;
+		kernel_raise_error(KERNEL_INACTIVE_ERR);
 		return 0;
 	}
 	
@@ -558,7 +558,7 @@ int Mailbox_Send_Mail(MAILBOX mb, void *msg, size_t msg_size)
 int Mailbox_Get_Mail(MAILBOX mb, MAIL* received)
 {
 	if(!KernelActive){
-		err = KERNEL_INACTIVE_ERR;
+		kernel_raise_error(KERNEL_INACTIVE_ERR);
 		return 0;
 	}
 		

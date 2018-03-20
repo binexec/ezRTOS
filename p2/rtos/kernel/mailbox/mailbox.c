@@ -29,7 +29,7 @@ MAILBOX_TYPE* findMailboxByID(MAILBOX mb)
 		#ifdef DEBUG
 		printf("findMailboxByID: The specified event ID is invalid!\n");
 		#endif
-		err = INVALID_ARG_ERR;
+		kernel_raise_error(INVALID_ARG_ERR);
 		return NULL;
 	}
 	
@@ -40,7 +40,7 @@ MAILBOX_TYPE* findMailboxByID(MAILBOX mb)
 			return mb_i;
 	}
 	
-	err = OBJECT_NOT_FOUND_ERR;
+	kernel_raise_error(OBJECT_NOT_FOUND_ERR);
 	return NULL;
 }
 
@@ -63,7 +63,7 @@ MAILBOX Kernel_Create_Mailbox_Direct(unsigned int capacity)
 		printf("Kernel_Create_Mailbox: Failed to create Mailbox. The system is at its max event threshold.\n");
 		#endif
 		
-		err = MAX_OBJECT_ERR;
+		kernel_raise_error(MAX_OBJECT_ERR);
 		return 0;
 	}
 	
@@ -80,7 +80,7 @@ MAILBOX Kernel_Create_Mailbox_Direct(unsigned int capacity)
 	printf("Kernel_Create_Mailbox: Created Mailbox %d!\n", Last_MailboxID);
 	#endif
 	
-	err = NO_ERR;
+	
 	return mb->id;
 }
 
@@ -115,7 +115,7 @@ void Kernel_Destroy_Mailbox(void)
 		#ifdef DEBUG
 		printf("Kernel_Destroy_Mailbox: The requested Mailbox %d was not found!\n", req_mb_id);
 		#endif
-		err = OBJECT_NOT_FOUND_ERR;
+		kernel_raise_error(OBJECT_NOT_FOUND_ERR);
 		return;
 	}
 	
@@ -124,7 +124,7 @@ void Kernel_Destroy_Mailbox(void)
 	ptrlist_remove(&MailboxList, i);
 	--Mailbox_Count;
 		
-	err = NO_ERR;
+	
 	
 	#undef req_mb_id
 }
@@ -143,7 +143,7 @@ void Kernel_Mailbox_Destroy_Mail(void)
 		#ifdef DEBUG
 		printf("Kernel_Mailbox_Destroy_Mail: Attempted to destroy invalid mail\n");
 		#endif
-		err = OBJECT_NOT_FOUND_ERR;
+		kernel_raise_error(OBJECT_NOT_FOUND_ERR);
 		Current_Process->request_retval = 0;
 	}
 	
@@ -152,7 +152,7 @@ void Kernel_Mailbox_Destroy_Mail(void)
 	m->size = 0;
 	m->source = 0;
 	
-	err = NO_ERR;
+	
 	Current_Process->request_retval = 1;
 	
 	#undef req_mail
@@ -176,7 +176,7 @@ void Kernel_Mailbox_Check_Mail(void)
 		#ifdef DEBUG
 		printf("Kernel_Mailbox_Check_Mail: The requested Mailbox %d was not found!\n", req_mb_id);
 		#endif
-		err = OBJECT_NOT_FOUND_ERR;
+		kernel_raise_error(OBJECT_NOT_FOUND_ERR);
 		Current_Process->request_retval = 0;
 		return;
 	}
@@ -200,7 +200,7 @@ void Kernel_Mailbox_Send_Mail(void)
 		#ifdef DEBUG
 		printf("Kernel_Mailbox_Send_Mail: The requested Mailbox %d was not found!\n", req_mb_id);
 		#endif
-		err = OBJECT_NOT_FOUND_ERR;
+		kernel_raise_error(OBJECT_NOT_FOUND_ERR);
 		Current_Process->request_retval = 0;
 		return;
 	}
@@ -227,7 +227,7 @@ void Kernel_Mailbox_Send_Mail(void)
 	if(!m->ptr)
 	{
 		printf("Malloc Failed...\n");
-		err = MALLOC_FAILED_ERR;
+		kernel_raise_error(MALLOC_FAILED_ERR);
 		Current_Process->request_retval = 0;
 		return;
 	}
@@ -236,7 +236,7 @@ void Kernel_Mailbox_Send_Mail(void)
 	//Add the new MAIL into the mailbox queue
 	enqueue_ptr(&mb->mails, m);
 	
-	err = NO_ERR;
+	
 	Current_Process->request_retval = mb->mails.count;
 	
 	#undef req_mb_id
@@ -260,7 +260,7 @@ void Kernel_Mailbox_Get_Mail(void)
 		#endif
 		
 		req_mail = NULL;
-		err = OBJECT_NOT_FOUND_ERR;
+		kernel_raise_error(OBJECT_NOT_FOUND_ERR);
 		Current_Process->request_retval = 0;
 		return;
 	}

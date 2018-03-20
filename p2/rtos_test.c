@@ -17,7 +17,7 @@ void Idle()
 };
 
 
-#define TEST_SET_10
+#define TEST_SET_1
 
 
 /************************************************************************/
@@ -92,11 +92,13 @@ void suspend_pong()
 		Task_Sleep(300);
 		printf("SUSPENDING PONG!\n");
 		Task_Suspend(Pong_PID);
+		Task_Suspend(69);
 		Task_Yield();
 		
 		Task_Sleep(300);
 		printf("RESUMING PONG!\n");
 		Task_Resume(Pong_PID);
+		Task_Suspend(96);
 		Task_Yield();
 	}
 }

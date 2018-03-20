@@ -28,7 +28,7 @@ EVENT_TYPE* findEventByEventID(EVENT e)
 		#ifdef DEBUG
 		printf("findEventByID: The specified event ID is invalid!\n");
 		#endif
-		err = INVALID_ARG_ERR;
+		kernel_raise_error(INVALID_ARG_ERR);
 		return NULL;
 	}
 	
@@ -39,7 +39,7 @@ EVENT_TYPE* findEventByEventID(EVENT e)
 			return event_i;
 	}
 	
-	err = OBJECT_NOT_FOUND_ERR;
+	kernel_raise_error(OBJECT_NOT_FOUND_ERR);
 	return NULL;
 }
 
@@ -61,7 +61,7 @@ EVENT Kernel_Create_Event(void)
 		printf("Event_Init: Failed to create Event. The system is at its max event threshold.\n");
 		#endif
 		
-		err = MAX_OBJECT_ERR;
+		kernel_raise_error(MAX_OBJECT_ERR);
 		if(KernelActive)
 			Current_Process->request_retval = 0;
 		return 0;
@@ -80,7 +80,7 @@ EVENT Kernel_Create_Event(void)
 	printf("Event_Init: Created Event %d!\n", Last_EventID);
 	#endif
 	
-	err = NO_ERR;
+	
 	if(KernelActive)	
 		Current_Process->request_retval = e->id;
 		
@@ -123,7 +123,7 @@ void Kernel_Wait_Event(void)
 		#ifdef DEBUG
 		printf("Kernel_Wait_Event: The requested event is already being waited by PID %d\n", e->owner);
 		#endif
-		err = OBJECT_NOT_FOUND_ERR;
+		kernel_raise_error(OBJECT_NOT_FOUND_ERR);
 		return;
 	}
 	
@@ -139,7 +139,7 @@ void Kernel_Wait_Event(void)
 	Current_Process->state = WAIT_EVENT;
 	Kernel_Request_Cswitch = 1;
 	
-	err = NO_ERR;
+	
 }
 
 void Kernel_Signal_Event(void)

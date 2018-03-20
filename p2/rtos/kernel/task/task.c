@@ -32,14 +32,14 @@ PID Kernel_Create_Task_Direct(taskfuncptr f, size_t stack_size, PRIORITY py, int
 		printf("Kernel_Create_Task: Failed to create task. There are no free slots remaining\n");
 		#endif
 		
-		err = MAX_PROCESS_ERR;
+		kernel_raise_error(MAX_OBJECT_ERR);
 		return 0;
 	}
 	
 	p = malloc(sizeof(PD));
 	if(!p)
 	{
-		err = MALLOC_FAILED_ERR;
+		kernel_raise_error(MALLOC_FAILED_ERR);
 		return 0;
 	}
 	ptrlist_add(&ProcessList, p);
@@ -64,7 +64,7 @@ PID Kernel_Create_Task_Direct(taskfuncptr f, size_t stack_size, PRIORITY py, int
 	p->stack = malloc(stack_size);
 	if(!p->stack)
 	{
-		err = MALLOC_FAILED_ERR;
+		kernel_raise_error(MALLOC_FAILED_ERR);
 		return 0;
 	}
 	
@@ -72,7 +72,7 @@ PID Kernel_Create_Task_Direct(taskfuncptr f, size_t stack_size, PRIORITY py, int
 	p->sp = &p->stack[stack_size-1];
 	Kernel_Init_Task_Stack(&p->sp, f);
 	
-	err = NO_ERR;
+	
 	return p->pid;
 }
 
@@ -105,7 +105,7 @@ void Kernel_Suspend_Task()
 		#ifdef DEBUG
 			printf("Kernel_Suspend_Task: PID not found in global process list!\n");
 		#endif
-		err = PID_NOT_FOUND_ERR;
+		kernel_raise_error(OBJECT_NOT_FOUND_ERR);
 		return;
 	}
 	
@@ -116,7 +116,7 @@ void Kernel_Suspend_Task()
 		#ifdef DEBUG
 		printf("Kernel_Suspend_Task: Trying to suspend a task that's in an unsuspendable state %d!\n", p->state);
 		#endif
-		err = UNSUSPENDABLE_TASK_STATE_ERR;
+		kernel_raise_error(UNPROCESSABLE_TASK_STATE_ERR);
 		return;
 	}
 	
@@ -127,7 +127,7 @@ void Kernel_Suspend_Task()
 		p->last_state = p->state;
 		
 	p->state = SUSPENDED;
-	err = NO_ERR;
+	
 }
 
 
@@ -142,7 +142,7 @@ void Kernel_Resume_Task()
 		#ifdef DEBUG
 			printf("Kernel_Resume_Task: PID not found in global process list!\n");
 		#endif
-		err = PID_NOT_FOUND_ERR;
+		kernel_raise_error(OBJECT_NOT_FOUND_ERR);
 		return;
 	}
 	
@@ -153,7 +153,7 @@ void Kernel_Resume_Task()
 		printf("Kernel_Resume_Task: Trying to resume a task that's not SUSPENDED!\n");
 		printf("CURRENT STATE: %d\n", p->state);
 		#endif
-		err = RESUME_NONSUSPENDED_TASK_ERR;
+		kernel_raise_error(UNPROCESSABLE_TASK_STATE_ERR);
 		return;
 	}
 	
@@ -164,7 +164,7 @@ void Kernel_Resume_Task()
 		p->state = p->last_state;
 		
 	p->last_state = SUSPENDED;		//last_state is not needed once a task has resumed, but whatever	
-	err = NO_ERR;
+	
 	
 }
 

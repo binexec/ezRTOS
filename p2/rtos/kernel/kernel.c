@@ -297,7 +297,7 @@ static void Kernel_Invalid_Request()
 	printf("***INVALID KERNEL REQUEST!***\n");
 	#endif
 	
-	err = INVALID_KERNET_REQUEST_ERR;
+	kernel_raise_error(INVALID_REQUEST_ERR);
 }
 
 
@@ -330,6 +330,8 @@ static void Kernel_Main_Loop()
 
 		//Save the current task's stack pointer and proceed to handle its request
 		Current_Process->sp = CurrentSp;
+		
+		err = NO_ERR;
 
 		//Because each branch only calls a function, this switch statement should hopefully be converted to a jump table by the compiler
 		switch(Current_Process->request)
