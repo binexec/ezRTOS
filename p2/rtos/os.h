@@ -129,11 +129,11 @@ typedef struct MAIL MAIL;													//Formally declared in mailbox/mailbox.h
 MAILBOX Mailbox_Create(unsigned int capacity);
 void Mailbox_Destroy(MAILBOX mb);
 int Mailbox_Destroy_Mail(MAIL* m);
-int Mailbox_Check_Mail(MAILBOX mb);
-int Mailbox_Send_Mail(MAILBOX mb, void* msg, size_t msg_size);
-int Mailbox_Recv_Mail(MAILBOX mb, MAIL* received);
-int Mailbox_Send_Mail_Blocking(MAILBOX mb, void *msg, size_t msg_size, TICK timeout);
-int Mailbox_Recv_Mail_Blocking(MAILBOX mb, MAIL* received, TICK TIMEOUT);
+int Mailbox_Check(MAILBOX mb);
+int Mailbox_Send(MAILBOX mb, void* msg, size_t msg_size);
+int Mailbox_Recv(MAILBOX mb, MAIL* received);
+int Mailbox_Send_Blocking(MAILBOX mb, void *msg, size_t msg_size, TICK timeout);
+int Mailbox_Recv_Blocking(MAILBOX mb, MAIL* received, TICK TIMEOUT);
 #endif 
 
 

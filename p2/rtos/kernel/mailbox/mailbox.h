@@ -40,9 +40,9 @@ MAILBOX Kernel_Create_Mailbox_Direct(unsigned int capacity);
 void Kernel_Destroy_Mailbox(void);
 void Kernel_Mailbox_Destroy_Mail(void);
 
-void Kernel_Mailbox_Check_Mail(void);
-void Kernel_Mailbox_Send_Mail(void);
-void Kernel_Mailbox_Recv_Mail(void);
+void Kernel_Mailbox_Check(void);
+void Kernel_Mailbox_Send(void);
+void Kernel_Mailbox_Recv(void);
 
 
 

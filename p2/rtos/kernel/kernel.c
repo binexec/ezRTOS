@@ -454,15 +454,15 @@ static void Kernel_Main_Loop()
 			break;
 			
 			case MB_CHECKMAIL:
-			Kernel_Mailbox_Check_Mail();
+			Kernel_Mailbox_Check();
 			break;
 			
 			case MB_SENDMAIL:
-			Kernel_Mailbox_Send_Mail();
+			Kernel_Mailbox_Send();
 			break;
 			
 			case MB_RECVMAIL:
-			Kernel_Mailbox_Recv_Mail();
+			Kernel_Mailbox_Recv();
 			break;
 			
 			case MB_DESTROYM:
