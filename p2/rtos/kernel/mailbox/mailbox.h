@@ -6,6 +6,7 @@
 
 #define MAXMAILBOX					8
 
+
 typedef struct MAIL{
 	
 	void* ptr;
@@ -14,11 +15,14 @@ typedef struct MAIL{
 	
 } MAIL;
 
+
 typedef struct {
 
 	MAILBOX id;
 	unsigned int capacity;
-	Queue mails;	
+	Queue mails;
+	Queue send_queue;	
+	Queue recv_queue;
 	
 } MAILBOX_TYPE;
 
@@ -36,16 +40,11 @@ MAILBOX Kernel_Create_Mailbox_Direct(unsigned int capacity);
 void Kernel_Destroy_Mailbox(void);
 void Kernel_Mailbox_Destroy_Mail(void);
 
-/*Asynchronous Operations*/
 void Kernel_Mailbox_Check_Mail(void);
 void Kernel_Mailbox_Send_Mail(void);
-void Kernel_Mailbox_Get_Mail(void);
+void Kernel_Mailbox_Recv_Mail(void);
 
-/*Blocking Operations*/
-/*
-void Kernel_Mailbox_Blocking_Send_Mail(void)
-void Kernel_Mailbox_Blocking_Get_Mail(void)
-*/
+
 
 
 

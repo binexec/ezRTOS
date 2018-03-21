@@ -34,7 +34,8 @@ typedef enum
 	WAIT_EVENT,
 	WAIT_EVENTG,
 	WAIT_MUTEX,
-	WAIT_SEMAPHORE
+	WAIT_SEMAPHORE,
+	WAIT_MAILBOX
 	
 } PROCESS_STATE;
 
@@ -92,8 +93,7 @@ typedef enum
 	MB_DESTROYM,
 	MB_CHECKMAIL,
 	MB_SENDMAIL,
-	MB_GETMAIL,
-	MB_WAITMAIL,
+	MB_RECVMAIL,
 	#endif
 	
 	INVALID					//Not an actual request. do not use!

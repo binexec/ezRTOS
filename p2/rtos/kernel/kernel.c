@@ -461,8 +461,8 @@ static void Kernel_Main_Loop()
 			Kernel_Mailbox_Send_Mail();
 			break;
 			
-			case MB_GETMAIL:
-			Kernel_Mailbox_Get_Mail();
+			case MB_RECVMAIL:
+			Kernel_Mailbox_Recv_Mail();
 			break;
 			
 			case MB_DESTROYM:

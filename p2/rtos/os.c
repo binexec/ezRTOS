@@ -537,6 +537,29 @@ int Mailbox_Check_Mail(MAILBOX mb)
 }
 
 
+static inline int Mailbox_Send_Mail_Helper(MAILBOX mb, void *msg, size_t msg_size, int blocking)
+{
+	Current_Process->request = MB_SENDMAIL;
+	Current_Process->request_args[0].val = mb;
+	Current_Process->request_args[1].ptr = msg;
+	Current_Process->request_args[2].val = msg_size;
+	Current_Process->request_args[3].val = blocking;
+	Enter_Kernel();
+	
+	return Current_Process->request_retval;
+}
+
+static inline int Mailbox_Recv_Mail_Helper(MAILBOX mb, MAIL* received, int blocking)
+{
+	Current_Process->request = MB_RECVMAIL;
+	Current_Process->request_args[0].val = mb;
+	Current_Process->request_args[1].ptr = received;
+	Current_Process->request_args[2].val = blocking;
+	Enter_Kernel();
+	
+	return Current_Process->request_retval;
+}
+
 int Mailbox_Send_Mail(MAILBOX mb, void *msg, size_t msg_size)
 {
 	if(!KernelActive){
@@ -545,30 +568,42 @@ int Mailbox_Send_Mail(MAILBOX mb, void *msg, size_t msg_size)
 	}
 	
 	Disable_Interrupt();
-	Current_Process->request = MB_SENDMAIL;
-	Current_Process->request_args[0].val = mb;
-	Current_Process->request_args[1].ptr = msg;
-	Current_Process->request_args[2].val = msg_size;
-	Enter_Kernel();
-	
-	return Current_Process->request_retval;
+	return Mailbox_Send_Mail_Helper(mb, msg, msg_size, 0);
 }
 
-
-int Mailbox_Get_Mail(MAILBOX mb, MAIL* received)
+int Mailbox_Recv_Mail(MAILBOX mb, MAIL* received)
 {
 	if(!KernelActive){
 		kernel_raise_error(KERNEL_INACTIVE_ERR);
 		return 0;
 	}
-		
-	Disable_Interrupt();
-	Current_Process->request = MB_GETMAIL;
-	Current_Process->request_args[0].val = mb;
-	Current_Process->request_args[1].ptr = received;
-	Enter_Kernel();
 	
-	return Current_Process->request_retval;
+	Disable_Interrupt();
+	return Mailbox_Recv_Mail_Helper(mb, received, 0);
+}
+
+int Mailbox_Send_Mail_Blocking(MAILBOX mb, void *msg, size_t msg_size, TICK timeout)
+{
+	if(!KernelActive){
+		kernel_raise_error(KERNEL_INACTIVE_ERR);
+		return 0;
+	}
+	
+	Disable_Interrupt();
+	Current_Process->request_timeout = timeout;
+	return Mailbox_Send_Mail_Helper(mb, msg, msg_size, 1);
+}
+
+int Mailbox_Recv_Mail_Blocking(MAILBOX mb, MAIL* received, TICK timeout)
+{
+	if(!KernelActive){
+		kernel_raise_error(KERNEL_INACTIVE_ERR);
+		return 0;
+	}
+	
+	Disable_Interrupt();
+	Current_Process->request_timeout = timeout;
+	return Mailbox_Recv_Mail_Helper(mb, received, 1);
 }
 
 

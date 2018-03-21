@@ -17,7 +17,7 @@ void Idle()
 };
 
 
-#define TEST_SET_1
+#define TEST_SET_12
 
 
 /************************************************************************/
@@ -92,13 +92,11 @@ void suspend_pong()
 		Task_Sleep(300);
 		printf("SUSPENDING PONG!\n");
 		Task_Suspend(Pong_PID);
-		Task_Suspend(69);
 		Task_Yield();
 		
 		Task_Sleep(300);
 		printf("RESUMING PONG!\n");
 		Task_Resume(Pong_PID);
-		Task_Suspend(96);
 		Task_Yield();
 	}
 }
@@ -566,11 +564,15 @@ void test()
 #endif
 
 
+/************************************************************************/
+/*				Test 10: Basic Mailbox Send/Recv (async)	            */
+/************************************************************************/
 #ifdef TEST_SET_10
 
 typedef struct {
 	int a;
-	int b;
+	unsigned int b;
+	char* c;
 }Sample_Msg;
 
 
@@ -580,10 +582,22 @@ void t1()
 {
 	Sample_Msg msg1 ;
 		
-	msg1.a = 69;
-	msg1.b = 420;
+	msg1.a = 11;
+	msg1.b = -1-1;
+	msg1.c = "aaa";
+	printf("T1: Sending Mail 1...\n");
+	Mailbox_Send_Mail(mb, &msg1, sizeof(Sample_Msg));
 	
-	printf("T1: Sending Mail...\n");
+	msg1.a = 22;
+	msg1.b = -1-2;
+	msg1.c = "bbb";
+	printf("T1: Sending Mail 2...\n");
+	Mailbox_Send_Mail(mb, &msg1, sizeof(Sample_Msg));
+	
+	msg1.a = 33;
+	msg1.b = -1-3;
+	msg1.c = "ccc";
+	printf("T1: Sending Mail 3...\n");
 	Mailbox_Send_Mail(mb, &msg1, sizeof(Sample_Msg));
 	
 	Task_Terminate();
@@ -591,20 +605,23 @@ void t1()
 
 void t2()
 {
+	int i, count;
 	MAIL r1;
 	Sample_Msg *msg1;
 	
-	Task_Sleep(100);
-	printf("T2: Mailbox has %d unread mails!\n", Mailbox_Check_Mail(mb));
+	Task_Sleep(250);
+	printf("\n******\n");
+	count = Mailbox_Check_Mail(mb);
+	printf("T2: Mailbox has %d unread mails!\n", count);
 	
-	Mailbox_Get_Mail(mb, &r1);
-	printf("Mail from %d, size %d\n", r1.source, r1.size);
-	
-	msg1 = r1.ptr;
-	printf("a: %d, b: %d\n", msg1->a, msg1->b);
-	
-	Mailbox_Destroy_Mail(&r1);
-	//printf("r1 pointer: %p, size: %d, source: %d\n", r1.ptr, r1.size, r1.source);
+	for(i=0; i<count; i++)
+	{
+		Mailbox_Recv_Mail(mb, &r1);
+		printf("T2: Mail from %d, size %d\n", r1.source, r1.size);
+		msg1 = r1.ptr;
+		printf("a: %d, b: %u, c: %s\n", msg1->a, msg1->b, msg1->c);
+		Mailbox_Destroy_Mail(&r1);
+	}
 	
 	Task_Terminate();
 		
@@ -616,7 +633,187 @@ void test()
 	
 	Task_Create(t1, TASK_STACK_SIZE, 1, 0);
 	Task_Create(t2, TASK_STACK_SIZE, 1, 0);
+}
+
+#endif
+
+
+/************************************************************************/
+/*				Test 11: Basic Mailbox Send/Recv (async)	            */
+/************************************************************************/
+#ifdef TEST_SET_11
+
+typedef struct {
+	int a;
+	unsigned int b;
+	char* c;
+}Sample_Msg;
+
+
+MAILBOX mb;
+
+void t1()
+{
+	Sample_Msg msg1 ;
 	
+	msg1.a = 11;
+	msg1.b = -1-1;
+	msg1.c = "aaa";
+	printf("T1: Sending Mail 1...\n");
+	Mailbox_Send_Mail(mb, &msg1, sizeof(Sample_Msg));
+	
+	msg1.a = 22;
+	msg1.b = -1-2;
+	msg1.c = "bbb";
+	printf("T1: Sending Mail 2...\n");
+	Mailbox_Send_Mail(mb, &msg1, sizeof(Sample_Msg));
+	
+	msg1.a = 33;
+	msg1.b = -1-3;
+	msg1.c = "ccc";
+	printf("T1: Sending Mail 3...\n");
+	Mailbox_Send_Mail(mb, &msg1, sizeof(Sample_Msg));
+	
+	Task_Terminate();
+}
+
+void t2()
+{
+	int i, count;
+	MAIL r1;
+	Sample_Msg *msg1;
+	
+	Task_Sleep(250);
+	printf("\n******\n");
+	count = Mailbox_Check_Mail(mb);
+	printf("T2: Mailbox has %d unread mails!\n", count);
+	
+	for(i=0; i<count; i++)
+	{
+		Mailbox_Recv_Mail(mb, &r1);
+		printf("T2: Mail from %d, size %d\n", r1.source, r1.size);
+		msg1 = r1.ptr;
+		printf("a: %d, b: %u, c: %s\n", msg1->a, msg1->b, msg1->c);
+		Mailbox_Destroy_Mail(&r1);
+	}
+	
+	Task_Terminate();
+	
+}
+
+void test()
+{
+	mb = Mailbox_Create(10);
+	
+	Task_Create(t1, TASK_STACK_SIZE, 1, 0);
+	Task_Create(t2, TASK_STACK_SIZE, 1, 0);
+}
+
+#endif
+
+
+
+/************************************************************************/
+/*					Test 12: Mailbox Blocking Send						*/
+/************************************************************************/
+#ifdef TEST_SET_12
+
+typedef struct {
+	int a;
+	unsigned int b;
+	char* c;
+}Sample_Msg;
+
+
+MAILBOX mb;
+
+void sender1()
+{
+	Sample_Msg msg1 = {.a = 11, .b = -1-1, .c = "aaa"};
+		
+	while(1)
+	{
+		printf("T1: Sending Mail...\n");
+		Mailbox_Send_Mail(mb, &msg1, sizeof(Sample_Msg));
+		
+		//Task_Sleep(50);
+		Task_Yield();
+	}
+}
+
+void sender2()
+{
+	Sample_Msg msg1 = {.a = 22, .b = -1-2, .c = "bbb"};
+	
+	while(1)
+	{
+		printf("T2: Sending Mail...\n");
+		Mailbox_Send_Mail(mb, &msg1, sizeof(Sample_Msg));
+		
+		//Task_Sleep(50);
+		Task_Yield();
+	}
+}
+
+void sender3()
+{
+	Sample_Msg msg1 = {.a = 33, .b = -1-3, .c = "ccc"};
+	
+	while(1)
+	{
+		printf("T3: Sending Mail...\n");
+		Mailbox_Send_Mail(mb, &msg1, sizeof(Sample_Msg));
+		
+		//Task_Sleep(50);
+		Task_Yield();
+	}
+}
+
+void receiver()
+{
+	int i, count;
+	MAIL r1;
+	Sample_Msg *msg1;
+	
+	Task_Sleep(250);
+	
+	while(1)
+	{
+		count = Mailbox_Check_Mail(mb);
+		if(!count)
+		{
+			Task_Sleep(250);
+			continue;
+		}
+		
+		
+		printf("\nT2: Mailbox has %d unread mails!\n", count);
+		printf("******\n");
+		
+		for(i=0; i<count; i++)
+		{
+			Mailbox_Recv_Mail(mb, &r1);
+			printf("Mail from %d, size %d\n", r1.source, r1.size);
+			msg1 = r1.ptr;
+			printf("a: %d, b: %u, c: %s\n", msg1->a, msg1->b, msg1->c);
+			printf("\n");
+			
+			Mailbox_Destroy_Mail(&r1);
+		}
+		
+		printf("******\n\n");
+		
+	}	
+}
+
+void test()
+{
+	mb = Mailbox_Create(3);
+	
+	Task_Create(sender1, TASK_STACK_SIZE, 1, 0);
+	Task_Create(sender2, TASK_STACK_SIZE, 1, 0);
+	Task_Create(sender3, TASK_STACK_SIZE, 1, 0);
+	Task_Create(receiver, TASK_STACK_SIZE, 2, 0);
 }
 
 #endif

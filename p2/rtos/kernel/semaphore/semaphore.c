@@ -153,7 +153,7 @@ static inline void Kernel_Semaphore_Get_From_Queue(SEMAPHORE_TYPE *sem)
 			#ifdef DEBUG
 			printf("Kernel_Semaphore_Get_From_Queue: Head of the wait queue isn't waiting for a semaphore!\n");
 			#endif
-			kernel_raise_error(OBJECT_NOT_FOUND_ERR);
+			kernel_raise_error(UNPROCESSABLE_TASK_STATE_ERR);
 			return;
 		}
 		
