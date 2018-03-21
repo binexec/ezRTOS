@@ -14,7 +14,7 @@ static Queue new_queue(void)
 }
 
 
-Queue new_pid_queue(void)
+Queue new_int_queue(void)
 {
 	Queue q = new_queue();	
 	q.is_ptr_queue = 0;
@@ -63,7 +63,7 @@ static void enqueue(Queue *q, QElement *qe)
 	q->count++;
 }
 
-int enqueue_pid(Queue *q, PID p)
+int enqueue_int(Queue *q, PID p)
 {
 	QElement *qe;
 	
@@ -120,7 +120,7 @@ static QElement* dequeue(Queue *q)
 	return retval;
 }
 
-PID dequeue_pid(Queue *q)
+PID dequeue_int(Queue *q)
 {
 	QElement *qe;
 	PID retval;
@@ -161,7 +161,7 @@ static QElement* queue_peek(Queue *q)
 	return q->head;
 }
 
-PID queue_peek_pid(Queue *q)
+PID queue_peek_int(Queue *q)
 {
 	QElement *retval = queue_peek(q);
 	

@@ -32,21 +32,21 @@ typedef struct {
 
 
 
-Queue new_pid_queue(void);
+Queue new_int_queue(void);
 Queue new_ptr_queue(void);
 int get_queue_type(Queue *q);
 void free_queue(Queue *q);
 
-int enqueue_pid(Queue *q, PID p);
+int enqueue_int(Queue *q, PID p);
 int enqueue_ptr(Queue *q, void *p);
 
-PID dequeue_pid(Queue *q);
+PID dequeue_int(Queue *q);
 void* dequeue_ptr(Queue *q);
 
-PID queue_peek_pid(Queue *q);
+PID queue_peek_int(Queue *q);
 void* queue_peek_ptr(Queue *q);
 
-PID iterate_pid_queue(Queue *q);
+PID iterate_int_queue(Queue *q);
 void* iterate_ptr_queue(Queue *q);
 
 

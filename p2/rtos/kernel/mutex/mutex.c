@@ -82,8 +82,8 @@ MUTEX Kernel_Create_Mutex(void)
 	mut->owner = 0;		
 	mut->lock_count = 0;
 	mut->highest_priority = LOWEST_PRIORITY;
-	mut->wait_queue = new_pid_queue();
-	mut->orig_priority = new_pid_queue();
+	mut->wait_queue = new_ptr_queue();
+	mut->orig_priority = new_int_queue();
 	
 	#ifdef DEBUG
 	printf("Kernel_Create_Mutex: Created Mutex %d!\n", Last_MutexID);
@@ -169,8 +169,8 @@ void Kernel_Lock_Mutex(void)
 	}
 		
 	//If I'm not the owner (mutex already locked): Add the current process to the wait queue
-	enqueue_pid(&m->wait_queue, Current_Process->pid);
-	enqueue_pid(&m->orig_priority, Current_Process->pri);
+	enqueue_ptr(&m->wait_queue, Current_Process);
+	enqueue_int(&m->orig_priority, Current_Process->pri);
 	
 	//Inherit the highest priority if mine's not the highest
 	if(m->highest_priority < Current_Process->pri)
@@ -191,16 +191,14 @@ void Kernel_Lock_Mutex(void)
 
 static void Kernel_Lock_Mutex_From_Queue(MUTEX_TYPE *m)
 {
-	PD *p;
+	PD *p = dequeue_ptr(&m->wait_queue);
 	
 	//Pass the mutex to the head of the wait queue and lock it
-	m->owner = dequeue_pid(&m->wait_queue);
-	m->owner_orig_priority = dequeue_pid(&m->orig_priority);
+	m->owner = p->pid;
+	m->owner_orig_priority = dequeue_int(&m->orig_priority);
 	m->lock_count++;
 
-	//Wake up the new mutex owner from its waiting state	
-	p = findProcessByPID(m->owner);
-	
+	//Wake up the new mutex owner from its waiting state		
 	if(p->state != WAIT_MUTEX)
 	{
 		printf("PID %d IS NOT IN WAIT_MUTEX\n", p->pid);

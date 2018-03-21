@@ -62,7 +62,7 @@ SEMAPHORE Kernel_Create_Semaphore_Direct(int initial_count, unsigned int is_bina
 	++Semaphore_Count;
 
 	sem->id = ++Last_SemaphoreID;
-	sem->wait_queue = new_pid_queue();
+	sem->wait_queue = new_ptr_queue();
 
 	//Creating a binary semaphore
 	if(is_binary > 0)
@@ -143,7 +143,7 @@ static inline void Kernel_Semaphore_Get_From_Queue(SEMAPHORE_TYPE *sem)
 {
 	#define head_req_amount		head->request_args[1].val
 	
-	PD *head = findProcessByPID(queue_peek_pid(&sem->wait_queue));	
+	PD *head = queue_peek_ptr(&sem->wait_queue);	
 	
 	//See if the semaphore has enough counts to fulfill the amount wanted by the head(s) of the wait queue
 	while(sem->count - head_req_amount >= 0)
@@ -160,8 +160,8 @@ static inline void Kernel_Semaphore_Get_From_Queue(SEMAPHORE_TYPE *sem)
 		sem->count -= head_req_amount;
 		head->state = READY;
 		
-		dequeue_pid(&sem->wait_queue);
-		head = findProcessByPID(queue_peek_pid(&sem->wait_queue));
+		dequeue_int(&sem->wait_queue);
+		head = queue_peek_ptr(&sem->wait_queue);
 	}
 	
 	#undef head_req_amount
@@ -200,7 +200,7 @@ void Kernel_Semaphore_Get()
 	//If not, add the process to the semaphore's waiting queue, and put the task into the WAIT_SEMAPHORE state
 	if(has_enough < 0)
 	{
-		enqueue_pid(&sem->wait_queue, Current_Process->pid);
+		enqueue_ptr(&sem->wait_queue, Current_Process);
 		Current_Process->state = WAIT_SEMAPHORE;
 		Kernel_Request_Cswitch = 1;
 		return;
