@@ -936,7 +936,7 @@ void test()
 /*						Entry point for application		                */
 /************************************************************************/
 
-void a_main()
+void main()
 {
 	OS_Init();
 		

@@ -5,8 +5,6 @@
 
 #define DEBUG
 
-extern void a_main();					//External entry point for application once kernel and OS has initialized.
-
 
 /************************************************************************/
 /*					RTOS Initialization Functions                       */
@@ -21,12 +19,6 @@ void OS_Init(void)
 void OS_Start(void)	
 {
 	Kernel_Start();
-}
-
-/*Don't use main function for application code. Any mandatory kernel initialization should be done here*/
-int main()
-{
-	a_main();		//Call the user's application entry point instead
 }
 
 
