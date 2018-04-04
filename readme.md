@@ -15,6 +15,9 @@ A complete ezRTOS build includes the following list of features and components:
 ezRTOS was developed using [**Atmel Studios 7.0**](https://www.microchip.com/avr-support/atmel-studio-7), but should work with further versions too. 
 Simply open _ezRTOS.atsln_ with Atmel Studios and the IDE will prompt you to install any missing libraries and headers automatically.
 
+If you simply compile and upload the RTOS without adding your own functionalities, test case 0 from _rtos_test.c_ will start running.
+When you're ready to integrate ezRTOS into your project, be sure to delete this file before start writing your own entry point.
+
 ## Basic Usage
 As usual with any C programs, the _main()_ function is the entry point even with ezRTOS used. Before any OS functions can be used however, your main() function must initializes the OS, create some tasks and other objects needed by the tasks, and then start the OS. The program flow for your main() should be structured as the following:
 
@@ -24,13 +27,14 @@ void main()
     /*Initialization for your project's own resources here...*/
     
     OS_Init();      //Initializes the OS
-		
-	/*Create some tasks, other kernel objects here...*/
+	
+    /*Create some tasks, other kernel objects here...*/
 
 	OS_Start();     //Start the OS. Created tasks will start running 
 }
 ```
 
+### Creating a Task
 To create a task, consider the function **Task_Create**
 >PID Task_Create(taskfuncptr f, size_t stack_size, PRIORITY py, int arg);
 
@@ -61,6 +65,7 @@ You will use this function to initialize a hardware timer to repeatedly cause an
 Whenever the timer's ISR is invoked, the ISR must directly call the function **Kernel_Tick_ISR()** defined in _ezRTOS/p2/rtos/kernel/kernel.c_. Do not edit this function.
 
 If the target microcontroller uses a different CPU architecture, the following additional steps are required. These steps are not needed for any other AVR microcontrollers.
+
 4. Implement **Enable_Interrupt()** and **Disable_Interrupt()**, defined in  _ezRTOS/p2/rtos/hardware/cpuarch.h_
 These functions allows the OS and kernel to enter and exit an atomic state uninterruptable by external sources.
 
