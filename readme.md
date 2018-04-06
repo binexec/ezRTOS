@@ -75,3 +75,12 @@ These functions allows the OS and kernel to enter and exit an atomic state unint
     - When CSwitch()/Enter_Kernel() is called, the function must save the current running task's context onto the stack, and load the kernel's context.
     - When **Exit_Kernel()**, the opposit occurs.
     - The current implementation for context switching on AVR is done in CSwitch.s
+
+## Todo
+
+Currently, kernel objects and linked list nodes are dynamically allocated onto the heap using the same malloc function provided by stdlib. There are two inherent concerns, as the same memory heap is shared with the user's memory allocations:
+
+1. Kernel objects may be corrupted if the user accidentally writes out of bound of its own allocated memory
+2. If the target platform does not have a native implementation of malloc in stdlib, the RTOS is unusable
+
+A seperate dynamic memory allocator has been implemented in the [DynMemAllocator](https://github.com/bowen-liu/DynMemAllocator) repo. By letting the RTOS manage its own memory heap, these concerns are mitigated. However, the memory allocator was developed using an x86 machine (even though the algorithm is system/architecture independant), and we have not yet tested it on AVR. The next step would be incorporating it into the RTOS.
