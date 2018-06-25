@@ -10,6 +10,7 @@ A complete ezRTOS build includes the following list of features and components:
 - Mutex with priority inheritence
 - Mailbox for interprocess communications.
 
+For more information on all available operations for the OS, tasks, and its other components, see _os.h_ for more detail.
 
 ## Prerequisites
 ezRTOS was developed using [**Atmel Studios 7.0**](https://www.microchip.com/avr-support/atmel-studio-7), but should work with further versions too. 
@@ -19,23 +20,10 @@ If you simply compile and upload the RTOS without adding your own functionalitie
 When you're ready to integrate ezRTOS into your project, be sure to delete this file before start writing your own entry point.
 
 ## Basic Usage
-As usual with any C programs, the _main()_ function is the entry point even with ezRTOS used. Before any OS functions can be used however, your main() function must initializes the OS, create some tasks and other objects needed by the tasks, and then start the OS. The program flow for your main() should be structured as the following:
+To help you getting started on your first basic multi-tasking application, we will provide a simple demo program that prints alternating "Ping" and "Pong".
 
-```
-void main()
-{
-    /*Initialization for your project's own resources here...*/
-    
-    OS_Init();      //Initializes the OS
-	
-    /*Create some tasks, other kernel objects here...*/
-
-	OS_Start();     //Start the OS. Created tasks will start running 
-}
-```
-
-### Creating a Task
-To create a task, consider the function **Task_Create**
+### Creating Your First Task
+To create a task, consider the function **Task_Create**:
 >PID Task_Create(taskfuncptr f, size_t stack_size, PRIORITY py, int arg);
 
 A task is fundamentally represented by a _void function_ **f**. This function should be running in a continuous loop, or else the task will terminate when the function returns. It's recommended for each task's main function (and its associated helper functions and variables) isolated seperate C file from other tasks, for ease of organization.
@@ -48,7 +36,68 @@ A task can have an optional user argument **arg**. The purpose of this value is 
 
 If a task has been successfully created, the function Task_Create will return a positive value as the **PID**. You must save this return value if you're planning to have this task interacting with other OS components later. If a value of 0 was returned, task creation has failed.
 
-For more information on all available operations for the OS, tasks, and its other components, see _os.h_ for more detail.
+#### Sample Application
+Below is a sample application that uses two tasks to print alternating "Ping" and "Pong" to stdout. 
+
+```c
+#include "rtos/os.h"
+
+void ping()
+{
+	for(;;)
+	{
+		printf("Ping\n");
+		Task_Yield();
+	}
+}
+
+void pong()
+{
+	for(;;)
+	{
+		printf("Pong\n");
+		Task_Yield(); 
+	}
+}
+
+void main()
+{
+	PID ping_pid, pong_pid;
+    
+    /*Initializes the RTOS*/
+    OS_Init();
+	
+    /*Create a task for PING and PONG. 
+     -Each task has 128 bytes of stack memories allocated for local variables, 
+     -Both tasks has a priority of 1.*/
+
+	ping_pid = Task_Create(ping, 128, 1, 0);
+	pong_pid = Task_Create(pong, 128, 1, 0);
+
+    /*Ensure the tasks has been created successfully*/
+    if(!ping_pid || !pong_pid)
+    {
+        printf("Failed to create tasks!\n");
+        exit(0);
+    }
+
+    /*Start the RTOS*/
+	OS_Start();
+}
+```
+
+##### Observations:
+
+* **Each tasks/thread is abstracted by a void function**. In this case, the task that prints "Ping" and "Pong" is abstracted as ping() and pong() respectively.
+* **A periodic task should always be running in an infinite loop**. Otherwise, the task will be killed if its corresponding function returns.
+* A task should call ```Task_Yield()``` after having completed one full iteration of work. This allows other tasks to run.
+    * You could optionally enable preemptive multitasking, if you want tasks to switch forcibly by the RTOS on a timed basis. 
+* As with any other typical C program, main() is the entry point. However, **the structure of main() is crucial** and must be based on the following steps:
+    1. Initialize the RTOS with ```OS_Init()```
+    2. Initialize other application components, if needed
+    3. Create your starting Tasks, and other RTOS components needed right at the start
+    4. Start the RTOS with ```OS_Start()```, and your initially created tasks will begin executing.
+
 
 ## Porting Guide
 The default configuration provided is targetted for Atmel Atmega2560, but can be ported to other microcontrollers and architectures with ease. If the target microcontroller is an Atmega2560 for your project, no further actions are needed.
